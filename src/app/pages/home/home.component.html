@@ -1,50 +1,406 @@
+<!-- ================================
+     HOME COMPONENT - QUINDÍO EJE CAFETERO
+     Página principal completa con temática cafetera
+     ================================ -->
+
 <!-- Hero Section -->
-<section class="hero">
+<section class="hero-quindio">
   <div class="container">
+    <!-- Título principal -->
     <div class="hero-content">
-      <h1>Find Your Perfect Stay</h1>
-      <p>Discover amazing hostels and apartments around the world</p>
+      <h1 class="hero-title">Descubre la Magia del Eje Cafetero</h1>
+      <p class="hero-subtitle">
+        Vive experiencias auténticas en fincas cafeteras, cabañas ecológicas y haciendas tradicionales del Quindío
+      </p>
       
-      <!-- Search Form -->
-      <div class="search-form">
-        <div class="search-input">
-          <input type="text" placeholder="Where do you want to stay?">
-        </div>
-        <div class="search-dates">
-          <input type="date" placeholder="Check-in">
-          <input type="date" placeholder="Check-out">
-        </div>
-        <div class="search-guests">
-          <select>
-            <option>1 Guest</option>
-            <option>2 Guests</option>
-            <option>3+ Guests</option>
-          </select>
-        </div>
-        <button class="btn btn-primary">Search</button>
+      <!-- Badges de experiencias -->
+      <div class="hero-badges">
+        <span class="hero-badge">
+          <span class="badge-icon">☕</span>
+          Tours de Café Incluidos
+        </span>
+        <span class="hero-badge">
+          <span class="badge-icon">🏔️</span>
+          Valle de Cocora
+        </span>
+        <span class="hero-badge">
+          <span class="badge-icon">🌿</span>
+          Naturaleza Auténtica
+        </span>
+      </div>
+    </div>
+
+    <!-- Barra de búsqueda especializada -->
+    <div class="search-bar-quindio">
+      <div class="search-field">
+        <label for="destination">¿A dónde quieres ir?</label>
+        <select id="destination" class="search-input">
+          <option value="">Selecciona tu destino en el Quindío</option>
+          <option value="salento">Salento - Pueblo Patrimonio</option>
+          <option value="valle-cocora">Valle de Cocora - Palmas de Cera</option>
+          <option value="filandia">Filandia - Balcón del Quindío</option>
+          <option value="armenia">Armenia - Ciudad Capital</option>
+          <option value="calarca">Calarcá - Corazón del Eje Cafetero</option>
+          <option value="montenegro">Montenegro - Ciudad Dulce</option>
+          <option value="quimbaya">Quimbaya - Tradición Cafetera</option>
+          <option value="circasia">Circasia - Pueblo Tranquilo</option>
+          <option value="la-tebaida">La Tebaida - Puerta de Oro</option>
+          <option value="buenavista">Buenavista - Paisajes Únicos</option>
+        </select>
+      </div>
+
+      <div class="search-field">
+        <label for="checkin">Llegada</label>
+        <input 
+          type="date" 
+          id="checkin" 
+          class="date-input"
+          placeholder="dd/mm/aaaa">
+      </div>
+
+      <div class="search-field">
+        <label for="checkout">Salida</label>
+        <input 
+          type="date" 
+          id="checkout" 
+          class="date-input"
+          placeholder="dd/mm/aaaa">
+      </div>
+
+      <div class="search-field">
+        <label for="guests">Huéspedes</label>
+        <select id="guests" class="guests-select">
+          <option value="1">1 Huésped</option>
+          <option value="2">2 Huéspedes</option>
+          <option value="3">3 Huéspedes</option>
+          <option value="4">4 Huéspedes</option>
+          <option value="5">5 Huéspedes</option>
+          <option value="6">6 Huéspedes</option>
+          <option value="7">7 Huéspedes</option>
+          <option value="8">8 Huéspedes</option>
+          <option value="9">9+ Huéspedes</option>
+        </select>
+      </div>
+
+      <button class="search-btn" type="button">
+        <span class="search-icon">🔍</span>
+        Buscar Alojamiento
+      </button>
+    </div>
+
+    <!-- Sugerencias rápidas -->
+    <div class="quick-suggestions">
+      <p class="suggestions-label">Destinos populares:</p>
+      <div class="suggestions-list">
+        <button class="suggestion-btn" type="button">
+          <span class="suggestion-icon">🏔️</span>
+          Valle de Cocora
+        </button>
+        <button class="suggestion-btn" type="button">
+          <span class="suggestion-icon">☕</span>
+          Fincas Cafeteras
+        </button>
+        <button class="suggestion-btn" type="button">
+          <span class="suggestion-icon">🏛️</span>
+          Pueblos Patrimonio
+        </button>
+        <button class="suggestion-btn" type="button">
+          <span class="suggestion-icon">🌿</span>
+          Experiencias Ecológicas
+        </button>
       </div>
     </div>
   </div>
+
+  <!-- Decoración de fondo -->
+  <div class="hero-decoration">
+    <div class="coffee-bean coffee-bean-1">☕</div>
+    <div class="coffee-bean coffee-bean-2">☕</div>
+    <div class="coffee-bean coffee-bean-3">☕</div>
+    <div class="palm-tree palm-tree-1">🌿</div>
+    <div class="palm-tree palm-tree-2">🌿</div>
+    <div class="mountain mountain-1">🏔️</div>
+  </div>
 </section>
 
-<!-- Featured Properties -->
+<!-- Propiedades Destacadas -->
 <section class="featured-properties">
   <div class="container">
-    <h2>Featured Properties</h2>
+    <div class="section-header">
+      <h2>Alojamientos Destacados del Quindío</h2>
+      <p class="subtitle">Descubre las mejores fincas cafeteras, cabañas y haciendas tradicionales</p>
+    </div>
+    
     <div class="properties-grid">
-      <div class="property-card" *ngFor="let property of featuredProperties">
+      <!-- Propiedad 1: Finca Cafetera Salento -->
+      <div class="property-card">
         <div class="property-image">
-          <img [src]="property.image" [alt]="property.title">
+          <img src="assets/images/finca-salento.jpg" 
+               alt="Finca Cafetera en Salento"
+               onerror="this.src='https://images.unsplash.com/photo-1544966503-7cc5ac882d5e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'">
           <div class="property-rating">
-            ⭐ {{ property.rating }}
+            ⭐ 4.9
           </div>
+          <div class="coffee-badge">Tour de Café</div>
         </div>
         <div class="property-info">
-          <h3>{{ property.title }}</h3>
-          <p class="location">📍 {{ property.location }}</p>
+          <h3>Finca Cafetera El Mirador</h3>
+          <p class="location">📍 Salento, Quindío</p>
+          <div class="property-features">
+            <span class="feature-tag">Tour de Café</span>
+            <span class="feature-tag">Desayuno Paisa</span>
+            <span class="feature-tag">Senderismo</span>
+          </div>
+          <p class="property-description">
+            Auténtica finca cafetera con vista panorámica al Valle de Cocora. 
+            Incluye tour completo del proceso del café y degustación.
+          </p>
           <div class="property-footer">
-            <span class="price">${{ property.price }}/night</span>
-            <button class="btn btn-secondary">View Details</button>
+            <span class="price">
+              $85.000 <span class="currency">COP/noche</span>
+            </span>
+            <button class="btn btn-secondary">Ver Detalles</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Propiedad 2: Cabaña Valle de Cocora -->
+      <div class="property-card">
+        <div class="property-image">
+          <img src="assets/images/cabana-cocora.jpg" 
+               alt="Cabaña en Valle de Cocora"
+               onerror="this.src='https://images.unsplash.com/photo-1449824913935-59a10b8d2000?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'">
+          <div class="property-rating">
+            ⭐ 4.8
+          </div>
+          <div class="coffee-badge">Ecológica</div>
+        </div>
+        <div class="property-info">
+          <h3>Cabaña Palmas de Cera</h3>
+          <p class="location">📍 Valle de Cocora, Salento</p>
+          <div class="property-features">
+            <span class="feature-tag">Vista Palmas</span>
+            <span class="feature-tag">Eco-amigable</span>
+            <span class="feature-tag">Senderismo</span>
+          </div>
+          <p class="property-description">
+            Cabaña ecológica en el corazón del Valle de Cocora, 
+            rodeada de las majestuosas palmas de cera más altas del mundo.
+          </p>
+          <div class="property-footer">
+            <span class="price">
+              $120.000 <span class="currency">COP/noche</span>
+            </span>
+            <button class="btn btn-secondary">Ver Detalles</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Propiedad 3: Hacienda Filandia -->
+      <div class="property-card">
+        <div class="property-image">
+          <img src="assets/images/hacienda-filandia.jpg" 
+               alt="Hacienda Tradicional en Filandia"
+               onerror="this.src='https://images.unsplash.com/photo-1571896349842-33c89424de2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'">
+          <div class="property-rating">
+            ⭐ 4.7
+          </div>
+          <div class="coffee-badge">Patrimonio</div>
+        </div>
+        <div class="property-info">
+          <h3>Hacienda Balcón del Quindío</h3>
+          <p class="location">📍 Filandia, Quindío</p>
+          <div class="property-features">
+            <span class="feature-tag">Arquitectura Colonial</span>
+            <span class="feature-tag">Vista Panorámica</span>
+            <span class="feature-tag">Cultura Paisa</span>
+          </div>
+          <p class="property-description">
+            Hacienda tradicional restaurada con arquitectura colonial paisa. 
+            Vista espectacular desde el "Balcón del Quindío".
+          </p>
+          <div class="property-footer">
+            <span class="price">
+              $150.000 <span class="currency">COP/noche</span>
+            </span>
+            <button class="btn btn-secondary">Ver Detalles</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Propiedad 4: Glamping Montenegro -->
+      <div class="property-card">
+        <div class="property-image">
+          <img src="assets/images/glamping-montenegro.jpg" 
+               alt="Glamping en Montenegro"
+               onerror="this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'">
+          <div class="property-rating">
+            ⭐ 4.6
+          </div>
+          <div class="coffee-badge">Glamping</div>
+        </div>
+        <div class="property-info">
+          <h3>Glamping Bosques del Quindío</h3>
+          <p class="location">📍 Montenegro, Quindío</p>
+          <div class="property-features">
+            <span class="feature-tag">Lujo Natural</span>
+            <span class="feature-tag">Avistamiento</span>
+            <span class="feature-tag">Spa Natural</span>
+          </div>
+          <p class="property-description">
+            Experiencia de glamping única en medio del bosque húmedo. 
+            Perfecto para desconectarse y conectar con la naturaleza.
+          </p>
+          <div class="property-footer">
+            <span class="price">
+              $200.000 <span class="currency">COP/noche</span>
+            </span>
+            <button class="btn btn-secondary">Ver Detalles</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Botón ver más -->
+    <div class="text-center mt-8">
+      <button class="btn btn-outline">
+        Ver Todos los Alojamientos del Quindío
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- Características Únicas del Quindío -->
+<section class="features">
+  <div class="container">
+    <div class="section-header">
+      <h2>¿Por Qué Elegir el Quindío?</h2>
+      <p class="subtitle">Descubre todo lo que hace único al corazón del Eje Cafetero colombiano</p>
+    </div>
+    
+    <div class="features-grid">
+      <!-- Experiencias Auténticas -->
+      <div class="feature">
+        <div class="feature-icon">🌿</div>
+        <h3>Experiencias Auténticas</h3>
+        <p>
+          Vive la verdadera cultura cafetera con tours guiados por productores locales, 
+          degustaciones de café especial y tradiciones paisas centenarias.
+        </p>
+      </div>
+
+      <!-- Cultura Cafetera -->
+      <div class="feature">
+        <div class="feature-icon">☕</div>
+        <h3>Cultura Cafetera Patrimonio</h3>
+        <p>
+          Explora el Paisaje Cultural Cafetero declarado Patrimonio de la Humanidad. 
+          Aprende sobre el proceso completo del café de especialidad.
+        </p>
+      </div>
+
+      <!-- Naturaleza Única -->
+      <div class="feature">
+        <div class="feature-icon">🏔️</div>
+        <h3>Naturaleza Exuberante</h3>
+        <p>
+          Valle de Cocora con las palmas de cera más altas del mundo, 
+          termales naturales, bosques de niebla y diversidad de aves única.
+        </p>
+      </div>
+
+      <!-- Alojamientos Verificados -->
+      <div class="feature">
+        <div class="feature-icon">🏠</div>
+        <h3>Alojamientos Verificados</h3>
+        <p>
+          Todas las fincas, cabañas y haciendas están verificadas por calidad, 
+          seguridad y autenticidad de la experiencia cafetera.
+        </p>
+      </div>
+
+      <!-- Gastronomía Local -->
+      <div class="feature">
+        <div class="feature-icon">🍽️</div>
+        <h3>Gastronomía Paisa</h3>
+        <p>
+          Disfruta la auténtica bandeja paisa, arepas de chócolo, 
+          trucha fresca y los mejores platos tradicionales del Quindío.
+        </p>
+      </div>
+
+      <!-- Soporte Local -->
+      <div class="feature">
+        <div class="feature-icon">🤝</div>
+        <h3>Soporte Local 24/7</h3>
+        <p>
+          Equipo local que conoce cada rincón del Quindío, 
+          listo para hacer de tu estadía una experiencia inolvidable.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Destinos Populares -->
+<section class="section bg-light">
+  <div class="container">
+    <div class="section-header">
+      <h2>Destinos Imperdibles del Quindío</h2>
+      <p class="subtitle">Explora los lugares más emblemáticos del Eje Cafetero</p>
+    </div>
+    
+    <div class="row">
+      <div class="col-4">
+        <div class="card">
+          <div class="card-image">
+            <img src="assets/images/salento-pueblo.jpg" 
+                 alt="Pueblo de Salento"
+                 onerror="this.src='https://images.unsplash.com/photo-1611273426858-450d8e3c9fce?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'">
+          </div>
+          <div class="card-content">
+            <h3 class="card-title">Salento</h3>
+            <p class="card-description">
+              Pueblo patrimonio con arquitectura colonial, calle del recuerdo 
+              y puerta de entrada al Valle de Cocora.
+            </p>
+            <button class="btn btn-primary">Explorar Salento</button>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-4">
+        <div class="card">
+          <div class="card-image">
+            <img src="assets/images/filandia-mirador.jpg" 
+                 alt="Mirador de Filandia"
+                 onerror="this.src='https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'">
+          </div>
+          <div class="card-content">
+            <h3 class="card-title">Filandia</h3>
+            <p class="card-description">
+              El "Balcón del Quindío" ofrece las mejores vistas panorámicas 
+              de la región y arquitectura paisa auténtica.
+            </p>
+            <button class="btn btn-primary">Explorar Filandia</button>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-4">
+        <div class="card">
+          <div class="card-image">
+            <img src="assets/images/armenia-ciudad.jpg" 
+                 alt="Ciudad de Armenia"
+                 onerror="this.src='https://images.unsplash.com/photo-1577962917302-cd874c4e31d2?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'">
+          </div>
+          <div class="card-content">
+            <h3 class="card-title">Armenia</h3>
+            <p class="card-description">
+              Capital del Quindío, centro urbano moderno con museos, 
+              parques temáticos y la mejor gastronomía de la región.
+            </p>
+            <button class="btn btn-primary">Explorar Armenia</button>
           </div>
         </div>
       </div>
@@ -52,31 +408,20 @@
   </div>
 </section>
 
-<!-- Features Section -->
-<section class="features">
+<!-- Call to Action Final -->
+<section class="section bg-quindio-gradient text-center">
   <div class="container">
-    <h2>Why Choose Our Platform?</h2>
-    <div class="features-grid">
-      <div class="feature">
-        <div class="feature-icon">🏠</div>
-        <h3>Verified Properties</h3>
-        <p>All accommodations are verified for quality and safety</p>
-      </div>
-      <div class="feature">
-        <div class="feature-icon">💳</div>
-        <h3>Secure Payments</h3>
-        <p>Safe and secure payment processing</p>
-      </div>
-      <div class="feature">
-        <div class="feature-icon">🌟</div>
-        <h3>Guest Reviews</h3>
-        <p>Read authentic reviews from previous guests</p>
-      </div>
-      <div class="feature">
-        <div class="feature-icon">📞</div>
-        <h3>24/7 Support</h3>
-        <p>Round-the-clock customer support</p>
-      </div>
+    <h2 style="color: white;">¿Listo para tu Aventura Cafetera?</h2>
+    <p style="color: rgba(255,255,255,0.9); font-size: 1.2rem; margin-bottom: 2rem;">
+      Únete a miles de viajeros que han descubierto la magia del Quindío
+    </p>
+    <div class="d-flex justify-center" style="gap: 1rem;">
+      <button class="btn btn-lg" style="background: white; color: var(--primary-color);">
+        Explorar Alojamientos
+      </button>
+      <button class="btn btn-lg btn-outline" style="border-color: white; color: white;">
+        Crear Cuenta Gratis
+      </button>
     </div>
   </div>
 </section>

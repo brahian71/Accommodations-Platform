@@ -1,49 +1,1046 @@
-/* Global Styles */
+/* ================================
+   ACCOMMODATIONS PLATFORM - QUINDÍO
+   Sistema de estilos inspirado en el Eje Cafetero
+   ================================ */
+
+/* Importar fuentes */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Open+Sans:wght@300;400;600&display=swap');
+
+/* ================================
+   VARIABLES GLOBALES - TEMÁTICA QUINDÍO
+   ================================ */
+:root {
+  /* === COLORES PRINCIPALES === */
+  /* Inspirados en paisajes cafeteros y naturaleza del Quindío */
+  
+  /* Verde café y naturaleza */
+  --primary-color: #27AE60;           // Verde naturaleza
+  --primary-dark: #1E8449;            // Verde oscuro café
+  --primary-light: #58D68D;           // Verde claro palmas
+  
+  /* Marrones tierra cafetera */
+  --coffee-brown: #8B4513;            // Marrón café
+  --coffee-light: #CD853F;            // Café claro
+  --earth-brown: #A0522D;             // Tierra cafetera
+  
+  /* Amarillos cafetera */
+  --coffee-yellow: #F1C40F;           // Amarillo café maduro
+  --warm-yellow: #F39C12;             // Naranja cálido (mantenido)
+  --sunshine: #FFD700;                // Sol andino
+  
+  /* Azules cielo andino */
+  --sky-blue: #3498DB;                // Azul cielo
+  --water-blue: #5DADE2;              // Agua cristalina
+  --trust-blue: #3C8DBC;              // Azul confianza (mantenido)
+  
+  /* Neutros naturales */
+  --text-color: #2C3E50;              // Texto principal
+  --text-light: #566573;              // Texto secundario
+  --text-muted: #85929E;              // Texto suave
+  
+  /* Backgrounds */
+  --white: #FFFFFF;
+  --light-bg: #F8F9FA;                // Fondo claro
+  --card-bg: #FFFFFF;
+  --overlay-dark: rgba(44, 62, 80, 0.8);
+  --overlay-light: rgba(255, 255, 255, 0.9);
+  
+  /* Estados y alertas */
+  --success-color: #27AE60;           // Verde éxito
+  --warning-color: #F39C12;           // Amarillo advertencia
+  --error-color: #E74C3C;             // Rojo error
+  --info-color: #3498DB;              // Azul información
+  
+  /* === TIPOGRAFÍA === */
+  --font-primary: 'Montserrat', sans-serif;     // Headers
+  --font-secondary: 'Open Sans', sans-serif;    // Body text
+  
+  /* Tamaños de fuente (sistema 8pt) */
+  --text-xs: 0.75rem;      /* 12px */
+  --text-sm: 0.875rem;     /* 14px */
+  --text-base: 1rem;       /* 16px */
+  --text-lg: 1.125rem;     /* 18px */
+  --text-xl: 1.25rem;      /* 20px */
+  --text-2xl: 1.5rem;      /* 24px */
+  --text-3xl: 1.875rem;    /* 30px */
+  --text-4xl: 2.25rem;     /* 36px */
+  --text-5xl: 3rem;        /* 48px */
+  
+  /* Pesos de fuente */
+  --font-light: 300;
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+  
+  /* === ESPACIADO === */
+  --space-1: 0.25rem;      /* 4px */
+  --space-2: 0.5rem;       /* 8px */
+  --space-3: 0.75rem;      /* 12px */
+  --space-4: 1rem;         /* 16px */
+  --space-5: 1.25rem;      /* 20px */
+  --space-6: 1.5rem;       /* 24px */
+  --space-8: 2rem;         /* 32px */
+  --space-10: 2.5rem;      /* 40px */
+  --space-12: 3rem;        /* 48px */
+  --space-16: 4rem;        /* 64px */
+  --space-20: 5rem;        /* 80px */
+  
+  /* === BORDES Y SOMBRAS === */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 24px;
+  --radius-full: 50%;
+  
+  /* Sombras inspiradas en montañas y paisajes */
+  --shadow-sm: 0 1px 2px 0 rgba(44, 62, 80, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(44, 62, 80, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(44, 62, 80, 0.1);
+  --shadow-xl: 0 20px 25px -5px rgba(44, 62, 80, 0.1);
+  --shadow-2xl: 0 25px 50px -12px rgba(44, 62, 80, 0.25);
+  
+  /* === TRANSICIONES === */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.3s ease;
+  --transition-slow: 0.5s ease;
+}
+
+/* ================================
+   ESTILOS BASE
+   ================================ */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  line-height: 1.6;
-  color: #333;
-  background-color: #f8f9fa;
+html {
+  scroll-behavior: smooth;
 }
 
-// Utilities
+body {
+  font-family: var(--font-secondary);
+  font-size: var(--text-base);
+  color: var(--text-color);
+  line-height: 1.6;
+  background-color: var(--light-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* === TIPOGRAFÍA === */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-primary);
+  font-weight: var(--font-bold);
+  line-height: 1.2;
+  margin-bottom: var(--space-4);
+  color: var(--text-color);
+}
+
+h1 { font-size: var(--text-5xl); }
+h2 { font-size: var(--text-4xl); }
+h3 { font-size: var(--text-3xl); }
+h4 { font-size: var(--text-2xl); }
+h5 { font-size: var(--text-xl); }
+h6 { font-size: var(--text-lg); }
+
+p {
+  margin-bottom: var(--space-4);
+  color: var(--text-light);
+}
+
+a {
+  color: var(--primary-color);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--primary-dark);
+}
+
+/* ================================
+   LAYOUT
+   ================================ */
 .container {
+  width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 1rem;
+  padding: 0 var(--space-4);
 }
 
+.container-fluid {
+  width: 100%;
+  padding: 0 var(--space-4);
+}
+
+.container-sm { max-width: 640px; }
+.container-md { max-width: 768px; }
+.container-lg { max-width: 1024px; }
+.container-xl { max-width: 1280px; }
+
+/* Grid system */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0 calc(var(--space-3) * -1);
+}
+
+.col {
+  flex: 1;
+  padding: 0 var(--space-3);
+}
+
+.col-12 { flex: 0 0 100%; max-width: 100%; }
+.col-6 { flex: 0 0 50%; max-width: 50%; }
+.col-4 { flex: 0 0 33.333333%; max-width: 33.333333%; }
+.col-3 { flex: 0 0 25%; max-width: 25%; }
+
+/* ================================
+   SECCIONES
+   ================================ */
+.section {
+  padding: var(--space-20) 0;
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: var(--space-16);
+}
+
+.section-header h2 {
+  font-size: var(--text-4xl);
+  margin-bottom: var(--space-4);
+  color: var(--text-color);
+}
+
+.section-header .subtitle {
+  font-size: var(--text-lg);
+  color: var(--text-light);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.section-header .separator {
+  width: 80px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary-color), var(--coffee-yellow));
+  margin: var(--space-6) auto;
+  border-radius: var(--radius-full);
+}
+
+/* ================================
+   BOTONES
+   ================================ */
 .btn {
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 0.375rem;
-  cursor: pointer;
-  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-md);
+  font-family: var(--font-primary);
+  font-weight: var(--font-semibold);
+  font-size: var(--text-base);
+  text-align: center;
   text-decoration: none;
-  display: inline-block;
-  transition: all 0.2s;
-  
-  &.btn-primary {
-    background-color: #007bff;
-    color: white;
-    
-    &:hover {
-      background-color: #0056b3;
-    }
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.3);
+}
+
+/* Botón primario - Verde naturaleza */
+.btn-primary {
+  background-color: var(--primary-color);
+  color: var(--white);
+  border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-dark);
+  border-color: var(--primary-dark);
+  color: var(--white);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Botón secundario - Amarillo cafetera */
+.btn-secondary {
+  background-color: var(--coffee-yellow);
+  color: var(--white);
+  border-color: var(--coffee-yellow);
+}
+
+.btn-secondary:hover {
+  background-color: var(--warm-yellow);
+  border-color: var(--warm-yellow);
+  color: var(--white);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Botón outline */
+.btn-outline {
+  background-color: transparent;
+  color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.btn-outline:hover {
+  background-color: var(--primary-color);
+  color: var(--white);
+}
+
+/* Tamaños de botones */
+.btn-sm {
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-sm);
+}
+
+.btn-lg {
+  padding: var(--space-4) var(--space-8);
+  font-size: var(--text-lg);
+}
+
+/* ================================
+   CARDS - ESTILO AIRBNB MEJORADO
+   ================================ */
+.card {
+  background: var(--card-bg);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  transition: all var(--transition-normal);
+  border: 1px solid rgba(44, 62, 80, 0.05);
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-xl);
+}
+
+.card-image {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 4/3;
+}
+
+.card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--transition-slow);
+}
+
+.card:hover .card-image img {
+  transform: scale(1.05);
+}
+
+.card-content {
+  padding: var(--space-5);
+}
+
+.card-title {
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  margin-bottom: var(--space-2);
+  color: var(--text-color);
+}
+
+.card-description {
+  color: var(--text-light);
+  font-size: var(--text-sm);
+  margin-bottom: var(--space-3);
+}
+
+/* ================================
+   BADGES Y ETIQUETAS
+   ================================ */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.badge-primary {
+  background-color: var(--primary-color);
+  color: var(--white);
+}
+
+.badge-coffee {
+  background-color: var(--coffee-brown);
+  color: var(--white);
+}
+
+.badge-yellow {
+  background-color: var(--coffee-yellow);
+  color: var(--white);
+}
+
+/* ================================
+   HERO SECTION QUINDÍO
+   ================================ */
+.hero-quindio {
+  background: linear-gradient(
+    135deg,
+    var(--primary-color) 0%,
+    var(--coffee-yellow) 70%,
+    var(--coffee-brown) 100%
+  );
+  color: white;
+  padding: 4rem 0 5rem;
+  position: relative;
+  overflow: hidden;
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+}
+
+.hero-content {
+  text-align: center;
+  margin-bottom: 3rem;
+  position: relative;
+  z-index: 10;
+}
+
+.hero-title {
+  font-size: 3.5rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  font-family: var(--font-primary);
+  line-height: 1.1;
+}
+
+.hero-subtitle {
+  font-size: 1.3rem;
+  margin-bottom: 2rem;
+  opacity: 0.95;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+/* === BADGES DE EXPERIENCIAS === */
+.hero-badges {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.hero-badge {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  padding: 0.5rem 1rem;
+  border-radius: 25px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  transition: all 0.3s ease;
+}
+
+.hero-badge:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.badge-icon {
+  font-size: 1.1rem;
+}
+
+/* === BARRA DE BÚSQUEDA MEJORADA === */
+.search-bar-quindio {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1.2fr;
+  gap: 1rem;
+  align-items: end;
+  position: relative;
+  z-index: 10;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.search-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.search-field label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-color);
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.search-input,
+.date-input,
+.guests-select {
+  border: 2px solid #E8F5E8;
+  border-radius: 8px;
+  padding: 0.75rem;
+  font-size: 1rem;
+  background: white;
+  color: var(--text-color);
+  transition: all 0.3s ease;
+  font-family: var(--font-secondary);
+}
+
+.search-input:focus,
+.date-input:focus,
+.guests-select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.1);
+}
+
+.search-btn {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-family: var(--font-primary);
+}
+
+.search-btn:hover {
+  background: var(--primary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(39, 174, 96, 0.3);
+}
+
+.search-icon {
+  font-size: 1.1rem;
+}
+
+/* === SUGERENCIAS RÁPIDAS === */
+.quick-suggestions {
+  text-align: center;
+  margin-top: 2rem;
+  position: relative;
+  z-index: 10;
+}
+
+.suggestions-label {
+  font-size: 1rem;
+  margin-bottom: 1rem;
+  opacity: 0.9;
+  font-weight: 500;
+}
+
+.suggestions-list {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.suggestion-btn {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.suggestion-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+.suggestion-icon {
+  font-size: 1rem;
+}
+
+/* === DECORACIONES ANIMADAS === */
+.hero-decoration {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.coffee-bean,
+.palm-tree,
+.mountain {
+  position: absolute;
+  font-size: 2rem;
+  opacity: 0.1;
+  animation: float 6s ease-in-out infinite;
+}
+
+.coffee-bean-1 {
+  top: 10%;
+  left: 10%;
+  animation-delay: 0s;
+}
+
+.coffee-bean-2 {
+  top: 60%;
+  right: 15%;
+  animation-delay: 2s;
+}
+
+.coffee-bean-3 {
+  bottom: 20%;
+  left: 20%;
+  animation-delay: 4s;
+}
+
+.palm-tree-1 {
+  top: 30%;
+  right: 10%;
+  animation-delay: 1s;
+}
+
+.palm-tree-2 {
+  bottom: 40%;
+  right: 30%;
+  animation-delay: 3s;
+}
+
+.mountain-1 {
+  top: 20%;
+  left: 60%;
+  animation-delay: 5s;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
   }
-  
-  &.btn-secondary {
-    background-color: #6c757d;
-    color: white;
-    
-    &:hover {
-      background-color: #545b62;
-    }
+  33% {
+    transform: translateY(-10px) rotate(5deg);
+  }
+  66% {
+    transform: translateY(-5px) rotate(-5deg);
   }
 }
+
+/* ================================
+   FEATURED PROPERTIES - QUINDÍO
+   ================================ */
+.featured-properties {
+  padding: var(--space-20) 0;
+  background: var(--white);
+}
+
+.featured-properties h2 {
+  text-align: center;
+  font-size: var(--text-4xl);
+  margin-bottom: var(--space-16);
+  color: var(--text-color);
+  position: relative;
+}
+
+.featured-properties h2::after {
+  content: '';
+  width: 80px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary-color), var(--coffee-yellow));
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: var(--radius-full);
+}
+
+.properties-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-8);
+}
+
+.property-card {
+  background: var(--card-bg);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  transition: all var(--transition-normal);
+  border: 1px solid rgba(44, 62, 80, 0.05);
+  position: relative;
+}
+
+.property-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-2xl);
+}
+
+.property-image {
+  position: relative;
+  aspect-ratio: 4/3;
+  overflow: hidden;
+}
+
+.property-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--transition-slow);
+}
+
+.property-card:hover .property-image img {
+  transform: scale(1.08);
+}
+
+.property-rating {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  backdrop-filter: blur(10px);
+}
+
+.coffee-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: var(--coffee-brown);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.property-info {
+  padding: var(--space-6);
+}
+
+.property-info h3 {
+  font-size: var(--text-xl);
+  margin-bottom: var(--space-2);
+  color: var(--text-color);
+  font-weight: var(--font-semibold);
+}
+
+.location {
+  color: var(--text-light);
+  margin-bottom: var(--space-4);
+  font-size: var(--text-sm);
+}
+
+.property-features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: var(--space-4);
+}
+
+.feature-tag {
+  background: rgba(var(--primary-color), 0.1);
+  color: var(--primary-dark);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.property-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.price {
+  font-size: var(--text-xl);
+  font-weight: var(--font-bold);
+  color: var(--text-color);
+}
+
+.price .currency {
+  font-size: var(--text-sm);
+  color: var(--text-light);
+  font-weight: var(--font-normal);
+}
+
+/* ================================
+   FEATURES SECTION - QUINDÍO
+   ================================ */
+.features {
+  padding: var(--space-20) 0;
+  background: linear-gradient(135deg, 
+    rgba(var(--primary-color), 0.05) 0%,
+    rgba(var(--coffee-yellow), 0.05) 100%
+  );
+}
+
+.features h2 {
+  text-align: center;
+  font-size: var(--text-4xl);
+  margin-bottom: var(--space-16);
+  color: var(--text-color);
+  position: relative;
+}
+
+.features h2::after {
+  content: '';
+  width: 80px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary-color), var(--coffee-yellow));
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: var(--radius-full);
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--space-8);
+}
+
+.feature {
+  text-align: center;
+  padding: var(--space-8);
+  background: var(--white);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  transition: all var(--transition-normal);
+  border: 1px solid rgba(44, 62, 80, 0.05);
+}
+
+.feature:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-xl);
+}
+
+.feature-icon {
+  font-size: 3rem;
+  margin-bottom: var(--space-4);
+  display: block;
+}
+
+.feature h3 {
+  font-size: var(--text-xl);
+  margin-bottom: var(--space-3);
+  color: var(--text-color);
+}
+
+.feature p {
+  color: var(--text-light);
+  line-height: 1.6;
+  margin-bottom: 0;
+}
+
+/* ================================
+   UTILIDADES
+   ================================ */
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.text-primary { color: var(--primary-color); }
+.text-coffee { color: var(--coffee-brown); }
+.text-muted { color: var(--text-muted); }
+
+.bg-primary { background-color: var(--primary-color); }
+.bg-light { background-color: var(--light-bg); }
+.bg-white { background-color: var(--white); }
+
+.d-none { display: none; }
+.d-block { display: block; }
+.d-flex { display: flex; }
+.d-grid { display: grid; }
+
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.items-center { align-items: center; }
+
+.mb-0 { margin-bottom: 0; }
+.mb-2 { margin-bottom: var(--space-2); }
+.mb-4 { margin-bottom: var(--space-4); }
+.mb-6 { margin-bottom: var(--space-6); }
+.mb-8 { margin-bottom: var(--space-8); }
+
+.mt-0 { margin-top: 0; }
+.mt-2 { margin-top: var(--space-2); }
+.mt-4 { margin-top: var(--space-4); }
+.mt-6 { margin-top: var(--space-6); }
+.mt-8 { margin-top: var(--space-8); }
+
+/* ================================
+   RESPONSIVE DESIGN
+   ================================ */
+@media (max-width: 1024px) {
+  .search-bar-quindio {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .hero-title {
+    font-size: 2.5rem;
+  }
+  
+  .properties-grid {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-6);
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0 var(--space-3);
+  }
+  
+  .section {
+    padding: var(--space-12) 0;
+  }
+  
+  .hero-quindio {
+    padding: 3rem 0 4rem;
+    min-height: 70vh;
+  }
+  
+  .hero-title {
+    font-size: 2rem;
+  }
+  
+  .hero-subtitle {
+    font-size: 1.1rem;
+  }
+  
+  .hero-badges {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .suggestions-list {
+    justify-content: center;
+    gap: 0.5rem;
+  }
+  
+  .search-bar-quindio {
+    padding: 1rem;
+    margin: 0 1rem;
+  }
+  
+  .section-header h2 {
+    font-size: var(--text-3xl);
+  }
+  
+  .col-12, .col-6, .col-4, .col-3 {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+  
+  .properties-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .features-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-title {
+    font-size: 1.8rem;
+  }
+  
+  .hero-subtitle {
+    font-size: 1rem;
+  }
+  
+  .suggestions-list {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  h1 { font-size: var(--text-3xl); }
+  h2 { font-size: var(--text-2xl); }
+  h3 { font-size: var(--text-xl); }
+  
+  .section-header h2 {
+    font-size: var(--text-2xl);
+  }
+}
+
+/* ================================
+   ANIMACIONES ESPECIALES
+   ================================ */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+/* Gradiente del Quindío para fondos especiales */
+.bg-quindio-gradient {
+  background: linear-gradient(135deg, 
+    var(--primary-color) 0%, 
+    var(--coffee-yellow) 50%, 
+    var(--sky-blue) 100%
+  );
+}
+
+/* Overlay para imágenes hero */
+.hero-overlay {
+  background: linear-gradient(
+    rgba(44, 62, 80, 0.4),
+    rgba(44, 62, 80, 0.6)
+  );
+}
+
+/* Import del custom theme */
+@import './styles/custom-theme.scss';
