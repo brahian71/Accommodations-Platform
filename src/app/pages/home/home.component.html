@@ -1,10 +1,10 @@
 <!-- ================================
-     HOME COMPONENT - COMPLETO CON ESTILOS APLICADOS
-     HTML que funciona perfectamente con el SCSS creado
+     HOME COMPONENT - HTML OPTIMIZADO
+     Perfectamente alineado con los estilos SCSS optimizados
      ================================ -->
-<section class="hero-quindio">
 
-  
+<!-- 🌄 HERO SECTION -->
+<section class="hero-quindio">
   <div class="container">
     <div class="hero-content">
       <h1 class="hero-title">
@@ -127,27 +127,30 @@
     
     <!-- PROPERTY CARDS -->
     <div *ngIf="!isLoading" class="properties-grid">
-      <div 
+      <article 
         *ngFor="let property of featuredProperties$ | async; trackBy: trackByPropertyId"
         class="property-card"
-        (click)="viewPropertyDetails(property.id)">
+        (click)="viewPropertyDetails(property.id)"
+        [attr.aria-label]="'Ver detalles de ' + (property.title || 'habitación')">
         
         <!-- PROPERTY IMAGE -->
         <div class="property-image">
           <img 
             [src]="property.image || 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&h=300&fit=crop'"
-            [alt]="property.title"
+            [alt]="property.title || 'Habitación en Armenia'"
             loading="lazy">
           
           <!-- RATING BADGE -->
-          <div class="property-rating">
-            ⭐ {{ property.rating || '4.9' }}
+          <div class="property-rating" *ngIf="property.rating">
+            ⭐ {{ property.rating }}
           </div>
           
           <!-- FAVORITE BUTTON -->
           <button 
             class="favorite-btn"
-            (click)="toggleFavorite(property.id, $event)">
+            (click)="toggleFavorite(property.id, $event)"
+            [attr.aria-label]="'Agregar a favoritos: ' + (property.title || 'habitación')"
+            type="button">
             <span [ngClass]="property.isFavorite ? 'heart-filled' : 'heart-empty'">
               {{ property.isFavorite ? '❤️' : '🤍' }}
             </span>
@@ -163,8 +166,8 @@
         
         <!-- PROPERTY INFO -->
         <div class="property-info">
-          <h3 class="property-title">{{ property.title || 'Finca Cafetera El Mirador' }}</h3>
-          <p class="property-location">{{ property.location || 'Salento, Quindío' }}</p>
+          <h3 class="property-title">{{ property.title || 'Habitación Cómoda Norte Centro' }}</h3>
+          <p class="property-location">{{ property.location || 'Norte Centro, Armenia' }}</p>
           
           <!-- PROPERTY FEATURES -->
           <div class="property-features">
@@ -177,27 +180,28 @@
           
           <!-- PROPERTY DESCRIPTION -->
           <div class="property-description">
-            {{ property.description || 'Auténtica finca cafetera con vista panorámica al Valle de Cocora. Incluye tour completo del proceso del café y degustación.' }}
+            {{ property.description || 'Habitación privada en el corazón del norte de Armenia. Perfecta para viajeros de negocios, con fácil acceso al centro comercial y transporte público.' }}
           </div>
         </div>
 
         <!-- PROPERTY FOOTER -->
         <div class="property-footer">
           <div class="property-price">
-            <span class="price-amount">${{ (property.pricePerNight || 85000) | number }}</span>
+            <span class="price-amount">${{ (property.pricePerNight || 45000) | number }}</span>
             <span class="price-currency">COP</span>
             <span class="price-period">/ noche</span>
           </div>
-          <button class="btn">Ver Habitación</button>
+          <button class="btn btn-primary" type="button">Ver Habitación</button>
         </div>
-      </div>
+      </article>
     </div>
 
     <!-- VER TODAS BUTTON -->
     <div class="text-center" *ngIf="!isLoading">
       <button 
         class="btn btn-outline btn-lg"
-        (click)="viewAllProperties()">
+        (click)="viewAllProperties()"
+        type="button">
         Ver Todas las Habitaciones
       </button>
     </div>
@@ -213,9 +217,9 @@
     </div>
     
     <div class="features-grid">
-      <div class="card">
+      <div class="card card-hover">
         <div class="card-content">
-          <div class="text-center mb-4" style="font-size: 3rem;">🚗</div>
+          <div class="feature-icon">🚗</div>
           <h3 class="card-title">Excelente Conexión</h3>
           <p class="card-description">
             Fácil acceso al centro, aeropuerto y principales vías. Transporte público disponible.
@@ -223,9 +227,9 @@
         </div>
       </div>
 
-      <div class="card">
+      <div class="card card-hover">
         <div class="card-content">
-          <div class="text-center mb-4" style="font-size: 3rem;">🏪</div>
+          <div class="feature-icon">🏪</div>
           <h3 class="card-title">Zona Comercial</h3>
           <p class="card-description">
             Cerca de centros comerciales, restaurantes, supermercados y servicios esenciales.
@@ -233,9 +237,9 @@
         </div>
       </div>
 
-      <div class="card">
+      <div class="card card-hover">
         <div class="card-content">
-          <div class="text-center mb-4" style="font-size: 3rem;">🔒</div>
+          <div class="feature-icon">🔒</div>
           <h3 class="card-title">Seguridad</h3>
           <p class="card-description">
             Zona residencial tranquila y segura, ideal para familias y viajeros de negocios.
@@ -243,9 +247,9 @@
         </div>
       </div>
 
-      <div class="card">
+      <div class="card card-hover">
         <div class="card-content">
-          <div class="text-center mb-4" style="font-size: 3rem;">✅</div>
+          <div class="feature-icon">✅</div>
           <h3 class="card-title">Habitaciones Verificadas</h3>
           <p class="card-description">
             Todos los alojamientos son inspeccionados por limpieza, comodidad y servicios.
@@ -264,23 +268,24 @@
       <p class="subtitle">Conoce las diferentes áreas disponibles</p>
     </div>
     
-    <div class="grid grid-cols-3 gap-6">
+    <div class="zones-grid">
       <div 
         *ngFor="let zona of zonasDelNorte"
         class="card card-interactive"
-        (click)="searchDestination(zona.key)">
+        (click)="searchDestination(zona.key)"
+        [attr.aria-label]="'Buscar habitaciones en ' + zona.name">
         
         <div class="card-content">
-          <div class="text-center mb-4" style="font-size: 2.5rem;">{{ zona.icon }}</div>
+          <div class="zone-icon">{{ zona.icon }}</div>
           <h3 class="card-title">{{ zona.name }}</h3>
           <p class="card-description">{{ zona.description }}</p>
-          <div class="mt-4">
-            <span class="badge-accent">{{ zona.properties }} habitaciones</span>
+          <div class="zone-stats">
+            <span class="zone-badge">{{ zona.properties }} habitaciones</span>
           </div>
         </div>
 
         <div class="card-footer">
-          <button class="btn">Ver Habitaciones</button>
+          <button class="btn btn-primary" type="button">Ver Habitaciones</button>
         </div>
       </div>
     </div>
@@ -288,25 +293,28 @@
 </section>
 
 <!-- 🚀 CTA SECTION -->
-<section class="section bg-quindio-gradient text-center">
+<section class="section bg-quindio-gradient">
   <div class="container">
-    <h2 class="text-white mb-4">Encuentra tu Habitación Ideal</h2>
-    <p class="text-white opacity-90 text-lg mb-8">
-      Habitaciones cómodas, ubicaciones estratégicas, precios justos
-    </p>
-    
-    <div class="d-flex justify-center gap-4">
-      <button 
-        class="btn btn-lg bg-white text-primary"
-        (click)="viewAllProperties()">
-        Ver Habitaciones
-      </button>
-      <button 
-        class="btn btn-lg"
-        style="background: transparent; color: white; border: 2px solid white;"
-        (click)="trackInteraction('contact_whatsapp')">
-        Contactar por WhatsApp
-      </button>
+    <div class="cta-content">
+      <h2 class="cta-title">Encuentra tu Habitación Ideal</h2>
+      <p class="cta-subtitle">
+        Habitaciones cómodas, ubicaciones estratégicas, precios justos
+      </p>
+      
+      <div class="cta-buttons">
+        <button 
+          class="btn btn-lg cta-btn-primary"
+          (click)="viewAllProperties()"
+          type="button">
+          Ver Habitaciones
+        </button>
+        <button 
+          class="btn btn-lg cta-btn-secondary"
+          (click)="trackInteraction('contact_whatsapp')"
+          type="button">
+          Contactar por WhatsApp
+        </button>
+      </div>
     </div>
   </div>
 </section>
