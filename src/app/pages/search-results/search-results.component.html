@@ -1,0 +1,630 @@
+<!-- 📁 src/app/pages/search-results/search-results.component.html -->
+<!-- ================================
+     SEARCH RESULTS HABITACIONES NORTE DE ARMENIA
+     Versión actualizada para habitaciones urbanas
+     ================================ -->
+
+<div class="search-results-page">
+  
+  <!-- 🔍 HEADER CON BÚSQUEDA COMPACTA -->
+  <section class="search-header">
+    <div class="container">
+      <form 
+        #searchForm="ngForm" 
+        (ngSubmit)="performSearch()"
+        class="search-bar-compact">
+        
+        <!-- Zona del Norte -->
+        <div class="search-field">
+          <label>Zona del Norte</label>
+          <select 
+            [(ngModel)]="searchData.destination" 
+            name="destination"
+            class="search-input">
+            <option value="">Todas las zonas</option>
+            <option 
+              *ngFor="let zone of northZones" 
+              [value]="zone.key">
+              {{ zone.name }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Fechas -->
+        <div class="search-field">
+          <label>Llegada</label>
+          <input 
+            type="date" 
+            [(ngModel)]="searchData.checkIn"
+            name="checkIn"
+            [min]="today"
+            class="date-input">
+        </div>
+
+        <div class="search-field">
+          <label>Salida</label>
+          <input 
+            type="date" 
+            [(ngModel)]="searchData.checkOut"
+            name="checkOut"
+            [min]="tomorrow"
+            class="date-input">
+        </div>
+
+        <!-- Huéspedes -->
+        <div class="search-field">
+          <label>Huéspedes</label>
+          <select 
+            [(ngModel)]="searchData.guests" 
+            name="guests"
+            class="guests-select">
+            <option value="1">1 Huésped</option>
+            <option value="2">2 Huéspedes</option>
+            <option value="3">3 Huéspedes</option>
+            <option value="4">4 Huéspedes</option>
+            <option value="5">5+ Huéspedes</option>
+          </select>
+        </div>
+
+        <!-- Botón búsqueda -->
+        <button 
+          type="submit"
+          class="search-btn"
+          [disabled]="isLoading">
+          <span class="search-icon">🔍</span>
+          {{ isLoading ? 'Buscando...' : 'Buscar' }}
+        </button>
+      </form>
+
+      <!-- Error de búsqueda -->
+      <div *ngIf="searchError" class="search-error">
+        {{ searchError }}
+      </div>
+    </div>
+  </section>
+
+  <!-- 📋 CONTENIDO PRINCIPAL -->
+  <section class="search-content">
+    <div class="container-fluid">
+      <div class="search-layout">
+        
+        <!-- 🎛️ SIDEBAR DE FILTROS -->
+        <aside class="filters-sidebar">
+          
+          <!-- ✅ FILTROS PARA HABITACIONES DEL NORTE -->
+          <div class="filters-panel-armenia-norte">
+            <div class="filter-header">
+              <h3>Filtrar Habitaciones</h3>
+              <button 
+                class="clear-filters-btn" 
+                (click)="clearFilters()"
+                [disabled]="!hasActiveFiltersSync()">
+                Limpiar filtros
+              </button>
+            </div>
+            
+            <!-- Filtro de Zonas del Norte -->
+            <div class="filter-group">
+              <h4 class="filter-title">🗺️ Zonas del Norte</h4>
+              <div class="filter-options">
+                <label class="filter-checkbox">
+                  <input type="checkbox" (change)="toggleZone('norte-centro', $any($event.target).checked)">
+                  <span>🏢 Norte Centro</span>
+                </label>
+                <label class="filter-checkbox">
+                  <input type="checkbox" (change)="toggleZone('la-secreta', $any($event.target).checked)">
+                  <span>🏘️ La Secreta</span>
+                </label>
+                <label class="filter-checkbox">
+                  <input type="checkbox" (change)="toggleZone('bosques-pinares', $any($event.target).checked)">
+                  <span>🌲 Bosques de Pinares</span>
+                </label>
+                <label class="filter-checkbox">
+                  <input type="checkbox" (change)="toggleZone('ciudadela-del-cafe', $any($event.target).checked)">
+                  <span>☕ Ciudadela del Café</span>
+                </label>
+                <label class="filter-checkbox">
+                  <input type="checkbox" (change)="toggleZone('villa-liliana', $any($event.target).checked)">
+                  <span>🏠 Villa Liliana</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Filtros de precio -->
+            <div class="filter-group">
+              <h4 class="filter-title">💰 Precio por noche</h4>
+              <div class="price-suggestions">
+                <button 
+                  class="price-tag" 
+                  (click)="onPriceFilterClick({priceMin: 30000, priceMax: 60000})">
+                  $30K - $60K
+                </button>
+                <button 
+                  class="price-tag" 
+                  (click)="onPriceFilterClick({priceMin: 60000, priceMax: 100000})">
+                  $60K - $100K
+                </button>
+                <button 
+                  class="price-tag" 
+                  (click)="onPriceFilterClick({priceMin: 100000, priceMax: 200000})">
+                  $100K - $200K
+                </button>
+                <button 
+                  class="price-tag" 
+                  (click)="onPriceFilterClick({priceMin: 200000, priceMax: 999999})">
+                  $200K+
+                </button>
+              </div>
+            </div>
+
+            <!-- Tipos de alojamiento urbano -->
+            <div class="filter-group">
+              <h4 class="filter-title">🏠 Tipo de Alojamiento</h4>
+              <div class="filter-options">
+                <label class="filter-checkbox">
+                  <input type="checkbox" (change)="togglePropertyType('habitacion', $any($event.target).checked)">
+                  <span>🛏️ Habitación Privada</span>
+                </label>
+                <label class="filter-checkbox">
+                  <input type="checkbox" (change)="togglePropertyType('apartamento', $any($event.target).checked)">
+                  <span>🏠 Apartamento Completo</span>
+                </label>
+                <label class="filter-checkbox">
+                  <input type="checkbox" (change)="togglePropertyType('studio', $any($event.target).checked)">
+                  <span>🏢 Studio</span>
+                </label>
+                <label class="filter-checkbox">
+                  <input type="checkbox" (change)="togglePropertyType('casa', $any($event.target).checked)">
+                  <span>🏡 Casa Familiar</span>
+                </label>
+                <label class="filter-checkbox">
+                  <input type="checkbox" (change)="togglePropertyType('penthouse', $any($event.target).checked)">
+                  <span>🏙️ Penthouse</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Amenidades urbanas -->
+            <div class="filter-group">
+              <h4 class="filter-title">🔧 Amenidades</h4>
+              <div class="filter-options">
+                <label class="filter-checkbox">
+                  <input type="checkbox" (change)="toggleAmenity('wifi', $any($event.target).checked)">
+                  <span>📶 WiFi gratis</span>
+                </label>
+                <label class="filter-checkbox">
+                  <input type="checkbox" (change)="toggleAmenity('ac', $any($event.target).checked)">
+                  <span>❄️ Aire acondicionado</span>
+                </label>
+                <label class="filter-checkbox">
+                  <input type="checkbox" (change)="toggleAmenity('parking', $any($event.target).checked)">
+                  <span>🚗 Parqueadero</span>
+                </label>
+                <label class="filter-checkbox">
+                  <input type="checkbox" (change)="toggleAmenity('kitchen', $any($event.target).checked)">
+                  <span>👨‍🍳 Cocina equipada</span>
+                </label>
+                <label class="filter-checkbox">
+                  <input type="checkbox" (change)="toggleAmenity('tv', $any($event.target).checked)">
+                  <span>📺 Televisión</span>
+                </label>
+                <label class="filter-checkbox">
+                  <input type="checkbox" (change)="toggleAmenity('washing-machine', $any($event.target).checked)">
+                  <span>🧺 Lavadora</span>
+                </label>
+                <label class="filter-checkbox">
+                  <input type="checkbox" (change)="toggleAmenity('security', $any($event.target).checked)">
+                  <span>🔒 Vigilancia 24h</span>
+                </label>
+                <label class="filter-checkbox">
+                  <input type="checkbox" (change)="toggleAmenity('elevator', $any($event.target).checked)">
+                  <span>🛗 Ascensor</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Servicios urbanos -->
+            <div class="filter-group">
+              <h4 class="filter-title">🛎️ Servicios</h4>
+              <div class="filter-options">
+                <label class="filter-checkbox">
+                  <input type="checkbox" (change)="toggleService('cleaning', $any($event.target).checked)">
+                  <span>🧹 Servicio de limpieza</span>
+                </label>
+                <label class="filter-checkbox">
+                  <input type="checkbox" (change)="toggleService('transport', $any($event.target).checked)">
+                  <span>🚖 Transporte aeropuerto</span>
+                </label>
+                <label class="filter-checkbox">
+                  <input type="checkbox" (change)="toggleService('late-checkin', $any($event.target).checked)">
+                  <span>🌙 Check-in tardío</span>
+                </label>
+                <label class="filter-checkbox">
+                  <input type="checkbox" (change)="toggleService('concierge', $any($event.target).checked)">
+                  <span>🎩 Conserjería</span>
+                </label>
+                <label class="filter-checkbox">
+                  <input type="checkbox" (change)="toggleService('luggage-storage', $any($event.target).checked)">
+                  <span>🧳 Guarda equipaje</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Filtros especiales -->
+            <div class="filter-group">
+              <h4 class="filter-title">⭐ Especiales</h4>
+              <div class="filter-options">
+                <label class="filter-checkbox">
+                  <input type="checkbox" (change)="toggleSpecialFilter('verified', $any($event.target).checked)">
+                  <span>✅ Verificados</span>
+                </label>
+                <label class="filter-checkbox">
+                  <input type="checkbox" (change)="toggleSpecialFilter('instantBook', $any($event.target).checked)">
+                  <span>⚡ Reserva inmediata</span>
+                </label>
+                <label class="filter-checkbox">
+                  <input type="checkbox" (change)="toggleSpecialFilter('businessFriendly', $any($event.target).checked)">
+                  <span>💼 Para viajeros de negocios</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Calificación mínima -->
+            <div class="filter-group">
+              <h4 class="filter-title">⭐ Calificación mínima</h4>
+              <div class="rating-filter">
+                <button 
+                  class="rating-btn"
+                  [class.active]="currentMinRating >= 4.5"
+                  (click)="setMinRating(4.5)">
+                  4.5+ ⭐
+                </button>
+                <button 
+                  class="rating-btn"
+                  [class.active]="currentMinRating >= 4.0 && currentMinRating < 4.5"
+                  (click)="setMinRating(4.0)">
+                  4.0+ ⭐
+                </button>
+                <button 
+                  class="rating-btn"
+                  [class.active]="currentMinRating >= 3.5 && currentMinRating < 4.0"
+                  (click)="setMinRating(3.5)">
+                  3.5+ ⭐
+                </button>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        <!-- 📋 ÁREA PRINCIPAL DE RESULTADOS -->
+        <main class="search-main">
+          
+          <!-- 📊 HEADER DE RESULTADOS -->
+          <div class="results-header" *ngIf="filteredProperties$ | async as properties">
+            <div class="results-info">
+              <h2>{{ properties.length }} habitaciones en el Norte de Armenia</h2>
+              <p *ngIf="(searchParams$ | async)?.destination as dest" class="search-location">
+                📍 {{ getZoneName(dest) }}
+              </p>
+              <div class="results-summary">
+                <span class="result-count">{{ totalResults }} resultados</span>
+                <span class="active-filters" *ngIf="hasActiveFiltersSync()">
+                  • {{ getActiveFiltersCount() }} filtros activos
+                </span>
+              </div>
+            </div>
+
+            <!-- 🎛️ CONTROLES DE VISTA -->
+            <div class="view-controls" *ngIf="config$ | async as config">
+              <!-- Ordenamiento -->
+              <select 
+                [value]="config.sortBy" 
+                (change)="updateSortBy($any($event.target).value)"
+                class="sort-select">
+                <option 
+                  *ngFor="let option of sortOptions" 
+                  [value]="option.value">
+                  {{ option.icon }} {{ option.label }}
+                </option>
+              </select>
+
+              <!-- Toggle vista -->
+              <div class="view-toggle">
+                <button 
+                  class="view-btn"
+                  [class.active]="config.viewMode === 'list'"
+                  (click)="setViewMode('list')">
+                  📋 Lista
+                </button>
+                <button 
+                  class="view-btn"
+                  [class.active]="config.viewMode === 'map'"
+                  (click)="setViewMode('map')">
+                  🗺️ Mapa
+                </button>
+              </div>
+
+              <!-- Items por página -->
+              <select 
+                [value]="config.itemsPerPage" 
+                (change)="updateItemsPerPage(+$any($event.target).value)"
+                class="items-per-page-select">
+                <option 
+                  *ngFor="let option of itemsPerPageOptions" 
+                  [value]="option">
+                  {{ option }} por página
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <!-- 🔄 LOADING STATE -->
+          <div *ngIf="isLoading" class="loading-container">
+            <div class="loading-spinner"></div>
+            <p>Buscando habitaciones en el Norte de Armenia...</p>
+          </div>
+
+          <!-- 📋 VISTA DE LISTA -->
+          <div 
+            *ngIf="!isLoading && (config$ | async)?.viewMode === 'list'" 
+            class="properties-list">
+            
+            <!-- Propiedades paginadas -->
+            <div 
+              *ngFor="let property of getPaginatedProperties() | async; trackBy: trackByPropertyId"
+              class="property-card-horizontal"
+              (click)="viewProperty(property.id)">
+              
+              <!-- 🖼️ Imagen -->
+              <div class="property-image">
+                <img 
+                  [src]="property.image" 
+                  [alt]="property.title"
+                  loading="lazy">
+                
+                <!-- Botón favorito -->
+                <button 
+                  class="favorite-btn" 
+                  (click)="toggleFavorite(property.id); $event.stopPropagation()">
+                  <span [class]="property.isFavorite ? 'heart-filled' : 'heart-empty'">
+                    {{ property.isFavorite ? '❤️' : '🤍' }}
+                  </span>
+                </button>
+                
+                <!-- Badges mejorados -->
+                <div class="property-badges">
+                  <span *ngIf="property.isVerified" class="badge verified-badge">
+                    ✅ Verificado
+                  </span>
+                  <span *ngIf="property.isInstantBook" class="badge instant-badge">
+                    ⚡ Reserva inmediata
+                  </span>
+                  <span class="badge type-badge">
+                    {{ getPropertyTypeLabel(property.propertyType) }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- 📝 CONTENIDO -->
+              <div class="property-content">
+                <!-- Header con rating y ubicación -->
+                <div class="property-header">
+                  <div class="property-rating">
+                    <span class="stars">⭐</span>
+                    <span class="rating-number">{{ property.rating }}</span>
+                    <span class="reviews-count">({{ property.reviewsCount }} reseñas)</span>
+                  </div>
+                  <div class="property-location">
+                    📍 {{ property.location }}
+                  </div>
+                </div>
+
+                <!-- Título y descripción -->
+                <h3 class="property-title">{{ property.title }}</h3>
+                <p class="property-description">{{ property.description }}</p>
+
+                <!-- Información de habitación -->
+                <div class="property-specs">
+                  <span class="spec-item">🛏️ {{ property.bedrooms }} habitación{{ property.bedrooms > 1 ? 'es' : '' }}</span>
+                  <span class="spec-item">🚿 {{ property.bathrooms }} baño{{ property.bathrooms > 1 ? 's' : '' }}</span>
+                  <span class="spec-item">👥 Hasta {{ property.maxGuests }} huéspedes</span>
+                  <span *ngIf="property.area" class="spec-item">📐 {{ property.area }}m²</span>
+                </div>
+
+                <!-- Features -->
+                <div class="property-features">
+                  <span 
+                    *ngFor="let feature of property.features.slice(0, 3)" 
+                    class="feature-tag">
+                    {{ feature }}
+                  </span>
+                  <span 
+                    *ngIf="property.features.length > 3" 
+                    class="feature-tag more">
+                    +{{ property.features.length - 3 }} más
+                  </span>
+                </div>
+
+                <!-- Amenidades principales -->
+                <div class="main-amenities">
+                  <span 
+                    *ngFor="let amenity of getMainAmenities(property)" 
+                    class="amenity-tag">
+                    {{ getAmenityLabel(amenity) }}
+                  </span>
+                </div>
+
+                <!-- Servicios disponibles -->
+                <div class="available-services" *ngIf="property.services.length > 0">
+                  <strong>Servicios:</strong>
+                  <span 
+                    *ngFor="let service of property.services.slice(0, 2)" 
+                    class="service-tag">
+                    {{ getServiceLabel(service) }}
+                  </span>
+                  <span 
+                    *ngIf="property.services.length > 2" 
+                    class="service-tag more">
+                    +{{ property.services.length - 2 }} más
+                  </span>
+                </div>
+
+                <!-- Información del anfitrión -->
+                <div class="host-info">
+                  <span class="host-name">Anfitrión: {{ property.hostName }}</span>
+                  <span *ngIf="property.responseTime" class="response-time">
+                    Respuesta {{ property.responseTime }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- 💰 PRECIO Y ACCIONES -->
+              <div class="property-actions">
+                <div class="pricing">
+                  <div class="price">
+                    <span class="amount">${{ property.pricePerNight | number }}</span>
+                    <span class="currency">COP</span>
+                  </div>
+                  <div class="period">por noche</div>
+                  
+                  <!-- Descuentos por estancia larga -->
+                  <div *ngIf="property.pricePerWeek" class="discount-info">
+                    <span class="weekly-price">Semanal: ${{ property.pricePerWeek | number }}</span>
+                    <span class="discount-badge">{{ getWeeklyDiscount(property) }}% desc.</span>
+                  </div>
+                  
+                  <div *ngIf="property.pricePerMonth" class="monthly-info">
+                    <span class="monthly-price">Mensual: ${{ property.pricePerMonth | number }}</span>
+                  </div>
+                </div>
+
+                <!-- Botones de acción -->
+                <div class="action-buttons">
+                  <button 
+                    class="btn btn-primary view-property-btn"
+                    (click)="viewProperty(property.id); $event.stopPropagation()">
+                    Ver Habitación
+                  </button>
+                  
+                  <button 
+                    *ngIf="property.isInstantBook"
+                    class="btn btn-outline quick-book-btn"
+                    (click)="quickBook(property.id); $event.stopPropagation()">
+                    Reservar Ahora
+                  </button>
+
+                  <button 
+                    *ngIf="property.hostWhatsapp"
+                    class="btn btn-outline contact-btn"
+                    (click)="contactHost(property); $event.stopPropagation()">
+                    💬 WhatsApp
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 📄 PAGINACIÓN -->
+            <div class="pagination">
+              <ng-container *ngIf="config$ | async as config">
+                <ng-container *ngIf="getPageNumbers() | async as pageNumbers">
+                  <div *ngIf="pageNumbers.length > 1" class="pagination-content">
+                    <button 
+                      class="page-btn"
+                      [disabled]="config.currentPage === 1"
+                      (click)="goToPage(config.currentPage - 1)">
+                      ← Anterior
+                    </button>
+                    
+                    <button 
+                      *ngFor="let page of pageNumbers"
+                      class="page-btn"
+                      [class.active]="page === config.currentPage"
+                      (click)="goToPage(page)">
+                      {{ page }}
+                    </button>
+                    
+                    <button 
+                      class="page-btn"
+                      [disabled]="config.currentPage === pageNumbers.length"
+                      (click)="goToPage(config.currentPage + 1)">
+                      Siguiente →
+                    </button>
+                  </div>
+                </ng-container>
+              </ng-container>
+            </div>
+          </div>
+
+          <!-- 🗺️ VISTA DE MAPA -->
+          <div 
+            *ngIf="!isLoading && (config$ | async)?.viewMode === 'map'" 
+            class="map-view">
+            <div class="map-container">
+              <div class="map-placeholder">
+                <div class="map-content">
+                  <h3>🗺️ Mapa del Norte de Armenia</h3>
+                  <p>Vista de mapa con {{ totalResults }} habitaciones</p>
+                  
+                  <!-- Marcadores por zona -->
+                  <div class="map-zones">
+                    <div class="zone-marker norte-centro">
+                      <span class="zone-name">Norte Centro</span>
+                      <span class="zone-count">{{ getZonePropertyCount('norte-centro') }} habitaciones</span>
+                    </div>
+                    <div class="zone-marker la-secreta">
+                      <span class="zone-name">La Secreta</span>
+                      <span class="zone-count">{{ getZonePropertyCount('la-secreta') }} habitaciones</span>
+                    </div>
+                    <div class="zone-marker bosques-pinares">
+                      <span class="zone-name">Bosques de Pinares</span>
+                      <span class="zone-count">{{ getZonePropertyCount('bosques-pinares') }} habitaciones</span>
+                    </div>
+                  </div>
+                  
+                  <!-- Propiedades destacadas en el mapa -->
+                  <div class="map-properties">
+                    <div 
+                      *ngFor="let property of (filteredProperties$ | async)?.slice(0, 6)"
+                      class="map-property-marker"
+                      [class]="'marker-' + property.zone"
+                      (click)="selectProperty(property.id)">
+                      <span class="marker-price">${{ (property.pricePerNight / 1000) | number }}K</span>
+                      <span class="marker-type">{{ getPropertyTypeLabel(property.propertyType) }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 🚫 NO HAY RESULTADOS -->
+          <div 
+            *ngIf="!isLoading && totalResults === 0" 
+            class="no-results">
+            <div class="no-results-content">
+              <h3>🔍 No encontramos habitaciones</h3>
+              <p>No hay habitaciones que coincidan con tus criterios de búsqueda</p>
+              <div class="no-results-suggestions">
+                <h4>Sugerencias:</h4>
+                <ul>
+                  <li>Intenta ampliar el rango de fechas</li>
+                  <li>Considera otras zonas del norte de Armenia</li>
+                  <li>Ajusta el rango de precios</li>
+                  <li>Reduce el número de filtros activos</li>
+                </ul>
+              </div>
+              <div class="no-results-actions">
+                <button class="btn btn-primary" (click)="clearFilters()">
+                  Limpiar Todos los Filtros
+                </button>
+                <button class="btn btn-outline" (click)="resetSearch()">
+                  Nueva Búsqueda
+                </button>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  </section>
+</div>

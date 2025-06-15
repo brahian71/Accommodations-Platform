@@ -2,26 +2,25 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
 const routes: Routes = [
-  { 
-    path: '', 
-    redirectTo: '/home', 
-    pathMatch: 'full' 
+  {
+    path: '',
+    redirectTo: '/home',
+    pathMatch: 'full'
   },
   {
     path: 'home',
     loadChildren: () => import('./pages/home/home.module').then(m => m.HomeModule)
   },
-  // TODO: Agregar rutas cuando creemos los módulos
-  // {
-  //   path: 'properties',
-  //   loadChildren: () => import('./features/properties/properties.module').then(m => m.PropertiesModule)
-  // },
-  // {
-  //   path: 'auth',
-  //   loadChildren: () => import('./features/auth/auth.module').then(m => m.AuthModule)
-  // },
   {
-    path: '**', 
+    path: 'search',
+    loadChildren: () => import('./pages/search-results/search-results.module').then(m => m.SearchResultsModule)
+  },
+  {
+    path: 'home',
+    loadChildren: () => import('./pages/home/home.module').then(m => m.HomeModule)
+  },
+  {
+    path: '**',
     redirectTo: '/home'
   }
 ];
