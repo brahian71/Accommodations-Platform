@@ -1,3 +1,6 @@
+// 📁 src/app/app-routing.module.ts
+// ✅ VERSIÓN CORREGIDA CON ARQUITECTURA CONSISTENTE
+
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
@@ -12,12 +15,16 @@ const routes: Routes = [
     loadChildren: () => import('./pages/home/home.module').then(m => m.HomeModule)
   },
   {
-    path: 'search',
+    path: 'search-results',
     loadChildren: () => import('./pages/search-results/search-results.module').then(m => m.SearchResultsModule)
   },
   {
-    path: 'home',
-    loadChildren: () => import('./pages/home/home.module').then(m => m.HomeModule)
+    path: 'property/:id', 
+    loadChildren: () => import('./pages/property-details/property-details.module').then(m => m.PropertyDetailsModule) // ✅ CAMBIO: loadChildren
+  },
+  {
+    path: 'search',
+    redirectTo: '/search-results'
   },
   {
     path: '**',

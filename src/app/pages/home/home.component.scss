@@ -407,6 +407,7 @@ $properties-grid-min-width: 350px;
   font-size: var(--font-size-sm);
   display: -webkit-box;
   -webkit-line-clamp: 3;
+  line-clamp: 3; /* Propiedad estándar agregada */
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -579,13 +580,17 @@ $properties-grid-min-width: 350px;
     gap: var(--spacing-xl);
   }
   
-  .zones-grid {
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  }
-  
   .features-grid {
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: var(--spacing-xl);
+    gap: var(--spacing-2xl); /* Aumentado de xl a 2xl */
+  }
+  
+  // Responsive para zonas usando grid global
+  .grid.grid-cols-3 {
+    grid-template-columns: repeat(2, 1fr);
+    &.gap-6 {
+      gap: var(--spacing-2xl);
+    }
   }
 }
 
@@ -606,14 +611,17 @@ $properties-grid-min-width: 350px;
     gap: var(--spacing-lg);
   }
   
-  .zones-grid {
-    grid-template-columns: 1fr;
-    gap: var(--spacing-lg);
-  }
-  
   .features-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: var(--spacing-lg);
+    gap: var(--spacing-xl); /* Aumentado de lg a xl */
+  }
+  
+  // Responsive móvil para zonas
+  .grid.grid-cols-3 {
+    grid-template-columns: 1fr;
+    &.gap-6 {
+      gap: var(--spacing-xl);
+    }
   }
   
   .hero-badges {
@@ -652,6 +660,7 @@ $properties-grid-min-width: 350px;
   
   .features-grid {
     grid-template-columns: 1fr;
+    gap: var(--spacing-xl); /* Mantener buen espaciado vertical */
   }
   
   .feature-icon,

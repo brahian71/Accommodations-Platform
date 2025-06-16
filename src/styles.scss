@@ -410,8 +410,8 @@ a {
   
   &.gap-2 { gap: var(--spacing-sm); }
   &.gap-4 { gap: var(--spacing-lg); }
-  &.gap-6 { gap: var(--spacing-xl); }
-  &.gap-8 { gap: var(--spacing-2xl); }
+  &.gap-6 { gap: var(--spacing-2xl); } /* Aumentado para mejor espaciado */
+  &.gap-8 { gap: var(--spacing-3xl); }
 }
 
 /* ================================
@@ -537,6 +537,12 @@ a {
   .btn {
     width: 100%;
     justify-content: center;
+  }
+  
+  // Ajustar gaps en móvil
+  .grid {
+    &.gap-6 { gap: var(--spacing-xl); }
+    &.gap-8 { gap: var(--spacing-2xl); }
   }
 }
 

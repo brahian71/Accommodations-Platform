@@ -1,0 +1,533 @@
+<!-- 📁 src/app/pages/property-details/property-details.component.html -->
+<!-- ================================
+     PROPERTY DETAILS - ACCOMMODATIONS PLATFORM
+     Vista completa de habitaciones/alojamientos del Norte de Armenia
+     ================================ -->
+
+<div class="property-details-page" *ngIf="property$ | async as property; else loadingTemplate">
+
+  <!-- 🧭 BREADCRUMB NAVIGATION -->
+  <section class="breadcrumb-section">
+    <div class="container">
+      <nav class="breadcrumb">
+        <button class="breadcrumb-item" (click)="goBackToSearch()">
+          ← Volver a resultados
+        </button>
+        <span class="breadcrumb-separator">•</span>
+        <span class="breadcrumb-item current">{{ getZoneName(property.zone) }}</span>
+        <span class="breadcrumb-separator">•</span>
+        <span class="breadcrumb-item current">{{ getPropertyTypeLabel(property.propertyType) }}</span>
+      </nav>
+    </div>
+  </section>
+
+  <!-- 🖼️ HERO GALLERY SECTION -->
+  <section class="hero-gallery-section">
+    <div class="container">
+      <div class="gallery-grid">
+        <!-- Imagen principal -->
+        <div class="main-image" (click)="openImageGallery(0)">
+          <img 
+            [src]="property.image" 
+            [alt]="property.title"
+            loading="eager">
+          
+          <!-- Overlay con acciones -->
+          <div class="image-overlay">
+            <button class="action-btn favorite-btn" (click)="toggleFavorite(property); $event.stopPropagation()">
+              <span [class]="property.isFavorite ? 'heart-filled' : 'heart-empty'">
+                {{ property.isFavorite ? '❤️' : '🤍' }}
+              </span>
+            </button>
+            
+            <button class="action-btn share-btn" (click)="shareProperty(property); $event.stopPropagation()">
+              🔗 Compartir
+            </button>
+
+            <button class="action-btn gallery-btn" (click)="openImageGallery(0); $event.stopPropagation()">
+              🖼️ Ver todas las fotos
+            </button>
+          </div>
+
+          <!-- Badges -->
+          <div class="property-badges">
+            <span *ngIf="property.isVerified" class="badge verified-badge">
+              ✅ Verificado
+            </span>
+            <span *ngIf="property.isInstantBook" class="badge instant-badge">
+              ⚡ Reserva inmediata
+            </span>
+            <span class="badge type-badge">
+              {{ getPropertyTypeLabel(property.propertyType) }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Galería secundaria (si hay más imágenes) -->
+        <div class="secondary-images" *ngIf="getPropertyImages(property).length > 1">
+          <div 
+            *ngFor="let image of getPropertyImages(property).slice(1, 5); let i = index"
+            class="secondary-image"
+            (click)="openImageGallery(i + 1)">
+            <img [src]="image" [alt]="property.title + ' - Imagen ' + (i + 2)">
+            
+            <!-- Mostrar contador en la última imagen si hay más -->
+            <div 
+              *ngIf="i === 3 && getPropertyImages(property).length > 5" 
+              class="more-images-overlay">
+              <span>+{{ getPropertyImages(property).length - 5 }} fotos más</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 📋 MAIN CONTENT -->
+  <section class="main-content">
+    <div class="container">
+      <div class="content-layout">
+        
+        <!-- 📝 PROPERTY INFO COLUMN -->
+        <main class="property-info-column">
+          
+          <!-- ✨ PROPERTY HEADER -->
+          <div class="property-header">
+            <div class="property-title-section">
+              <h1 class="property-title">{{ property.title }}</h1>
+              <div class="property-meta">
+                <div class="location">
+                  <span class="zone-icon">{{ getZoneIcon(property.zone) }}</span>
+                  <span class="location-text">{{ property.location }}</span>
+                  <span *ngIf="property.address" class="address">{{ property.address }}</span>
+                </div>
+                <div class="rating-section">
+                  <span class="stars">⭐</span>
+                  <span class="rating-number">{{ property.rating }}</span>
+                  <span class="reviews-link">({{ property.reviewsCount }} reseñas)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 📝 DESCRIPTION -->
+          <div class="description-section">
+            <h2>Acerca de este alojamiento</h2>
+            <p class="description-text">{{ property.description }}</p>
+          </div>
+
+          <!-- 🏠 PROPERTY SPECS -->
+          <div class="specs-section">
+            <h2>Detalles del alojamiento</h2>
+            <div class="specs-grid">
+              <div class="spec-item">
+                <span class="spec-icon">🛏️</span>
+                <div class="spec-content">
+                  <span class="spec-label">Habitaciones</span>
+                  <span class="spec-value">{{ property.bedrooms }}</span>
+                </div>
+              </div>
+              
+              <div class="spec-item">
+                <span class="spec-icon">🚿</span>
+                <div class="spec-content">
+                  <span class="spec-label">Baños</span>
+                  <span class="spec-value">{{ property.bathrooms }}</span>
+                </div>
+              </div>
+              
+              <div class="spec-item">
+                <span class="spec-icon">👥</span>
+                <div class="spec-content">
+                  <span class="spec-label">Huéspedes</span>
+                  <span class="spec-value">Hasta {{ property.maxGuests }}</span>
+                </div>
+              </div>
+              
+              <div class="spec-item" *ngIf="property.area">
+                <span class="spec-icon">📐</span>
+                <div class="spec-content">
+                  <span class="spec-label">Área</span>
+                  <span class="spec-value">{{ property.area }}m²</span>
+                </div>
+              </div>
+              
+              <div class="spec-item" *ngIf="property.floor">
+                <span class="spec-icon">🏢</span>
+                <div class="spec-content">
+                  <span class="spec-label">Piso</span>
+                  <span class="spec-value">{{ property.floor }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ✨ FEATURES -->
+          <div class="features-section" *ngIf="property.features.length > 0">
+            <h2>Características destacadas</h2>
+            <div class="features-grid">
+              <div 
+                *ngFor="let feature of property.features" 
+                class="feature-item">
+                <span class="feature-icon">✨</span>
+                <span class="feature-text">{{ feature }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 🔧 AMENITIES -->
+          <div class="amenities-section" *ngIf="property.amenities.length > 0">
+            <h2>Amenidades disponibles</h2>
+            
+            <!-- Amenidades principales -->
+            <div class="main-amenities" *ngIf="getMainAmenities(property).length > 0">
+              <h3>Principales</h3>
+              <div class="amenities-grid">
+                <div 
+                  *ngFor="let amenity of getMainAmenities(property)" 
+                  class="amenity-item">
+                  <span class="amenity-text">{{ getAmenityLabel(amenity) }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Amenidades adicionales -->
+            <div class="secondary-amenities" *ngIf="getSecondaryAmenities(property).length > 0">
+              <h3>Adicionales</h3>
+              <div class="amenities-grid">
+                <div 
+                  *ngFor="let amenity of getSecondaryAmenities(property)" 
+                  class="amenity-item">
+                  <span class="amenity-text">{{ getAmenityLabel(amenity) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 🛎️ SERVICES -->
+          <div class="services-section" *ngIf="property.services.length > 0">
+            <h2>Servicios incluidos</h2>
+            <div class="services-grid">
+              <div 
+                *ngFor="let service of property.services" 
+                class="service-item">
+                <span class="service-icon">🛎️</span>
+                <span class="service-text">{{ getServiceLabel(service) }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 📍 LOCATION SECTION -->
+          <div class="location-section">
+            <h2>Ubicación y alrededores</h2>
+            <div class="location-details">
+              <div class="zone-info">
+                <h3>{{ getZoneName(property.zone) }}</h3>
+                <p>{{ getZoneDescription(property.zone) }}</p>
+              </div>
+
+              <!-- Lugares cercanos -->
+              <div class="nearby-places" *ngIf="property.nearbyPlaces.length > 0">
+                <h3>Lugares de interés cercanos</h3>
+                <div class="places-list">
+                  <div 
+                    *ngFor="let place of property.nearbyPlaces" 
+                    class="place-item">
+                    <span class="place-icon">📍</span>
+                    <span class="place-name">{{ place }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Acceso de transporte -->
+              <div class="transport-access" *ngIf="property.transportAccess.length > 0">
+                <h3>Acceso y transporte</h3>
+                <div class="transport-list">
+                  <div 
+                    *ngFor="let transport of property.transportAccess" 
+                    class="transport-item">
+                    <span class="transport-icon">🚌</span>
+                    <span class="transport-name">{{ transport }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 📋 POLICIES SECTION -->
+          <div class="policies-section">
+            <h2>Políticas del alojamiento</h2>
+            <div class="policies-content">
+              <div class="policy-group">
+                <h3>Check-in y Check-out</h3>
+                <div class="policy-items">
+                  <div class="policy-item">
+                    <span class="policy-icon">🕐</span>
+                    <span class="policy-text">Check-in: {{ property.checkInTime }}</span>
+                  </div>
+                  <div class="policy-item">
+                    <span class="policy-icon">🕐</span>
+                    <span class="policy-text">Check-out: {{ property.checkOutTime }}</span>
+                  </div>
+                  <div class="policy-item" *ngIf="property.minimumStay">
+                    <span class="policy-icon">📅</span>
+                    <span class="policy-text">Estadía mínima: {{ property.minimumStay }} noche{{ property.minimumStay > 1 ? 's' : '' }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="policy-group" *ngIf="property.cancellationPolicy">
+                <h3>Política de cancelación</h3>
+                <div class="policy-item">
+                  <span class="policy-icon">📝</span>
+                  <span class="policy-text">{{ getCancellationPolicyLabel(property.cancellationPolicy) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 👤 HOST SECTION -->
+          <div class="host-section">
+            <h2>Tu anfitrión</h2>
+            <div class="host-card">
+              <div class="host-info">
+                <div class="host-avatar">
+                  <img 
+                    [src]="property.hostPhoto || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face'" 
+                    [alt]="property.hostName"
+                    class="host-photo">
+                </div>
+                <div class="host-details">
+                  <h3 class="host-name">{{ property.hostName }}</h3>
+                  <div class="host-stats">
+                    <span class="response-time" *ngIf="property.responseTime">
+                      Respuesta {{ property.responseTime }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="host-actions">
+                <button 
+                  class="btn btn-outline contact-btn"
+                  (click)="contactHost(property)"
+                  *ngIf="property.hostWhatsapp">
+                  💬 Enviar mensaje
+                </button>
+                <button 
+                  class="btn btn-outline call-btn"
+                  (click)="callHost(property)"
+                  *ngIf="property.hostWhatsapp">
+                  📞 Llamar
+                </button>
+              </div>
+            </div>
+          </div>
+        </main>
+
+        <!-- 💰 BOOKING SIDEBAR -->
+        <aside class="booking-sidebar">
+          <div class="booking-widget" [class.sticky]="!showBookingWidget">
+            
+            <!-- Precio principal -->
+            <div class="pricing-header">
+              <div class="main-price">
+                <span class="amount">{{ formatCurrency(property.pricePerNight) }}</span>
+                <span class="period">/ noche</span>
+              </div>
+              <div class="rating-badge">
+                <span class="stars">⭐</span>
+                <span class="rating">{{ property.rating }}</span>
+                <span class="reviews">({{ property.reviewsCount }})</span>
+              </div>
+            </div>
+
+            <!-- Descuentos disponibles -->
+            <div class="discounts" *ngIf="property.pricePerWeek || property.pricePerMonth">
+              <div class="discount-item" *ngIf="property.pricePerWeek">
+                <span class="discount-label">Semanal</span>
+                <span class="discount-price">{{ formatCurrency(property.pricePerWeek) }}</span>
+                <span class="discount-badge">{{ getWeeklyDiscount(property) }}% desc.</span>
+              </div>
+              <div class="discount-item" *ngIf="property.pricePerMonth">
+                <span class="discount-label">Mensual</span>
+                <span class="discount-price">{{ formatCurrency(property.pricePerMonth) }}</span>
+                <span class="discount-badge">{{ getMonthlyDiscount(property) }}% desc.</span>
+              </div>
+            </div>
+
+            <!-- Formulario de reserva -->
+            <div class="booking-form">
+              <!-- Fechas -->
+              <div class="date-inputs">
+                <div class="date-input-group">
+                  <label>Llegada</label>
+                  <input 
+                    type="date" 
+                    [(ngModel)]="bookingData.checkIn"
+                    [min]="today"
+                    (change)="calculateBookingTotal()"
+                    class="date-input">
+                  <span class="formatted-date">{{ formatDate(bookingData.checkIn) }}</span>
+                </div>
+                <div class="date-input-group">
+                  <label>Salida</label>
+                  <input 
+                    type="date" 
+                    [(ngModel)]="bookingData.checkOut"
+                    [min]="tomorrow"
+                    (change)="calculateBookingTotal()"
+                    class="date-input">
+                  <span class="formatted-date">{{ formatDate(bookingData.checkOut) }}</span>
+                </div>
+              </div>
+
+              <!-- Huéspedes -->
+              <div class="guests-input">
+                <label>Huéspedes</label>
+                <select 
+                  [(ngModel)]="bookingData.guests"
+                  (change)="calculateBookingTotal()"
+                  class="guests-select">
+                  <option 
+                    *ngFor="let i of [].constructor(property.maxGuests); let idx = index" 
+                    [value]="idx + 1">
+                    {{ idx + 1 }} huésped{{ idx > 0 ? 'es' : '' }}
+                  </option>
+                </select>
+              </div>
+
+              <!-- Resumen de precios -->
+              <div class="price-breakdown" *ngIf="bookingData.totalNights > 0">
+                <div class="price-item">
+                  <span class="price-label">{{ formatCurrency(property.pricePerNight) }} x {{ bookingData.totalNights }} noches</span>
+                  <span class="price-value">{{ formatCurrency(bookingData.subtotal) }}</span>
+                </div>
+                <div class="price-item">
+                  <span class="price-label">Impuestos</span>
+                  <span class="price-value">{{ formatCurrency(bookingData.taxes) }}</span>
+                </div>
+                <div class="price-total">
+                  <span class="total-label">Total</span>
+                  <span class="total-value">{{ formatCurrency(bookingData.total) }}</span>
+                </div>
+              </div>
+
+              <!-- Botones de acción -->
+              <div class="booking-actions">
+                <button 
+                  *ngIf="property.isInstantBook"
+                  class="btn btn-primary book-btn"
+                  (click)="proceedToBooking(property)"
+                  [disabled]="bookingData.totalNights <= 0">
+                  ⚡ Reservar ahora
+                </button>
+                
+                <button 
+                  *ngIf="!property.isInstantBook"
+                  class="btn btn-primary book-btn"
+                  (click)="proceedToBooking(property)"
+                  [disabled]="bookingData.totalNights <= 0">
+                  📩 Solicitar reserva
+                </button>
+
+                <button 
+                  class="btn btn-outline contact-btn"
+                  (click)="contactHost(property)">
+                  💬 Contactar anfitrión
+                </button>
+              </div>
+
+              <!-- Nota de disponibilidad -->
+              <div class="availability-note">
+                <p>💡 Este alojamiento suele reservarse rápidamente</p>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <!-- 🏠 SIMILAR PROPERTIES -->
+  <section class="similar-properties-section" *ngIf="similarProperties$ | async as similarProperties">
+    <div class="container">
+      <h2>Alojamientos similares</h2>
+      <div class="similar-properties-grid">
+        <div 
+          *ngFor="let similarProperty of similarProperties; trackBy: trackByPropertyId"
+          class="similar-property-card"
+          (click)="viewSimilarProperty(similarProperty.id)">
+          
+          <div class="property-image">
+            <img [src]="similarProperty.image" [alt]="similarProperty.title">
+            <div class="property-badge">
+              <span class="rating">⭐ {{ similarProperty.rating }}</span>
+            </div>
+          </div>
+          
+          <div class="property-content">
+            <h3 class="property-title">{{ similarProperty.title }}</h3>
+            <p class="property-location">{{ similarProperty.location }}</p>
+            <div class="property-price">
+              <span class="amount">{{ formatCurrency(similarProperty.pricePerNight) }}</span>
+              <span class="period">/ noche</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- 🖼️ FULL SCREEN IMAGE GALLERY -->
+<div class="image-gallery-modal" *ngIf="showImageGallery" (click)="closeImageGallery()">
+  <div class="gallery-container" (click)="$event.stopPropagation()">
+    <button class="gallery-close-btn" (click)="closeImageGallery()">✕</button>
+    
+    <div class="gallery-main" *ngIf="property$ | async as property">
+      <button class="gallery-nav-btn prev" (click)="previousImage(property)">‹</button>
+      
+      <div class="gallery-image-container">
+        <img 
+          [src]="getPropertyImages(property)[selectedImageIndex]" 
+          [alt]="property.title + ' - Imagen ' + (selectedImageIndex + 1)"
+          class="gallery-image">
+      </div>
+      
+      <button class="gallery-nav-btn next" (click)="nextImage(property)">›</button>
+    </div>
+    
+    <div class="gallery-thumbnails" *ngIf="property$ | async as property">
+      <div 
+        *ngFor="let image of getPropertyImages(property); let i = index"
+        class="thumbnail"
+        [class.active]="i === selectedImageIndex"
+        (click)="selectedImageIndex = i">
+        <img [src]="image" [alt]="property.title + ' - Miniatura ' + (i + 1)">
+      </div>
+    </div>
+    
+    <div class="gallery-counter" *ngIf="property$ | async as property">
+      {{ selectedImageIndex + 1 }} / {{ getPropertyImages(property).length }}
+    </div>
+  </div>
+</div>
+
+<!-- 🔄 LOADING TEMPLATE -->
+<ng-template #loadingTemplate>
+  <div class="loading-container" *ngIf="isLoading">
+    <div class="loading-spinner"></div>
+    <p>Cargando detalles de la habitación...</p>
+  </div>
+  
+  <div class="not-found-container" *ngIf="notFound">
+    <div class="not-found-content">
+      <h2>🏠 Habitación no encontrada</h2>
+      <p>Lo sentimos, no pudimos encontrar la habitación que buscas.</p>
+      <button class="btn btn-primary" (click)="goBackToSearch()">
+        Volver a la búsqueda
+      </button>
+    </div>
+  </div>
+</ng-template>

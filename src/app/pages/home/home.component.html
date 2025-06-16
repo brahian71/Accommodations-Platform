@@ -1,6 +1,6 @@
 <!-- ================================
      HOME COMPONENT - HTML OPTIMIZADO
-     Perfectamente alineado con los estilos SCSS optimizados
+     ✅ Version mejorada con mejor responsive y UX
      ================================ -->
 
 <!-- 🌄 HERO SECTION -->
@@ -27,84 +27,95 @@
       </div>
     </div>
 
-    <!-- 🔍 SEARCH BAR -->
+    <!-- 🔍 SEARCH BAR - ✅ OPTIMIZADO -->
     <form #searchForm="ngForm" (ngSubmit)="onSearchSubmit(searchForm)" class="search-bar">
       
       <div class="search-field">
-        <label>Zona del Norte</label>
+        <label for="destination">Zona del Norte</label>
         <select 
+          id="destination"
           [(ngModel)]="searchData.destination"
           name="destination"
           class="search-input"
           required>
           <option value="">Selecciona zona</option>
-          <option value="norte-centro">Norte Centro</option>
-          <option value="la-secreta">La Secreta</option>
-          <option value="bosques-pinares">Bosques de Pinares</option>
-          <option value="ciudadela-del-cafe">Ciudadela del Café</option>
-          <option value="villa-liliana">Villa Liliana</option>
+          <option value="norte-centro">🏢 Norte Centro</option>
+          <option value="la-secreta">🏘️ La Secreta</option>
+          <option value="bosques-pinares">🌲 Bosques de Pinares</option>
+          <option value="ciudadela-del-cafe">☕ Ciudadela del Café</option>
+          <option value="villa-liliana">🏠 Villa Liliana</option>
         </select>
       </div>
 
       <div class="search-field">
-        <label>Llegada</label>
+        <label for="checkIn">Llegada</label>
         <input 
+          id="checkIn"
           type="date" 
           [(ngModel)]="searchData.checkIn"
           name="checkIn"
           [min]="today"
           class="date-input"
-          required>
+          placeholder="Seleccionar fecha">
       </div>
 
       <div class="search-field">
-        <label>Salida</label>
+        <label for="checkOut">Salida</label>
         <input 
+          id="checkOut"
           type="date" 
           [(ngModel)]="searchData.checkOut"
           name="checkOut"
           [min]="tomorrow"
           class="date-input"
-          required>
+          placeholder="Seleccionar fecha">
       </div>
 
       <div class="search-field">
-        <label>Huéspedes</label>
+        <label for="guests">Huéspedes</label>
         <select 
+          id="guests"
           [(ngModel)]="searchData.guests"
           name="guests"
           class="guests-select">
           <option value="1">1 Persona</option>
           <option value="2">2 Personas</option>
           <option value="3">3 Personas</option>
-          <option value="4">4+ Personas</option>
+          <option value="4">4 Personas</option>
+          <option value="5">5+ Personas</option>
         </select>
       </div>
       
-      <button 
-        type="submit" 
-        class="search-btn"
-        [disabled]="searchForm.invalid">
-        <span class="search-icon">🔍</span>
-        Buscar
-      </button>
+      <div class="search-field search-button-field">
+        <button 
+          type="submit" 
+          class="search-btn"
+          [disabled]="!searchData.destination"
+          [class.loading]="isLoading">
+          <span class="search-icon">🔍</span>
+          <span class="search-text">{{ isLoading ? 'Buscando...' : 'Buscar' }}</span>
+        </button>
+      </div>
 
       <!-- Error message -->
-      <div *ngIf="searchError" class="search-error">
-        {{ searchError }}
+      <div *ngIf="searchError" class="search-error" [attr.role]="'alert'">
+        ⚠️ {{ searchError }}
       </div>
     </form>
 
-    <!-- QUICK SUGGESTIONS -->
+    <!-- ✅ QUICK SUGGESTIONS - MEJORADAS -->
     <div class="quick-suggestions">
       <p class="suggestions-label">Zonas populares:</p>
       <div class="suggestions-list">
         <button 
           *ngFor="let suggestion of quickSuggestions"
           class="suggestion-btn" 
-          (click)="searchDestination(suggestion.destination)">
+          (click)="searchDestination(suggestion.destination)"
+          [attr.aria-label]="'Buscar en ' + suggestion.label"
+          type="button">
           <span class="suggestion-icon">{{ suggestion.icon }}</span>
-          {{ suggestion.label }}
+          <span class="suggestion-label">{{ suggestion.label }}</span>
+          <span class="suggestion-description">{{ suggestion.description }}</span>
         </button>
       </div>
     </div>
@@ -120,7 +131,7 @@
     </div>
     
     <!-- LOADING STATE -->
-    <div *ngIf="isLoading" class="loading-container">
+    <div *ngIf="isLoading" class="loading-container" [attr.aria-live]="'polite'">
       <div class="loading-spinner"></div>
       <p class="loading-text">Cargando habitaciones...</p>
     </div>
@@ -131,7 +142,10 @@
         *ngFor="let property of featuredProperties$ | async; trackBy: trackByPropertyId"
         class="property-card"
         (click)="viewPropertyDetails(property.id)"
-        [attr.aria-label]="'Ver detalles de ' + (property.title || 'habitación')">
+        [attr.aria-label]="'Ver detalles de ' + (property.title || 'habitación')"
+        tabindex="0"
+        (keydown.enter)="viewPropertyDetails(property.id)"
+        (keydown.space)="viewPropertyDetails(property.id)">
         
         <!-- PROPERTY IMAGE -->
         <div class="property-image">
@@ -161,13 +175,23 @@
             <span class="badge badge-primary">
               {{ getPropertyTypeName(property) || 'ALOJAMIENTO' }}
             </span>
+            <span *ngIf="property.isVerified" class="badge badge-verified">
+              ✅ VERIFICADO
+            </span>
           </div>
         </div>
         
         <!-- PROPERTY INFO -->
         <div class="property-info">
           <h3 class="property-title">{{ property.title || 'Habitación Cómoda Norte Centro' }}</h3>
-          <p class="property-location">{{ property.location || 'Norte Centro, Armenia' }}</p>
+          <p class="property-location">📍 {{ property.location || 'Norte Centro, Armenia' }}</p>
+          
+          <!-- PROPERTY SPECS -->
+          <div class="property-specs">
+            <span class="spec-item">🛏️ {{ property.bedrooms || 1 }} hab.</span>
+            <span class="spec-item">🚿 {{ property.bathrooms || 1 }} baño</span>
+            <span class="spec-item">👥 {{ property.maxGuests || 2 }} huéspedes</span>
+          </div>
           
           <!-- PROPERTY FEATURES -->
           <div class="property-features">
@@ -191,7 +215,12 @@
             <span class="price-currency">COP</span>
             <span class="price-period">/ noche</span>
           </div>
-          <button class="btn btn-primary" type="button">Ver Habitación</button>
+          <button 
+            class="btn btn-primary" 
+            type="button"
+            (click)="viewPropertyDetails(property.id); $event.stopPropagation()">
+            Ver Habitación
+          </button>
         </div>
       </article>
     </div>
@@ -204,6 +233,46 @@
         type="button">
         Ver Todas las Habitaciones
       </button>
+    </div>
+  </div>
+</section>
+
+<!-- 🎯 ZONAS DEL NORTE DE ARMENIA -->
+<section class="section">
+  <div class="container">
+    <div class="section-header">
+      <h2>Zonas del Norte de Armenia</h2>
+      <p class="subtitle">Conoce las diferentes áreas disponibles</p>
+    </div>
+    
+    <div class="grid grid-cols-3 gap-6">
+      <div 
+        *ngFor="let zona of zonasDelNorte"
+        class="card card-interactive"
+        (click)="searchDestination(zona.key)"
+        [attr.aria-label]="'Buscar habitaciones en ' + zona.name"
+        tabindex="0"
+        (keydown.enter)="searchDestination(zona.key)"
+        (keydown.space)="searchDestination(zona.key)">
+        
+        <div class="card-content">
+          <div class="zone-icon">{{ zona.icon }}</div>
+          <h3 class="card-title">{{ zona.name }}</h3>
+          <p class="card-description">{{ zona.description }}</p>
+          <div class="zone-stats">
+            <span class="zone-badge">{{ zona.properties }} habitaciones</span>
+          </div>
+        </div>
+
+        <div class="card-footer">
+          <button 
+            class="btn btn-primary" 
+            type="button"
+            (click)="searchDestination(zona.key); $event.stopPropagation()">
+            Ver Habitaciones
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </section>
@@ -254,38 +323,6 @@
           <p class="card-description">
             Todos los alojamientos son inspeccionados por limpieza, comodidad y servicios.
           </p>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- 🎯 ZONAS DEL NORTE DE ARMENIA -->
-<section class="section">
-  <div class="container">
-    <div class="section-header">
-      <h2>Zonas del Norte de Armenia</h2>
-      <p class="subtitle">Conoce las diferentes áreas disponibles</p>
-    </div>
-    
-    <div class="zones-grid">
-      <div 
-        *ngFor="let zona of zonasDelNorte"
-        class="card card-interactive"
-        (click)="searchDestination(zona.key)"
-        [attr.aria-label]="'Buscar habitaciones en ' + zona.name">
-        
-        <div class="card-content">
-          <div class="zone-icon">{{ zona.icon }}</div>
-          <h3 class="card-title">{{ zona.name }}</h3>
-          <p class="card-description">{{ zona.description }}</p>
-          <div class="zone-stats">
-            <span class="zone-badge">{{ zona.properties }} habitaciones</span>
-          </div>
-        </div>
-
-        <div class="card-footer">
-          <button class="btn btn-primary" type="button">Ver Habitaciones</button>
         </div>
       </div>
     </div>

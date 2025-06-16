@@ -1,5 +1,5 @@
 // 📁 src/app/pages/home/home.component.ts
-// VERSIÓN CORREGIDA - SIN ERRORES
+// ✅ VERSIÓN CORREGIDA Y OPTIMIZADA
 
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -8,7 +8,6 @@ import { Router } from '@angular/router';
 import { Observable, Subject, of } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
-// Importar desde la nueva arquitectura actualizada
 import { Property, ZoneType, ARMENIA_NORTH_ZONES, PROPERTY_TYPE_LABELS, PropertyType } from '../../core/models/property.interface';
 import { SearchParams, QuickSuggestion, QUICK_SUGGESTIONS } from '../../core/models/search.interface';
 import { PropertyService } from '../../core/services/property.service';
@@ -32,11 +31,11 @@ export class HomeComponent implements OnInit, OnDestroy {
   isLoading = true;
   searchError: string | null = null;
   
-  // 🔍 FORM DATA
+  // 🔍 FORM DATA - ✅ INICIALIZACIÓN CORREGIDA
   searchData: SearchParams = {
     destination: '',
-    checkIn: '',
-    checkOut: '',
+    checkIn: '',    // ✅ Se inicializará en ngOnInit
+    checkOut: '',   // ✅ Se inicializará en ngOnInit
     guests: 2
   };
   
@@ -47,34 +46,48 @@ export class HomeComponent implements OnInit, OnDestroy {
   readonly today = new Date().toISOString().split('T')[0];
   readonly tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
 
-  // 🚀 SUGERENCIAS RÁPIDAS - Usando datos actualizados
+  // 🚀 CONFIGURACIONES ESTÁTICAS
   readonly quickSuggestions = QUICK_SUGGESTIONS;
-
-  // 🗺️ ZONAS DEL NORTE DE ARMENIA - Usando configuración actualizada
   readonly zonasDelNorte = Object.entries(ARMENIA_NORTH_ZONES).map(([key, value]) => ({
     key: key as ZoneType,
     ...value,
     properties: this.getPropertiesCountByZone(key as ZoneType)
   }));
-
-  // 🏷️ TIPOS DE ALOJAMIENTOS - Usando etiquetas actualizadas
   readonly propertyTypeLabels = PROPERTY_TYPE_LABELS;
 
   constructor(
     private propertyService: PropertyService,
     private router: Router
   ) {
-    // Usar servicio actualizado
+    // ✅ SOLO obtener el observable, la inicialización va en ngOnInit
     this.featuredProperties$ = this.propertyService.getFeaturedProperties();
   }
 
   ngOnInit(): void {
+    // ✅ ÚNICA llamada a inicialización
+    this.initializeDefaultDates();
     this.loadFeaturedProperties();
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  // ================================
+  // 🔧 INICIALIZACIÓN
+  // ================================
+
+  private initializeDefaultDates(): void {
+    // ✅ INICIALIZAR fechas por defecto para que el formulario funcione
+    this.searchData.checkIn = this.getDateString(1);   // Mañana
+    this.searchData.checkOut = this.getDateString(3);  // Pasado mañana
+  }
+
+  private getDateString(daysFromNow: number): string {
+    const date = new Date();
+    date.setDate(date.getDate() + daysFromNow);
+    return date.toISOString().split('T')[0];
   }
 
   // ================================
@@ -105,28 +118,55 @@ export class HomeComponent implements OnInit, OnDestroy {
   // ================================
   // 🔍 SEARCH FUNCTIONALITY
   // ================================
-  
+
   onSearchSubmit(form: any): void {
-    if (form.valid && this.validateSearchData()) {
-      this.performSearch(this.searchData);
-    } else {
-      this.searchError = 'Por favor completa todos los campos requeridos';
+    console.log('🔍 Formulario enviado:', {
+      formValid: form.valid,
+      searchData: this.searchData
+    });
+
+    // Limpiar errores previos
+    this.searchError = null;
+
+    // Validación
+    if (!this.validateSearchData()) {
+      console.log('❌ Validación fallida:', this.searchError);
+      return;
     }
+
+    console.log('✅ Validación exitosa, ejecutando búsqueda...');
+    this.performSearch(this.searchData);
   }
 
   private validateSearchData(): boolean {
     const { destination, checkIn, checkOut, guests } = this.searchData;
     
-    if (!destination || !checkIn || !checkOut) {
+    // Validar zona requerida
+    if (!destination) {
+      this.searchError = 'Por favor selecciona una zona del norte de Armenia';
       return false;
     }
     
-    if (new Date(checkIn) >= new Date(checkOut)) {
-      this.searchError = 'La fecha de salida debe ser posterior a la de llegada';
-      return false;
+    // Validar fechas si están presentes
+    if (checkIn && checkOut) {
+      const checkInDate = new Date(checkIn);
+      const checkOutDate = new Date(checkOut);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      if (checkInDate < today) {
+        this.searchError = 'La fecha de llegada no puede ser anterior a hoy';
+        return false;
+      }
+      
+      if (checkOutDate <= checkInDate) {
+        this.searchError = 'La fecha de salida debe ser posterior a la fecha de llegada';
+        return false;
+      }
     }
     
-    if (guests < 1) {
+    // Validar huéspedes
+    if (!guests || guests < 1) {
       this.searchError = 'Debe haber al menos 1 huésped';
       return false;
     }
@@ -135,28 +175,41 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   private performSearch(params: SearchParams): void {
-    this.searchError = null;
+    const queryParams = {
+      destination: params.destination, // ✅ USAR 'destination'
+      checkIn: params.checkIn,
+      checkOut: params.checkOut,
+      guests: params.guests.toString()
+    };
+
+    console.log('🚀 Navegando a search-results con:', queryParams);
     
-    this.router.navigate(['/search'], { 
-      queryParams: {
-        zone: params.destination,
-        checkIn: params.checkIn,
-        checkOut: params.checkOut,
-        guests: params.guests,
-        area: 'armenia-norte'
+    this.router.navigate(['/search-results'], {
+      queryParams
+    }).then(success => {
+      if (success) {
+        console.log('✅ Navegación exitosa a search-results');
+      } else {
+        console.error('❌ Error en navegación');
+        this.searchError = 'Error en la navegación. Inténtalo de nuevo.';
       }
     });
   }
 
+  // ✅ MÉTODO PARA QUICK SUGGESTIONS
   searchDestination(destination: ZoneType): void {
-    const searchParams: SearchParams = {
+    console.log('🎯 Búsqueda rápida por zona:', destination);
+    
+    // Actualizar datos de búsqueda
+    this.searchData = {
       destination,
       checkIn: this.getDateString(1),
       checkOut: this.getDateString(3),
       guests: 2
     };
 
-    this.performSearch(searchParams);
+    // Realizar búsqueda
+    this.performSearch(this.searchData);
   }
 
   // ================================
@@ -194,19 +247,38 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   // ================================
-  // 🛠️ UTILITY FUNCTIONS - CORREGIDOS
+  // 🗺️ NAVIGATION - ✅ CORREGIDA
+  // ================================
+
+  viewAllProperties(): void {
+    this.router.navigate(['/search-results'], {
+      queryParams: {
+        area: 'armenia-norte'
+      }
+    });
+  }
+
+  viewPropertiesByZone(zone: ZoneType): void {
+    this.router.navigate(['/search-results'], {
+      queryParams: {
+        destination: zone, // ✅ CORREGIDO: usar 'destination' en lugar de 'zone'
+        area: 'armenia-norte'
+      }
+    });
+  }
+
+  // ================================
+  // 🛠️ UTILITY FUNCTIONS
   // ================================
   
   trackByPropertyId(index: number, property: Property): string {
     return property.id;
   }
 
-  // ✅ MÉTODO CORREGIDO - Recibe Property completa
   getPropertyTypeName(property: Property): string {
     return this.propertyTypeLabels[property.propertyType] || 'Alojamiento';
   }
 
-  // ✅ MÉTODO ALTERNATIVO - Recibe solo el tipo
   getPropertyTypeLabel(propertyType: PropertyType): string {
     return this.propertyTypeLabels[propertyType] || 'Alojamiento';
   }
@@ -256,6 +328,17 @@ export class HomeComponent implements OnInit, OnDestroy {
       .slice(0, 3);
   }
 
+  private getPropertiesCountByZone(zone: ZoneType): string {
+    const counts = {
+      'norte-centro': '8',
+      'la-secreta': '6', 
+      'bosques-pinares': '4',
+      'ciudadela-del-cafe': '5',
+      'villa-liliana': '3'
+    };
+    return counts[zone] || '2';
+  }
+
   // ================================
   // 🎯 TRACKING & ANALYTICS
   // ================================
@@ -287,49 +370,6 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   private trackPropertyView(propertyId: string): void {
     console.log('👁️ Propiedad vista:', propertyId);
-  }
-
-  // ================================
-  // 🗺️ NAVIGATION
-  // ================================
-
-  viewAllProperties(): void {
-    this.router.navigate(['/search'], {
-      queryParams: {
-        area: 'armenia-norte'
-      }
-    });
-  }
-
-  viewPropertiesByZone(zone: ZoneType): void {
-    this.router.navigate(['/search'], {
-      queryParams: {
-        zone: zone,
-        area: 'armenia-norte'
-      }
-    });
-  }
-
-  // ================================
-  // 🔧 HELPER METHODS
-  // ================================
-
-  private getDateString(daysFromNow: number): string {
-    const date = new Date();
-    date.setDate(date.getDate() + daysFromNow);
-    return date.toISOString().split('T')[0];
-  }
-
-  private getPropertiesCountByZone(zone: ZoneType): string {
-    // En una implementación real, esto vendría del servicio
-    const counts = {
-      'norte-centro': '8',
-      'la-secreta': '6', 
-      'bosques-pinares': '4',
-      'ciudadela-del-cafe': '5',
-      'villa-liliana': '3'
-    };
-    return counts[zone] || '2';
   }
 
   // ================================
