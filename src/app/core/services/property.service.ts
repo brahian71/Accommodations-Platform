@@ -20,35 +20,23 @@ export class PropertyService {
   public favorites$ = this.favoritesSubject.asObservable();
 
   constructor() {
-    // Inicializar favoritos desde localStorage
     this.loadFavoritesFromStorage();
   }
 
   // ================================
-  // 🔍 MÉTODOS BÁSICOS DE BÚSQUEDA
+  //  MÉTODOS BÁSICOS DE BÚSQUEDA
   // ================================
 
-  /**
-   * Obtener todas las propiedades del norte de Armenia
-   */
   getProperties(): Observable<Property[]> {
     return this.properties$.pipe(
       delay(300) // Simular delay de API
     );
   }
-
-  /**
-   * Obtener propiedades destacadas para la página de inicio
-   */
   getFeaturedProperties(): Observable<Property[]> {
     return of(FEATURED_PROPERTIES).pipe(
       delay(200)
     );
   }
-
-  /**
-   * Obtener una propiedad por ID
-   */
   getPropertyById(id: string): Observable<Property | undefined> {
     return this.properties$.pipe(
       map(properties => properties.find(property => property.id === id)),
@@ -59,10 +47,6 @@ export class PropertyService {
   // ================================
   // 🗺️ BÚSQUEDAS POR UBICACIÓN
   // ================================
-
-  /**
-   * Obtener propiedades por zona del norte de Armenia
-   */
   getPropertiesByZone(zone: ZoneType): Observable<Property[]> {
     return this.properties$.pipe(
       map(properties => 
@@ -71,10 +55,6 @@ export class PropertyService {
       delay(200)
     );
   }
-
-  /**
-   * Obtener propiedades por múltiples zonas
-   */
   getPropertiesByZones(zones: ZoneType[]): Observable<Property[]> {
     return this.properties$.pipe(
       map(properties => 
@@ -85,12 +65,9 @@ export class PropertyService {
   }
 
   // ================================
-  // 🏠 BÚSQUEDAS POR TIPO DE PROPIEDAD
+  //  BÚSQUEDAS POR TIPO DE PROPIEDAD
   // ================================
 
-  /**
-   * Obtener propiedades por tipo (habitación, apartamento, etc.)
-   */
   getPropertiesByType(type: PropertyType): Observable<Property[]> {
     return this.properties$.pipe(
       map(properties => 
@@ -99,10 +76,6 @@ export class PropertyService {
       delay(200)
     );
   }
-
-  /**
-   * Obtener propiedades por múltiples tipos
-   */
   getPropertiesByTypes(types: PropertyType[]): Observable<Property[]> {
     return this.properties$.pipe(
       map(properties => 
@@ -113,12 +86,9 @@ export class PropertyService {
   }
 
   // ================================
-  // 💰 BÚSQUEDAS POR PRECIO
+  //  BÚSQUEDAS POR PRECIO
   // ================================
 
-  /**
-   * Obtener propiedades en un rango de precios
-   */
   getPropertiesByPriceRange(minPrice: number, maxPrice: number): Observable<Property[]> {
     return this.properties$.pipe(
       map(properties => 
@@ -130,9 +100,6 @@ export class PropertyService {
     );
   }
 
-  /**
-   * Obtener propiedades con descuentos semanales/mensuales
-   */
   getPropertiesWithDiscounts(): Observable<Property[]> {
     return this.properties$.pipe(
       map(properties => 
@@ -145,12 +112,9 @@ export class PropertyService {
   }
 
   // ================================
-  // ⭐ BÚSQUEDAS POR CALIFICACIÓN
+  //  BÚSQUEDAS POR CALIFICACIÓN
   // ================================
 
-  /**
-   * Obtener propiedades con calificación mínima
-   */
   getPropertiesByMinRating(minRating: number): Observable<Property[]> {
     return this.properties$.pipe(
       map(properties => 
@@ -160,9 +124,6 @@ export class PropertyService {
     );
   }
 
-  /**
-   * Obtener propiedades mejor calificadas
-   */
   getTopRatedProperties(limit: number = 5): Observable<Property[]> {
     return this.properties$.pipe(
       map(properties => 
@@ -175,12 +136,9 @@ export class PropertyService {
   }
 
   // ================================
-  // 🔧 BÚSQUEDAS POR SERVICIOS Y AMENIDADES
+  // BÚSQUEDAS POR SERVICIOS Y AMENIDADES
   // ================================
 
-  /**
-   * Obtener propiedades por amenidades específicas
-   */
   getPropertiesByAmenities(amenities: AmenityType[]): Observable<Property[]> {
     return this.properties$.pipe(
       map(properties => 
@@ -192,9 +150,6 @@ export class PropertyService {
     );
   }
 
-  /**
-   * Obtener propiedades por servicios específicos
-   */
   getPropertiesByServices(services: ServiceType[]): Observable<Property[]> {
     return this.properties$.pipe(
       map(properties => 
@@ -206,9 +161,6 @@ export class PropertyService {
     );
   }
 
-  /**
-   * Obtener propiedades para viajeros de negocios
-   */
   getBusinessProperties(): Observable<Property[]> {
     const businessAmenities: AmenityType[] = ['wifi', 'ac'];
     const businessServices: ServiceType[] = ['late-checkin'];
@@ -225,12 +177,9 @@ export class PropertyService {
   }
 
   // ================================
-  // 👥 BÚSQUEDAS POR CAPACIDAD
+  //  BÚSQUEDAS POR CAPACIDAD
   // ================================
 
-  /**
-   * Obtener propiedades por número de huéspedes
-   */
   getPropertiesByGuestCount(guestCount: number): Observable<Property[]> {
     return this.properties$.pipe(
       map(properties => 
@@ -244,9 +193,6 @@ export class PropertyService {
   // 🔍 BÚSQUEDA AVANZADA
   // ================================
 
-  /**
-   * Búsqueda de texto completo
-   */
   searchProperties(searchTerm: string): Observable<Property[]> {
     if (!searchTerm.trim()) {
       return this.getProperties();
@@ -269,25 +215,19 @@ export class PropertyService {
     );
   }
 
-  /**
-   * Búsqueda con filtros avanzados
-   */
   searchWithFilters(searchParams: SearchParams, filters: Partial<Filters>): Observable<Property[]> {
     return this.properties$.pipe(
       map(properties => {
         let filtered = [...properties];
 
-        // Filtrar por zona si se especifica
         if (searchParams.destination) {
           filtered = filtered.filter(p => p.zone === searchParams.destination);
         }
 
-        // Filtrar por capacidad de huéspedes
         if (searchParams.guests) {
           filtered = filtered.filter(p => p.maxGuests >= searchParams.guests);
         }
 
-        // Aplicar filtros adicionales
         if (filters.zones) {
           const activeZones = Object.entries(filters.zones)
             .filter(([_, active]) => active)
@@ -334,12 +274,8 @@ export class PropertyService {
   }
 
   // ================================
-  // ❤️ GESTIÓN DE FAVORITOS
+  //  GESTIÓN DE FAVORITOS
   // ================================
-
-  /**
-   * Toggle favorito
-   */
   toggleFavorite(propertyId: string): Observable<boolean> {
     const currentFavorites = this.favoritesSubject.value;
     const isFavorite = currentFavorites.includes(propertyId);
@@ -359,18 +295,12 @@ export class PropertyService {
     return of(!isFavorite);
   }
 
-  /**
-   * Verificar si una propiedad es favorita
-   */
   isFavorite(propertyId: string): Observable<boolean> {
     return this.favorites$.pipe(
       map(favorites => favorites.includes(propertyId))
     );
   }
 
-  /**
-   * Obtener todas las propiedades favoritas
-   */
   getFavoriteProperties(): Observable<Property[]> {
     return this.properties$.pipe(
       map(properties => properties.filter(property => property.isFavorite))
@@ -381,25 +311,15 @@ export class PropertyService {
   // 📊 ESTADÍSTICAS Y ANALYTICS
   // ================================
 
-  /**
-   * Obtener estadísticas del norte de Armenia
-   */
   getPropertyStats(): Observable<any> {
     return of(ARMENIA_NORTH_STATS).pipe(delay(100));
   }
 
-  /**
-   * Incrementar vistas de propiedad
-   */
   incrementPropertyViews(propertyId: string): Observable<boolean> {
     console.log(`📈 Propiedad ${propertyId} vista`);
-    // En una app real, esto haría una llamada a la API para registrar la vista
     return of(true);
   }
 
-  /**
-   * Obtener propiedades similares
-   */
   getSimilarProperties(propertyId: string, limit: number = 3): Observable<Property[]> {
     return this.getPropertyById(propertyId).pipe(
       map(property => {
@@ -411,7 +331,6 @@ export class PropertyService {
             (p.zone === property.zone || p.propertyType === property.propertyType)
           )
           .sort((a, b) => {
-            // Priorizar misma zona y tipo similar
             const aScore = (a.zone === property.zone ? 2 : 0) + 
                           (a.propertyType === property.propertyType ? 1 : 0);
             const bScore = (b.zone === property.zone ? 2 : 0) + 
@@ -427,9 +346,6 @@ export class PropertyService {
   // 🎯 MÉTODOS ESPECÍFICOS DEL NEGOCIO
   // ================================
 
-  /**
-   * Obtener propiedades disponibles para reserva inmediata
-   */
   getInstantBookProperties(): Observable<Property[]> {
     return this.properties$.pipe(
       map(properties => 
@@ -439,9 +355,6 @@ export class PropertyService {
     );
   }
 
-  /**
-   * Obtener propiedades verificadas
-   */
   getVerifiedProperties(): Observable<Property[]> {
     return this.properties$.pipe(
       map(properties => 
@@ -450,10 +363,6 @@ export class PropertyService {
       delay(200)
     );
   }
-
-  /**
-   * Obtener propiedades por anfitrión
-   */
   getPropertiesByHost(hostName: string): Observable<Property[]> {
     return this.properties$.pipe(
       map(properties => 
@@ -504,30 +413,18 @@ export class PropertyService {
   // ================================
   // 🛠️ UTILIDADES
   // ================================
-
-  /**
-   * Calcular descuento semanal
-   */
   calculateWeeklyDiscount(property: Property): number {
     if (!property.pricePerWeek) return 0;
     const regularWeeklyPrice = property.pricePerNight * 7;
     return Math.round(((regularWeeklyPrice - property.pricePerWeek) / regularWeeklyPrice) * 100);
   }
-
-  /**
-   * Calcular descuento mensual
-   */
   calculateMonthlyDiscount(property: Property): number {
     if (!property.pricePerMonth) return 0;
     const regularMonthlyPrice = property.pricePerNight * 30;
     return Math.round(((regularMonthlyPrice - property.pricePerMonth) / regularMonthlyPrice) * 100);
   }
 
-  /**
-   * Verificar disponibilidad en fechas (simulado)
-   */
   checkAvailability(propertyId: string, checkIn: string, checkOut: string): Observable<boolean> {
-    // En una app real, esto consultaría la disponibilidad real
     return of(true).pipe(delay(500));
   }
 }

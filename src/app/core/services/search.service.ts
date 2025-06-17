@@ -50,9 +50,6 @@ export class SearchService {
   // 🔍 BÚSQUEDA PRINCIPAL
   // ================================
 
-  /**
-   * Realizar búsqueda de habitaciones con parámetros específicos
-   */
   searchProperties(params: SearchParams): Observable<Property[]> {
     this.updateSearchParams(params);
     
@@ -61,16 +58,10 @@ export class SearchService {
     );
   }
 
-  /**
-   * Búsqueda avanzada con filtros específicos para habitaciones urbanas
-   */
   searchWithFilters(params: SearchParams, filters: Filters): Observable<Property[]> {
     return this.propertyService.searchWithFilters(params, filters);
   }
 
-  /**
-   * Obtener resultados filtrados y ordenados (método principal)
-   */
   getFilteredResults(): Observable<Property[]> {
     return combineLatest([
       this.propertyService.getProperties(),
@@ -81,13 +72,9 @@ export class SearchService {
       debounceTime(300),
       distinctUntilChanged(),
       map(([properties, searchParams, filters, config]) => {
-        // 1. Filtrar por parámetros de búsqueda
         let filtered = this.filterBySearchParams(properties, searchParams);
-        
-        // 2. Aplicar filtros urbanos
+
         filtered = this.applyUrbanFilters(filtered, filters);
-        
-        // 3. Ordenar resultados
         filtered = this.sortProperties(filtered, config.sortBy);
         
         return filtered;
@@ -95,9 +82,6 @@ export class SearchService {
     );
   }
 
-  /**
-   * Búsqueda por texto libre (nombre, descripción, zona, anfitrión)
-   */
   searchByText(searchTerm: string): Observable<Property[]> {
     return this.propertyService.searchProperties(searchTerm);
   }
@@ -106,38 +90,27 @@ export class SearchService {
   // 🎛️ FILTROS ESPECÍFICOS PARA HABITACIONES URBANAS
   // ================================
 
-  /**
-   * Aplicar filtros específicos para habitaciones del norte de Armenia
-   */
   private applyUrbanFilters(properties: Property[], filters: Filters): Property[] {
     return properties.filter(property => {
-      // Filtro por zonas del norte
       const zoneMatch = !this.hasActiveZoneFilters(filters) || 
         filters.zones[property.zone];
 
-      // Filtro por tipos de alojamiento urbano
       const propertyTypeMatch = !this.hasActivePropertyTypeFilters(filters) || 
         filters.propertyTypes[property.propertyType];
 
-      // Filtro por amenidades urbanas
       const amenityMatch = !this.hasActiveAmenityFilters(filters) || 
         this.checkAmenitiesMatch(property.amenities, filters.amenities);
 
-      // Filtro por servicios urbanos
       const serviceMatch = !this.hasActiveServiceFilters(filters) || 
         this.checkServicesMatch(property.services, filters.services);
 
-      // Filtro por calificación mínima
       const ratingMatch = property.rating >= filters.minRating;
 
-      // Filtro por rango de precios
       const priceMatch = property.pricePerNight >= filters.priceMin && 
                         property.pricePerNight <= filters.priceMax;
 
-      // Filtro por número máximo de huéspedes
       const guestMatch = property.maxGuests >= filters.maxGuests;
 
-      // Filtros especiales
       const verifiedMatch = !filters.verified || property.isVerified;
       const instantBookMatch = !filters.instantBook || property.isInstantBook;
 
@@ -146,9 +119,6 @@ export class SearchService {
     });
   }
 
-  /**
-   * Verificar coincidencia de amenidades (requiere que todas las seleccionadas estén presentes)
-   */
   private checkAmenitiesMatch(propertyAmenities: AmenityType[], filterAmenities: any): boolean {
     const activeAmenities = Object.entries(filterAmenities)
       .filter(([_, active]) => active)
@@ -158,9 +128,6 @@ export class SearchService {
            activeAmenities.every(amenity => propertyAmenities.includes(amenity));
   }
 
-  /**
-   * Verificar coincidencia de servicios (requiere que todos los seleccionados estén presentes)
-   */
   private checkServicesMatch(propertyServices: ServiceType[], filterServices: any): boolean {
     const activeServices = Object.entries(filterServices)
       .filter(([_, active]) => active)
@@ -174,9 +141,6 @@ export class SearchService {
   // 📊 ORDENAMIENTO MEJORADO
   // ================================
 
-  /**
-   * Ordenar propiedades según criterio específico para habitaciones urbanas
-   */
   sortProperties(properties: Property[], sortBy: string): Property[] {
     const sorted = [...properties];
     
@@ -194,7 +158,6 @@ export class SearchService {
         return sorted.sort((a, b) => b.reviewsCount - a.reviewsCount);
 
       case 'distance':
-        // Ordenar por cercanía al centro (Norte Centro es más cercano)
         return sorted.sort((a, b) => {
           const aDistance = this.getDistanceToCenter(a.zone);
           const bDistance = this.getDistanceToCenter(b.zone);
@@ -208,29 +171,21 @@ export class SearchService {
       
       case 'relevance':
       default:
-        // Relevancia: verificados primero, luego por rating y ubicación
         return sorted.sort((a, b) => {
-          // Prioridad 1: Verificados
           if (a.isVerified !== b.isVerified) {
             return a.isVerified ? -1 : 1;
           }
-          
-          // Prioridad 2: Rating
+
           if (Math.abs(a.rating - b.rating) > 0.1) {
             return b.rating - a.rating;
           }
-          
-          // Prioridad 3: Cercanía al centro
+
           const aDistance = this.getDistanceToCenter(a.zone);
           const bDistance = this.getDistanceToCenter(b.zone);
           return aDistance - bDistance;
         });
     }
   }
-
-  /**
-   * Obtener distancia simulada al centro (Norte Centro = 1, Villa Liliana = 2, etc.)
-   */
   private getDistanceToCenter(zone: ZoneType): number {
     const distances = {
       'norte-centro': 1,
@@ -246,25 +201,16 @@ export class SearchService {
   // 🎛️ GESTIÓN DE ESTADO
   // ================================
 
-  /**
-   * Actualizar parámetros de búsqueda
-   */
   updateSearchParams(params: Partial<SearchParams>): void {
     const current = this.searchParamsSubject.value;
     this.searchParamsSubject.next({ ...current, ...params });
   }
 
-  /**
-   * Actualizar filtros específicos
-   */
   updateFilters(filters: Partial<Filters>): void {
     const current = this.filtersSubject.value;
     this.filtersSubject.next({ ...current, ...filters });
   }
 
-  /**
-   * Actualizar filtro de zona específica
-   */
   updateZoneFilter(zone: ZoneType, active: boolean): void {
     const current = this.filtersSubject.value;
     this.filtersSubject.next({
@@ -276,9 +222,6 @@ export class SearchService {
     });
   }
 
-  /**
-   * Actualizar filtro de tipo de propiedad
-   */
   updatePropertyTypeFilter(type: PropertyType, active: boolean): void {
     const current = this.filtersSubject.value;
     this.filtersSubject.next({
@@ -290,9 +233,6 @@ export class SearchService {
     });
   }
 
-  /**
-   * Actualizar filtro de amenidad
-   */
   updateAmenityFilter(amenity: AmenityType, active: boolean): void {
     const current = this.filtersSubject.value;
     this.filtersSubject.next({
@@ -304,9 +244,6 @@ export class SearchService {
     });
   }
 
-  /**
-   * Actualizar filtro de servicio
-   */
   updateServiceFilter(service: ServiceType, active: boolean): void {
     const current = this.filtersSubject.value;
     this.filtersSubject.next({
@@ -318,16 +255,10 @@ export class SearchService {
     });
   }
 
-  /**
-   * Limpiar todos los filtros
-   */
   clearFilters(): void {
     this.filtersSubject.next(DEFAULT_FILTERS);
   }
 
-  /**
-   * Aplicar filtros predefinidos para viajeros de negocios
-   */
   applyBusinessFilters(): void {
     const businessFilters: Partial<Filters> = {
       zones: {
@@ -350,31 +281,19 @@ export class SearchService {
     this.updateFilters(businessFilters);
   }
 
-  /**
-   * Actualizar configuración de resultados
-   */
   updateConfig(config: Partial<SearchResultsConfig>): void {
     const current = this.configSubject.value;
     this.configSubject.next({ ...current, ...config });
   }
 
-  /**
-   * Cambiar modo de vista
-   */
   setViewMode(mode: 'list' | 'map'): void {
     this.updateConfig({ viewMode: mode });
   }
 
-  /**
-   * Cambiar criterio de ordenamiento
-   */
   setSortBy(sortBy: string): void {
     this.updateConfig({ sortBy });
   }
 
-  /**
-   * Cambiar página actual
-   */
   setCurrentPage(page: number): void {
     this.updateConfig({ currentPage: page });
   }
@@ -383,9 +302,6 @@ export class SearchService {
   // 📊 INFORMACIÓN Y ESTADÍSTICAS
   // ================================
 
-  /**
-   * Obtener estado actual de filtros
-   */
   getFilterState(): Observable<FilterState> {
     return this.filters$.pipe(
       map(filters => ({
@@ -396,16 +312,10 @@ export class SearchService {
     );
   }
 
-  /**
-   * Obtener sugerencias de zonas del norte de Armenia
-   */
   getZoneSuggestions(): QuickSuggestion[] {
     return QUICK_SUGGESTIONS;
   }
 
-  /**
-   * Obtener nombres de zonas disponibles
-   */
   getAvailableZones(): { key: ZoneType; name: string; description: string }[] {
     return Object.entries(ARMENIA_NORTH_ZONES).map(([key, value]) => ({
       key: key as ZoneType,
@@ -414,9 +324,6 @@ export class SearchService {
     }));
   }
 
-  /**
-   * Obtener estadísticas de búsqueda actual
-   */
   getSearchStats(): Observable<{
     totalResults: number;
     averagePrice: number;
@@ -436,12 +343,9 @@ export class SearchService {
   }
 
   // ================================
-  // ✅ VALIDACIÓN Y UTILIDADES
+  //  VALIDACIÓN Y UTILIDADES
   // ================================
 
-  /**
-   * Validar fechas de búsqueda para habitaciones
-   */
   validateSearchDates(checkIn: string, checkOut: string): { valid: boolean; error?: string } {
     if (!checkIn || !checkOut) {
       return { valid: false, error: 'Fechas de llegada y salida son requeridas' };
@@ -468,9 +372,6 @@ export class SearchService {
     return { valid: true };
   }
 
-  /**
-   * Calcular número de noches
-   */
   calculateNights(checkIn: string, checkOut: string): number {
     if (!checkIn || !checkOut) return 0;
     
@@ -480,25 +381,17 @@ export class SearchService {
     return Math.ceil(timeDiff / (1000 * 3600 * 24));
   }
 
-  /**
-   * Calcular precio total estimado
-   */
   calculateTotalPrice(pricePerNight: number, checkIn: string, checkOut: string): number {
     const nights = this.calculateNights(checkIn, checkOut);
     return pricePerNight * nights;
   }
 
-  /**
-   * Obtener recomendaciones basadas en búsqueda actual
-   */
   getRecommendations(): Observable<Property[]> {
     const currentParams = this.searchParamsSubject.value;
     
     if (currentParams.destination) {
-      // Recomendar propiedades en la misma zona
       return this.propertyService.getPropertiesByZone(currentParams.destination as ZoneType);
     } else {
-      // Recomendar propiedades mejor calificadas
       return this.propertyService.getTopRatedProperties(3);
     }
   }
@@ -510,23 +403,15 @@ export class SearchService {
   private filterBySearchParams(properties: Property[], params: SearchParams): Property[] {
     let filtered = [...properties];
 
-    // Filtrar por zona específica
     if (params.destination) {
       filtered = filtered.filter(property => 
         property.zone === params.destination ||
         property.location.toLowerCase().includes(params.destination.toLowerCase())
       );
     }
-
-    // Filtrar por capacidad de huéspedes
     if (params.guests > 0) {
       filtered = filtered.filter(property => property.maxGuests >= params.guests);
     }
-
-    // En una aplicación real, aquí filtrarías por disponibilidad de fechas
-    // if (params.checkIn && params.checkOut) {
-    //   filtered = this.filterByAvailability(filtered, params.checkIn, params.checkOut);
-    // }
 
     return filtered;
   }

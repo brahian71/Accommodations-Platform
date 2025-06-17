@@ -32,56 +32,46 @@ export interface Property {
   address?: string;
   description: string;
   
-  // Precios
   pricePerNight: number;
   pricePerWeek?: number;
   pricePerMonth?: number;
   currency: 'COP';
-  
-  // Calificaciones
+
   rating: number;
   reviewsCount: number;
-  
-  // Imágenes
+
   image: string;
   images?: string[];
-  
-  // Características de la habitación/alojamiento
+
   propertyType: PropertyType;
   bedrooms: number;
   bathrooms: number;
   maxGuests: number;
-  area?: number; // en m²
+  area?: number; 
   floor?: number;
-  
-  // Características específicas
-  features: string[]; // Ej: ['Baño privado', 'Ventana exterior', 'Armario amplio']
+
+  features: string[];
   amenities: AmenityType[];
   services: ServiceType[];
-  
-  // Información del anfitrión
+
   hostName: string;
   hostPhoto?: string;
   hostWhatsapp?: string;
-  responseTime?: string; // 'inmediata' | 'en horas' | 'en 1 día'
-  
-  // Ubicación y acceso
-  nearbyPlaces: string[]; // Ej: ['Centro Comercial Portal del Quindío', 'Clínica La Sagrada Familia']
-  transportAccess: string[]; // Ej: ['Bus urbano', 'Taxi', 'A 5 min del centro']
-  
-  // Políticas
+  responseTime?: string; 
+
+  nearbyPlaces: string[];
+  transportAccess: string[];
+
   checkInTime: string;
   checkOutTime: string;
-  minimumStay?: number; // noches mínimas
+  minimumStay?: number; 
   cancellationPolicy?: 'flexible' | 'moderada' | 'estricta';
-  
-  // Estados
+
   isFavorite: boolean;
   isVerified: boolean;
   isInstantBook: boolean;
   isAvailable: boolean;
-  
-  // Fechas
+
   createdAt: string;
   updatedAt: string;
 }
@@ -108,7 +98,6 @@ export interface PropertyFilters {
   verified: boolean;
 }
 
-// Configuraciones específicas para Armenia Norte
 export const ARMENIA_NORTH_ZONES = {
   'norte-centro': {
     name: 'Norte Centro',

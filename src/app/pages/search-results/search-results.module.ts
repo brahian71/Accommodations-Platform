@@ -1,17 +1,18 @@
-import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+// 📁 src/app/pages/search-results/search-results.module.ts
 
-import { SearchResultsRoutingModule } from './search-results-routing.module';
+import { NgModule } from '@angular/core';
+import { RouterModule, Routes } from '@angular/router';
+import { SearchResultsComponent } from './search-results.component';
+
+const routes: Routes = [
+  {
+    path: '',
+    component: SearchResultsComponent
+  }
+];
 
 @NgModule({
-  declarations: [
-
-  ],
-  imports: [
-    CommonModule,           
-    FormsModule,           
-    SearchResultsRoutingModule
-  ]
+  imports: [RouterModule.forChild(routes)],
+  exports: [RouterModule]
 })
 export class SearchResultsModule { }

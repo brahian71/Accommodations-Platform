@@ -30,12 +30,11 @@ export class HomeComponent implements OnInit, OnDestroy {
   // 📊 ESTADO
   isLoading = true;
   searchError: string | null = null;
-  
-  // 🔍 FORM DATA - ✅ INICIALIZACIÓN CORREGIDA
+
   searchData: SearchParams = {
     destination: '',
-    checkIn: '',    // ✅ Se inicializará en ngOnInit
-    checkOut: '',   // ✅ Se inicializará en ngOnInit
+    checkIn: '', 
+    checkOut: '',  
     guests: 2
   };
   
@@ -59,12 +58,10 @@ export class HomeComponent implements OnInit, OnDestroy {
     private propertyService: PropertyService,
     private router: Router
   ) {
-    // ✅ SOLO obtener el observable, la inicialización va en ngOnInit
     this.featuredProperties$ = this.propertyService.getFeaturedProperties();
   }
 
   ngOnInit(): void {
-    // ✅ ÚNICA llamada a inicialización
     this.initializeDefaultDates();
     this.loadFeaturedProperties();
   }
@@ -79,9 +76,8 @@ export class HomeComponent implements OnInit, OnDestroy {
   // ================================
 
   private initializeDefaultDates(): void {
-    // ✅ INICIALIZAR fechas por defecto para que el formulario funcione
-    this.searchData.checkIn = this.getDateString(1);   // Mañana
-    this.searchData.checkOut = this.getDateString(3);  // Pasado mañana
+    this.searchData.checkIn = this.getDateString(1); 
+    this.searchData.checkOut = this.getDateString(3);
   }
 
   private getDateString(daysFromNow: number): string {
@@ -95,7 +91,6 @@ export class HomeComponent implements OnInit, OnDestroy {
   // ================================
   
   private loadFeaturedProperties(): void {
-    // Simular loading realista
     setTimeout(() => {
       this.isLoading = false;
     }, 800);
@@ -124,11 +119,8 @@ export class HomeComponent implements OnInit, OnDestroy {
       formValid: form.valid,
       searchData: this.searchData
     });
-
-    // Limpiar errores previos
     this.searchError = null;
 
-    // Validación
     if (!this.validateSearchData()) {
       console.log('❌ Validación fallida:', this.searchError);
       return;
@@ -141,13 +133,11 @@ export class HomeComponent implements OnInit, OnDestroy {
   private validateSearchData(): boolean {
     const { destination, checkIn, checkOut, guests } = this.searchData;
     
-    // Validar zona requerida
     if (!destination) {
       this.searchError = 'Por favor selecciona una zona del norte de Armenia';
       return false;
     }
-    
-    // Validar fechas si están presentes
+
     if (checkIn && checkOut) {
       const checkInDate = new Date(checkIn);
       const checkOutDate = new Date(checkOut);
@@ -165,7 +155,6 @@ export class HomeComponent implements OnInit, OnDestroy {
       }
     }
     
-    // Validar huéspedes
     if (!guests || guests < 1) {
       this.searchError = 'Debe haber al menos 1 huésped';
       return false;
@@ -176,7 +165,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   private performSearch(params: SearchParams): void {
     const queryParams = {
-      destination: params.destination, // ✅ USAR 'destination'
+      destination: params.destination,
       checkIn: params.checkIn,
       checkOut: params.checkOut,
       guests: params.guests.toString()
@@ -196,11 +185,9 @@ export class HomeComponent implements OnInit, OnDestroy {
     });
   }
 
-  // ✅ MÉTODO PARA QUICK SUGGESTIONS
   searchDestination(destination: ZoneType): void {
     console.log('🎯 Búsqueda rápida por zona:', destination);
-    
-    // Actualizar datos de búsqueda
+
     this.searchData = {
       destination,
       checkIn: this.getDateString(1),
@@ -208,7 +195,6 @@ export class HomeComponent implements OnInit, OnDestroy {
       guests: 2
     };
 
-    // Realizar búsqueda
     this.performSearch(this.searchData);
   }
 
@@ -218,8 +204,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   
   viewPropertyDetails(propertyId: string): void {
     console.log('🏠 Ver detalles de habitación:', propertyId);
-    
-    // Incrementar vistas si el servicio lo soporta
+
     if (this.propertyService.incrementPropertyViews) {
       this.propertyService.incrementPropertyViews(propertyId)
         .pipe(takeUntil(this.destroy$))
@@ -247,7 +232,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   // ================================
-  // 🗺️ NAVIGATION - ✅ CORREGIDA
+  // 🗺️ NAVIGATION
   // ================================
 
   viewAllProperties(): void {
@@ -261,7 +246,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   viewPropertiesByZone(zone: ZoneType): void {
     this.router.navigate(['/search-results'], {
       queryParams: {
-        destination: zone, // ✅ CORREGIDO: usar 'destination' en lugar de 'zone'
+        destination: zone, 
         area: 'armenia-norte'
       }
     });
@@ -288,7 +273,6 @@ export class HomeComponent implements OnInit, OnDestroy {
       return property.features.slice(0, 3);
     }
     
-    // Features por defecto basados en el tipo
     switch (property.propertyType) {
       case 'habitacion':
         return ['Baño privado', 'WiFi gratis', 'Ventana exterior'];

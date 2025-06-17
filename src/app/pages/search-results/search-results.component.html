@@ -1,8 +1,4 @@
 <!-- 📁 src/app/pages/search-results/search-results.component.html -->
-<!-- ================================
-     SEARCH RESULTS HABITACIONES NORTE DE ARMENIA
-     Versión actualizada para habitaciones urbanas
-     ================================ -->
 
 <div class="search-results-page">
   
@@ -20,7 +16,7 @@
           <select 
             [(ngModel)]="searchData.destination" 
             name="destination"
-            class="search-input">
+            class="form-input">
             <option value="">Todas las zonas</option>
             <option 
               *ngFor="let zone of northZones" 
@@ -38,7 +34,7 @@
             [(ngModel)]="searchData.checkIn"
             name="checkIn"
             [min]="today"
-            class="date-input">
+            class="form-input">
         </div>
 
         <div class="search-field">
@@ -48,7 +44,7 @@
             [(ngModel)]="searchData.checkOut"
             name="checkOut"
             [min]="tomorrow"
-            class="date-input">
+            class="form-input">
         </div>
 
         <!-- Huéspedes -->
@@ -57,7 +53,7 @@
           <select 
             [(ngModel)]="searchData.guests" 
             name="guests"
-            class="guests-select">
+            class="form-select">
             <option value="1">1 Huésped</option>
             <option value="2">2 Huéspedes</option>
             <option value="3">3 Huéspedes</option>
@@ -69,7 +65,7 @@
         <!-- Botón búsqueda -->
         <button 
           type="submit"
-          class="search-btn"
+          class="btn btn-primary search-btn"
           [disabled]="isLoading">
           <span class="search-icon">🔍</span>
           {{ isLoading ? 'Buscando...' : 'Buscar' }}
@@ -88,10 +84,9 @@
     <div class="container-fluid">
       <div class="search-layout">
         
-        <!-- 🎛️ SIDEBAR DE FILTROS -->
+        <!-- 🎯 SIDEBAR DE FILTROS OPTIMIZADO -->
         <aside class="filters-sidebar">
           
-          <!-- ✅ FILTROS PARA HABITACIONES DEL NORTE -->
           <div class="filters-panel-armenia-norte">
             <div class="filter-header">
               <h3>Filtrar Habitaciones</h3>
@@ -103,34 +98,44 @@
               </button>
             </div>
             
-            <!-- Filtro de Zonas del Norte -->
+            <!-- ✅ 1. ZONAS DEL NORTE - MANTENER COMPLETO -->
             <div class="filter-group">
               <h4 class="filter-title">🗺️ Zonas del Norte</h4>
               <div class="filter-options">
                 <label class="filter-checkbox">
-                  <input type="checkbox" (change)="toggleZone('norte-centro', $any($event.target).checked)">
-                  <span>🏢 Norte Centro</span>
+                  <input type="checkbox" 
+                    [checked]="currentFilters.zones['norte-centro']"
+                    (change)="toggleZone('norte-centro', $any($event.target).checked)">
+                  <span>🏢 Norte Centro ({{ getZonePropertyCount('norte-centro') }})</span>
                 </label>
                 <label class="filter-checkbox">
-                  <input type="checkbox" (change)="toggleZone('la-secreta', $any($event.target).checked)">
-                  <span>🏘️ La Secreta</span>
+                  <input type="checkbox" 
+                    [checked]="currentFilters.zones['la-secreta']"
+                    (change)="toggleZone('la-secreta', $any($event.target).checked)">
+                  <span>🏘️ La Secreta ({{ getZonePropertyCount('la-secreta') }})</span>
                 </label>
                 <label class="filter-checkbox">
-                  <input type="checkbox" (change)="toggleZone('bosques-pinares', $any($event.target).checked)">
-                  <span>🌲 Bosques de Pinares</span>
+                  <input type="checkbox" 
+                    [checked]="currentFilters.zones['bosques-pinares']"
+                    (change)="toggleZone('bosques-pinares', $any($event.target).checked)">
+                  <span>🌲 Bosques de Pinares ({{ getZonePropertyCount('bosques-pinares') }})</span>
                 </label>
                 <label class="filter-checkbox">
-                  <input type="checkbox" (change)="toggleZone('ciudadela-del-cafe', $any($event.target).checked)">
-                  <span>☕ Ciudadela del Café</span>
+                  <input type="checkbox" 
+                    [checked]="currentFilters.zones['ciudadela-del-cafe']"
+                    (change)="toggleZone('ciudadela-del-cafe', $any($event.target).checked)">
+                  <span>☕ Ciudadela del Café ({{ getZonePropertyCount('ciudadela-del-cafe') }})</span>
                 </label>
                 <label class="filter-checkbox">
-                  <input type="checkbox" (change)="toggleZone('villa-liliana', $any($event.target).checked)">
-                  <span>🏠 Villa Liliana</span>
+                  <input type="checkbox" 
+                    [checked]="currentFilters.zones['villa-liliana']"
+                    (change)="toggleZone('villa-liliana', $any($event.target).checked)">
+                  <span>🏠 Villa Liliana ({{ getZonePropertyCount('villa-liliana') }})</span>
                 </label>
               </div>
             </div>
 
-            <!-- Filtros de precio -->
+            <!-- ✅ 2. PRECIO - MANTENER COMPLETO -->
             <div class="filter-group">
               <h4 class="filter-title">💰 Precio por noche</h4>
               <div class="price-suggestions">
@@ -157,119 +162,130 @@
               </div>
             </div>
 
-            <!-- Tipos de alojamiento urbano -->
+            <!-- ✅ 3. TIPO DE ALOJAMIENTO - MANTENER COMPLETO -->
             <div class="filter-group">
               <h4 class="filter-title">🏠 Tipo de Alojamiento</h4>
               <div class="filter-options">
                 <label class="filter-checkbox">
-                  <input type="checkbox" (change)="togglePropertyType('habitacion', $any($event.target).checked)">
+                  <input type="checkbox" 
+                    [checked]="currentFilters.propertyTypes.habitacion"
+                    (change)="togglePropertyType('habitacion', $any($event.target).checked)">
                   <span>🛏️ Habitación Privada</span>
                 </label>
                 <label class="filter-checkbox">
-                  <input type="checkbox" (change)="togglePropertyType('apartamento', $any($event.target).checked)">
+                  <input type="checkbox" 
+                    [checked]="currentFilters.propertyTypes.apartamento"
+                    (change)="togglePropertyType('apartamento', $any($event.target).checked)">
                   <span>🏠 Apartamento Completo</span>
                 </label>
                 <label class="filter-checkbox">
-                  <input type="checkbox" (change)="togglePropertyType('studio', $any($event.target).checked)">
+                  <input type="checkbox" 
+                    [checked]="currentFilters.propertyTypes.studio"
+                    (change)="togglePropertyType('studio', $any($event.target).checked)">
                   <span>🏢 Studio</span>
                 </label>
                 <label class="filter-checkbox">
-                  <input type="checkbox" (change)="togglePropertyType('casa', $any($event.target).checked)">
+                  <input type="checkbox" 
+                    [checked]="currentFilters.propertyTypes.casa"
+                    (change)="togglePropertyType('casa', $any($event.target).checked)">
                   <span>🏡 Casa Familiar</span>
                 </label>
                 <label class="filter-checkbox">
-                  <input type="checkbox" (change)="togglePropertyType('penthouse', $any($event.target).checked)">
+                  <input type="checkbox" 
+                    [checked]="currentFilters.propertyTypes.penthouse"
+                    (change)="togglePropertyType('penthouse', $any($event.target).checked)">
                   <span>🏙️ Penthouse</span>
                 </label>
               </div>
             </div>
 
-            <!-- Amenidades urbanas -->
+            <!-- 🔄 4. AMENIDADES - REDUCIDAS A 5 ESENCIALES -->
             <div class="filter-group">
-              <h4 class="filter-title">🔧 Amenidades</h4>
+              <h4 class="filter-title">🔧 Amenidades Esenciales</h4>
               <div class="filter-options">
                 <label class="filter-checkbox">
-                  <input type="checkbox" (change)="toggleAmenity('wifi', $any($event.target).checked)">
+                  <input type="checkbox" 
+                    [checked]="currentFilters.amenities.wifi"
+                    (change)="toggleAmenity('wifi', $any($event.target).checked)">
                   <span>📶 WiFi gratis</span>
                 </label>
                 <label class="filter-checkbox">
-                  <input type="checkbox" (change)="toggleAmenity('ac', $any($event.target).checked)">
+                  <input type="checkbox" 
+                    [checked]="currentFilters.amenities.ac"
+                    (change)="toggleAmenity('ac', $any($event.target).checked)">
                   <span>❄️ Aire acondicionado</span>
                 </label>
                 <label class="filter-checkbox">
-                  <input type="checkbox" (change)="toggleAmenity('parking', $any($event.target).checked)">
+                  <input type="checkbox" 
+                    [checked]="currentFilters.amenities.parking"
+                    (change)="toggleAmenity('parking', $any($event.target).checked)">
                   <span>🚗 Parqueadero</span>
                 </label>
                 <label class="filter-checkbox">
-                  <input type="checkbox" (change)="toggleAmenity('kitchen', $any($event.target).checked)">
+                  <input type="checkbox" 
+                    [checked]="currentFilters.amenities.kitchen"
+                    (change)="toggleAmenity('kitchen', $any($event.target).checked)">
                   <span>👨‍🍳 Cocina equipada</span>
                 </label>
                 <label class="filter-checkbox">
-                  <input type="checkbox" (change)="toggleAmenity('tv', $any($event.target).checked)">
-                  <span>📺 Televisión</span>
-                </label>
-                <label class="filter-checkbox">
-                  <input type="checkbox" (change)="toggleAmenity('washing-machine', $any($event.target).checked)">
-                  <span>🧺 Lavadora</span>
-                </label>
-                <label class="filter-checkbox">
-                  <input type="checkbox" (change)="toggleAmenity('security', $any($event.target).checked)">
+                  <input type="checkbox" 
+                    [checked]="currentFilters.amenities.security"
+                    (change)="toggleAmenity('security', $any($event.target).checked)">
                   <span>🔒 Vigilancia 24h</span>
-                </label>
-                <label class="filter-checkbox">
-                  <input type="checkbox" (change)="toggleAmenity('elevator', $any($event.target).checked)">
-                  <span>🛗 Ascensor</span>
                 </label>
               </div>
             </div>
 
-            <!-- Servicios urbanos -->
+            <!-- 🔄 5. SERVICIOS - REDUCIDOS A 3 PRINCIPALES -->
             <div class="filter-group">
-              <h4 class="filter-title">🛎️ Servicios</h4>
+              <h4 class="filter-title">🛎️ Servicios Principales</h4>
               <div class="filter-options">
                 <label class="filter-checkbox">
-                  <input type="checkbox" (change)="toggleService('cleaning', $any($event.target).checked)">
+                  <input type="checkbox" 
+                    [checked]="currentFilters.services.cleaning"
+                    (change)="toggleService('cleaning', $any($event.target).checked)">
                   <span>🧹 Servicio de limpieza</span>
                 </label>
                 <label class="filter-checkbox">
-                  <input type="checkbox" (change)="toggleService('transport', $any($event.target).checked)">
+                  <input type="checkbox" 
+                    [checked]="currentFilters.services.transport"
+                    (change)="toggleService('transport', $any($event.target).checked)">
                   <span>🚖 Transporte aeropuerto</span>
                 </label>
                 <label class="filter-checkbox">
-                  <input type="checkbox" (change)="toggleService('late-checkin', $any($event.target).checked)">
+                  <input type="checkbox" 
+                    [checked]="currentFilters.services['late-checkin']"
+                    (change)="toggleService('late-checkin', $any($event.target).checked)">
                   <span>🌙 Check-in tardío</span>
-                </label>
-                <label class="filter-checkbox">
-                  <input type="checkbox" (change)="toggleService('concierge', $any($event.target).checked)">
-                  <span>🎩 Conserjería</span>
-                </label>
-                <label class="filter-checkbox">
-                  <input type="checkbox" (change)="toggleService('luggage-storage', $any($event.target).checked)">
-                  <span>🧳 Guarda equipaje</span>
                 </label>
               </div>
             </div>
 
-            <!-- Filtros especiales -->
+            <!-- ✅ 6. ESPECIALES - MANTENER COMPLETO -->
             <div class="filter-group">
               <h4 class="filter-title">⭐ Especiales</h4>
               <div class="filter-options">
                 <label class="filter-checkbox">
-                  <input type="checkbox" (change)="toggleSpecialFilter('verified', $any($event.target).checked)">
+                  <input type="checkbox" 
+                    [checked]="currentFilters.verified"
+                    (change)="toggleSpecialFilter('verified', $any($event.target).checked)">
                   <span>✅ Verificados</span>
                 </label>
                 <label class="filter-checkbox">
-                  <input type="checkbox" (change)="toggleSpecialFilter('instantBook', $any($event.target).checked)">
+                  <input type="checkbox" 
+                    [checked]="currentFilters.instantBook"
+                    (change)="toggleSpecialFilter('instantBook', $any($event.target).checked)">
                   <span>⚡ Reserva inmediata</span>
                 </label>
                 <label class="filter-checkbox">
-                  <input type="checkbox" (change)="toggleSpecialFilter('businessFriendly', $any($event.target).checked)">
+                  <input type="checkbox" 
+                    (change)="toggleSpecialFilter('businessFriendly', $any($event.target).checked)">
                   <span>💼 Para viajeros de negocios</span>
                 </label>
               </div>
             </div>
 
-            <!-- Calificación mínima -->
+            <!-- ✅ 7. CALIFICACIÓN - MANTENER COMPLETO -->
             <div class="filter-group">
               <h4 class="filter-title">⭐ Calificación mínima</h4>
               <div class="rating-filter">
@@ -300,11 +316,11 @@
         <main class="search-main">
           
           <!-- 📊 HEADER DE RESULTADOS -->
-          <div class="results-header" *ngIf="filteredProperties$ | async as properties">
+          <div class="results-header">
             <div class="results-info">
-              <h2>{{ properties.length }} habitaciones en el Norte de Armenia</h2>
-              <p *ngIf="(searchParams$ | async)?.destination as dest" class="search-location">
-                📍 {{ getZoneName(dest) }}
+              <h2>{{ totalResults }} habitaciones en el Norte de Armenia</h2>
+              <p *ngIf="searchData.destination" class="search-location">
+                📍 {{ getZoneName(searchData.destination) }}
               </p>
               <div class="results-summary">
                 <span class="result-count">{{ totalResults }} resultados</span>
@@ -315,12 +331,12 @@
             </div>
 
             <!-- 🎛️ CONTROLES DE VISTA -->
-            <div class="view-controls" *ngIf="config$ | async as config">
+            <div class="view-controls">
               <!-- Ordenamiento -->
               <select 
-                [value]="config.sortBy" 
+                [value]="currentConfig.sortBy" 
                 (change)="updateSortBy($any($event.target).value)"
-                class="sort-select">
+                class="form-select sort-select">
                 <option 
                   *ngFor="let option of sortOptions" 
                   [value]="option.value">
@@ -332,13 +348,13 @@
               <div class="view-toggle">
                 <button 
                   class="view-btn"
-                  [class.active]="config.viewMode === 'list'"
+                  [class.active]="currentConfig.viewMode === 'list'"
                   (click)="setViewMode('list')">
                   📋 Lista
                 </button>
                 <button 
                   class="view-btn"
-                  [class.active]="config.viewMode === 'map'"
+                  [class.active]="currentConfig.viewMode === 'map'"
                   (click)="setViewMode('map')">
                   🗺️ Mapa
                 </button>
@@ -346,9 +362,9 @@
 
               <!-- Items por página -->
               <select 
-                [value]="config.itemsPerPage" 
+                [value]="currentConfig.itemsPerPage" 
                 (change)="updateItemsPerPage(+$any($event.target).value)"
-                class="items-per-page-select">
+                class="form-select items-per-page-select">
                 <option 
                   *ngFor="let option of itemsPerPageOptions" 
                   [value]="option">
@@ -364,15 +380,15 @@
             <p>Buscando habitaciones en el Norte de Armenia...</p>
           </div>
 
-          <!-- 📋 VISTA DE LISTA -->
+          <!-- 📋 VISTA DE LISTA - ✅ CORREGIDA -->
           <div 
-            *ngIf="!isLoading && (config$ | async)?.viewMode === 'list'" 
+            *ngIf="!isLoading && currentConfig.viewMode === 'list'" 
             class="properties-list">
             
-            <!-- Propiedades paginadas -->
+            <!-- ✅ PROPIEDADES SIMPLIFICADAS -->
             <div 
-              *ngFor="let property of getPaginatedProperties() | async; trackBy: trackByPropertyId"
-              class="property-card-horizontal"
+              *ngFor="let property of paginatedProperties; trackBy: trackByPropertyId"
+              class="property-card-horizontal card-interactive"
               (click)="viewProperty(property.id)">
               
               <!-- 🖼️ Imagen -->
@@ -435,12 +451,12 @@
                 <div class="property-features">
                   <span 
                     *ngFor="let feature of property.features.slice(0, 3)" 
-                    class="feature-tag">
+                    class="feature-tag badge-success">
                     {{ feature }}
                   </span>
                   <span 
                     *ngIf="property.features.length > 3" 
-                    class="feature-tag more">
+                    class="feature-tag badge-light">
                     +{{ property.features.length - 3 }} más
                   </span>
                 </div>
@@ -464,7 +480,7 @@
                   </span>
                   <span 
                     *ngIf="property.services.length > 2" 
-                    class="service-tag more">
+                    class="service-tag badge-light">
                     +{{ property.services.length - 2 }} más
                   </span>
                 </div>
@@ -523,41 +539,37 @@
               </div>
             </div>
 
-            <!-- 📄 PAGINACIÓN -->
-            <div class="pagination">
-              <ng-container *ngIf="config$ | async as config">
-                <ng-container *ngIf="getPageNumbers() | async as pageNumbers">
-                  <div *ngIf="pageNumbers.length > 1" class="pagination-content">
-                    <button 
-                      class="page-btn"
-                      [disabled]="config.currentPage === 1"
-                      (click)="goToPage(config.currentPage - 1)">
-                      ← Anterior
-                    </button>
-                    
-                    <button 
-                      *ngFor="let page of pageNumbers"
-                      class="page-btn"
-                      [class.active]="page === config.currentPage"
-                      (click)="goToPage(page)">
-                      {{ page }}
-                    </button>
-                    
-                    <button 
-                      class="page-btn"
-                      [disabled]="config.currentPage === pageNumbers.length"
-                      (click)="goToPage(config.currentPage + 1)">
-                      Siguiente →
-                    </button>
-                  </div>
-                </ng-container>
-              </ng-container>
+            <!-- 📄 PAGINACIÓN SIMPLIFICADA -->
+            <div class="pagination" *ngIf="totalPages > 1">
+              <div class="pagination-content">
+                <button 
+                  class="page-btn"
+                  [disabled]="currentConfig.currentPage === 1"
+                  (click)="goToPage(currentConfig.currentPage - 1)">
+                  ← Anterior
+                </button>
+                
+                <button 
+                  *ngFor="let page of getPageNumbers()"
+                  class="page-btn"
+                  [class.active]="page === currentConfig.currentPage"
+                  (click)="goToPage(page)">
+                  {{ page }}
+                </button>
+                
+                <button 
+                  class="page-btn"
+                  [disabled]="currentConfig.currentPage === totalPages"
+                  (click)="goToPage(currentConfig.currentPage + 1)">
+                  Siguiente →
+                </button>
+              </div>
             </div>
           </div>
 
           <!-- 🗺️ VISTA DE MAPA -->
           <div 
-            *ngIf="!isLoading && (config$ | async)?.viewMode === 'map'" 
+            *ngIf="!isLoading && currentConfig.viewMode === 'map'" 
             class="map-view">
             <div class="map-container">
               <div class="map-placeholder">
@@ -584,7 +596,7 @@
                   <!-- Propiedades destacadas en el mapa -->
                   <div class="map-properties">
                     <div 
-                      *ngFor="let property of (filteredProperties$ | async)?.slice(0, 6)"
+                      *ngFor="let property of filteredProperties.slice(0, 6)"
                       class="map-property-marker"
                       [class]="'marker-' + property.zone"
                       (click)="selectProperty(property.id)">

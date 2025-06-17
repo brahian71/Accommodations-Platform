@@ -1,14 +1,11 @@
 // 📁 src/app/pages/search-results/search-results.component.ts
-// VERSIÓN CORREGIDA - OBSERVABLES INICIALIZADOS
 
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Observable, Subject, BehaviorSubject, combineLatest, of } from 'rxjs';
-import { map, takeUntil, debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
-
-// Importar tipos actualizados
+import { map, takeUntil, debounceTime, distinctUntilChanged, switchMap, startWith, tap } from 'rxjs/operators';
 import { 
   Property, 
   ZoneType, 
@@ -46,16 +43,15 @@ import { PropertyService } from '../../core/services/property.service';
 })
 export class SearchResultsComponent implements OnInit, OnDestroy {
 
-  // 🎯 REACTIVE DATA - ✅ OBSERVABLES INICIALIZADOS
-  filteredProperties$: Observable<Property[]> = of([]);
-  searchParams$: Observable<SearchParams> = of(DEFAULT_SEARCH_PARAMS);
-  filters$: Observable<Filters> = of(DEFAULT_FILTERS);
-  config$: Observable<SearchResultsConfig> = of(DEFAULT_SEARCH_RESULTS_CONFIG);
-
+  allProperties: Property[] = [];
+  filteredProperties: Property[] = [];
+  paginatedProperties: Property[] = [];
+  
   // 📊 STATE
   isLoading = false;
   searchError: string | null = null;
   totalResults = 0;
+  totalPages = 0;
 
   // 🔍 SEARCH DATA
   searchData: SearchParams = {
@@ -65,10 +61,9 @@ export class SearchResultsComponent implements OnInit, OnDestroy {
     guests: 2
   };
 
-  // 📱 SUBJECTS
-  private searchParamsSubject = new BehaviorSubject<SearchParams>(this.searchData);
-  private filtersSubject = new BehaviorSubject<Filters>(DEFAULT_FILTERS);
-  private configSubject = new BehaviorSubject<SearchResultsConfig>(DEFAULT_SEARCH_RESULTS_CONFIG);
+  // 📱 CURRENT CONFIG
+  currentFilters: Filters = { ...DEFAULT_FILTERS };
+  currentConfig: SearchResultsConfig = { ...DEFAULT_SEARCH_RESULTS_CONFIG };
 
   // 🧹 CLEANUP
   private destroy$ = new Subject<void>();
@@ -88,20 +83,17 @@ export class SearchResultsComponent implements OnInit, OnDestroy {
   readonly sortOptions = SORT_OPTIONS;
   readonly itemsPerPageOptions = [5, 10, 20, 50];
 
-  // 🔄 FILTROS ACTUALES (para UI)
   currentMinRating = 0;
 
   constructor(
     private propertyService: PropertyService,
     private route: ActivatedRoute,
     private router: Router
-  ) {
-    this.initializeObservables();
-  }
+  ) {}
 
   ngOnInit(): void {
+    this.loadInitialData();
     this.loadSearchParamsFromRoute();
-    this.setupSearch();
   }
 
   ngOnDestroy(): void {
@@ -109,29 +101,22 @@ export class SearchResultsComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  // ================================
-  // 🔄 INICIALIZACIÓN
-  // ================================
-
-  private initializeObservables(): void {
-    this.searchParams$ = this.searchParamsSubject.asObservable();
-    this.filters$ = this.filtersSubject.asObservable();
-    this.config$ = this.configSubject.asObservable();
-
-    // Combinar parámetros de búsqueda y filtros para obtener resultados
-    this.filteredProperties$ = combineLatest([
-      this.searchParams$,
-      this.filters$,
-      this.config$
-    ]).pipe(
-      debounceTime(300),
-      distinctUntilChanged(),
-      switchMap(([searchParams, filters, config]) => 
-        this.propertyService.getProperties().pipe(
-          map(properties => this.applyFiltersAndSort(properties, searchParams, filters, config))
-        )
-      )
-    );
+  private loadInitialData(): void {
+    this.isLoading = true;
+    this.propertyService.getProperties()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (properties) => {
+          this.allProperties = properties;
+          this.applyFiltersAndUpdate();
+          this.isLoading = false;
+        },
+        error: (error) => {
+          this.isLoading = false;
+          this.searchError = 'Error cargando habitaciones. Inténtalo de nuevo.';
+          console.error('❌ Error cargando propiedades:', error);
+        }
+      });
   }
 
   private loadSearchParamsFromRoute(): void {
@@ -146,145 +131,108 @@ export class SearchResultsComponent implements OnInit, OnDestroy {
         };
 
         this.searchData = { ...searchParams };
-        this.searchParamsSubject.next(searchParams);
+        this.applyFiltersAndUpdate();
       });
   }
+  private applyFiltersAndUpdate(): void {
+    let filtered = [...this.allProperties];
 
-  private setupSearch(): void {
-    this.filteredProperties$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (properties) => {
-          this.totalResults = properties.length;
-          this.isLoading = false;
-        },
-        error: (error) => {
-          this.isLoading = false;
-          this.searchError = 'Error buscando habitaciones. Inténtalo de nuevo.';
-          console.error('❌ Error en búsqueda:', error);
-        }
-      });
-  }
-
-  // ================================
-  // 🔍 APLICAR FILTROS Y ORDENAMIENTO
-  // ================================
-
-  private applyFiltersAndSort(
-    properties: Property[],
-    searchParams: SearchParams, 
-    filters: Filters, 
-    config: SearchResultsConfig
-  ): Property[] {
-    let filtered = [...properties];
-
-    // Aplicar búsqueda por zona
-    if (searchParams.destination) {
-      filtered = filtered.filter(p => p.zone === searchParams.destination);
+    if (this.searchData.destination) {
+      filtered = filtered.filter(p => p.zone === this.searchData.destination);
     }
 
-    // Aplicar filtro de huéspedes
-    if (searchParams.guests) {
-      filtered = filtered.filter(p => p.maxGuests >= searchParams.guests);
+    if (this.searchData.guests) {
+      filtered = filtered.filter(p => p.maxGuests >= this.searchData.guests);
     }
 
-    // Aplicar filtros de zona
-    if (filters.zones) {
-      const activeZones = Object.entries(filters.zones)
-        .filter(([_, active]) => active)
-        .map(([zone, _]) => zone as ZoneType);
-      
-      if (activeZones.length > 0) {
-        filtered = filtered.filter(p => activeZones.includes(p.zone));
-      }
+    const activeZones = Object.entries(this.currentFilters.zones)
+      .filter(([_, active]) => active)
+      .map(([zone, _]) => zone as ZoneType);
+    
+    if (activeZones.length > 0) {
+      filtered = filtered.filter(p => activeZones.includes(p.zone));
     }
 
-    // Aplicar filtros de tipo de propiedad
-    if (filters.propertyTypes) {
-      const activeTypes = Object.entries(filters.propertyTypes)
-        .filter(([_, active]) => active)
-        .map(([type, _]) => type as PropertyType);
-      
-      if (activeTypes.length > 0) {
-        filtered = filtered.filter(p => activeTypes.includes(p.propertyType));
-      }
+    const activeTypes = Object.entries(this.currentFilters.propertyTypes)
+      .filter(([_, active]) => active)
+      .map(([type, _]) => type as PropertyType);
+    
+    if (activeTypes.length > 0) {
+      filtered = filtered.filter(p => activeTypes.includes(p.propertyType));
     }
 
-    // Aplicar filtros de amenidades
-    if (filters.amenities) {
-      const activeAmenities = Object.entries(filters.amenities)
-        .filter(([_, active]) => active)
-        .map(([amenity, _]) => amenity as AmenityType);
-      
-      if (activeAmenities.length > 0) {
-        filtered = filtered.filter(p => 
-          activeAmenities.every(amenity => p.amenities.includes(amenity))
-        );
-      }
-    }
-
-    // Aplicar filtros de servicios
-    if (filters.services) {
-      const activeServices = Object.entries(filters.services)
-        .filter(([_, active]) => active)
-        .map(([service, _]) => service as ServiceType);
-      
-      if (activeServices.length > 0) {
-        filtered = filtered.filter(p => 
-          activeServices.every(service => p.services.includes(service))
-        );
-      }
-    }
-
-    // Aplicar filtros de precio
-    if (filters.priceMin || filters.priceMax) {
+    const activeAmenities = Object.entries(this.currentFilters.amenities)
+      .filter(([_, active]) => active)
+      .map(([amenity, _]) => amenity as AmenityType);
+    
+    if (activeAmenities.length > 0) {
       filtered = filtered.filter(p => 
-        p.pricePerNight >= (filters.priceMin || 0) &&
-        p.pricePerNight <= (filters.priceMax || Infinity)
+        activeAmenities.every(amenity => p.amenities.includes(amenity))
       );
     }
 
-    // Aplicar filtro de calificación
-    if (filters.minRating) {
-      filtered = filtered.filter(p => p.rating >= filters.minRating);
+    const activeServices = Object.entries(this.currentFilters.services)
+      .filter(([_, active]) => active)
+      .map(([service, _]) => service as ServiceType);
+    
+    if (activeServices.length > 0) {
+      filtered = filtered.filter(p => 
+        activeServices.every(service => p.services.includes(service))
+      );
     }
 
-    // Aplicar filtros especiales
-    if (filters.verified) {
+    if (this.currentFilters.priceMin || this.currentFilters.priceMax) {
+      filtered = filtered.filter(p => 
+        p.pricePerNight >= (this.currentFilters.priceMin || 0) &&
+        p.pricePerNight <= (this.currentFilters.priceMax || Infinity)
+      );
+    }
+
+    if (this.currentFilters.minRating) {
+      filtered = filtered.filter(p => p.rating >= this.currentFilters.minRating);
+    }
+
+    if (this.currentFilters.verified) {
       filtered = filtered.filter(p => p.isVerified);
     }
 
-    if (filters.instantBook) {
+    if (this.currentFilters.instantBook) {
       filtered = filtered.filter(p => p.isInstantBook);
     }
 
-    // Aplicar ordenamiento
-    return this.sortProperties(filtered, config.sortBy);
+    filtered = this.sortProperties(filtered, this.currentConfig.sortBy);
+
+    this.filteredProperties = filtered;
+    this.totalResults = filtered.length;
+    this.totalPages = Math.ceil(this.totalResults / this.currentConfig.itemsPerPage);
+    this.updatePagination();
   }
 
   private sortProperties(properties: Property[], sortBy: string): Property[] {
+    const sorted = [...properties];
+    
     switch (sortBy) {
       case 'price-asc':
-        return properties.sort((a, b) => a.pricePerNight - b.pricePerNight);
+        return sorted.sort((a, b) => a.pricePerNight - b.pricePerNight);
       case 'price-desc':
-        return properties.sort((a, b) => b.pricePerNight - a.pricePerNight);
+        return sorted.sort((a, b) => b.pricePerNight - a.pricePerNight);
       case 'rating':
-        return properties.sort((a, b) => b.rating - a.rating);
+        return sorted.sort((a, b) => b.rating - a.rating);
       case 'reviews':
-        return properties.sort((a, b) => b.reviewsCount - a.reviewsCount);
+        return sorted.sort((a, b) => b.reviewsCount - a.reviewsCount);
       case 'distance':
-        return properties.sort((a, b) => {
+        return sorted.sort((a, b) => {
           const aDistance = a.zone === 'norte-centro' ? 1 : a.zone === 'villa-liliana' ? 2 : 3;
           const bDistance = b.zone === 'norte-centro' ? 1 : b.zone === 'villa-liliana' ? 2 : 3;
           return aDistance - bDistance;
         });
       case 'newest':
-        return properties.sort((a, b) => 
+        return sorted.sort((a, b) => 
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
       case 'relevance':
       default:
-        return properties.sort((a, b) => {
+        return sorted.sort((a, b) => {
           if (a.isVerified !== b.isVerified) {
             return a.isVerified ? -1 : 1;
           }
@@ -293,111 +241,77 @@ export class SearchResultsComponent implements OnInit, OnDestroy {
     }
   }
 
-  // ================================
-  // 🎛️ GESTIÓN DE FILTROS
-  // ================================
+  private updatePagination(): void {
+    const startIndex = (this.currentConfig.currentPage - 1) * this.currentConfig.itemsPerPage;
+    const endIndex = startIndex + this.currentConfig.itemsPerPage;
+    this.paginatedProperties = this.filteredProperties.slice(startIndex, endIndex);
+  }
 
   toggleZone(zone: ZoneType, active: boolean): void {
-    const currentFilters = this.filtersSubject.value;
-    const updatedFilters = {
-      ...currentFilters,
-      zones: {
-        ...currentFilters.zones,
-        [zone]: active
-      }
-    };
-    this.filtersSubject.next(updatedFilters);
+    this.currentFilters.zones[zone] = active;
+    this.currentConfig.currentPage = 1; // Reset pagination
+    this.applyFiltersAndUpdate();
   }
 
   togglePropertyType(type: PropertyType, active: boolean): void {
-    const currentFilters = this.filtersSubject.value;
-    const updatedFilters = {
-      ...currentFilters,
-      propertyTypes: {
-        ...currentFilters.propertyTypes,
-        [type]: active
-      }
-    };
-    this.filtersSubject.next(updatedFilters);
+    this.currentFilters.propertyTypes[type] = active;
+    this.currentConfig.currentPage = 1;
+    this.applyFiltersAndUpdate();
   }
 
   toggleAmenity(amenity: AmenityType, active: boolean): void {
-    const currentFilters = this.filtersSubject.value;
-    const updatedFilters = {
-      ...currentFilters,
-      amenities: {
-        ...currentFilters.amenities,
-        [amenity]: active
-      }
-    };
-    this.filtersSubject.next(updatedFilters);
+    this.currentFilters.amenities[amenity] = active;
+    this.currentConfig.currentPage = 1;
+    this.applyFiltersAndUpdate();
   }
 
   toggleService(service: ServiceType, active: boolean): void {
-    const currentFilters = this.filtersSubject.value;
-    const updatedFilters = {
-      ...currentFilters,
-      services: {
-        ...currentFilters.services,
-        [service]: active
-      }
-    };
-    this.filtersSubject.next(updatedFilters);
+    this.currentFilters.services[service] = active;
+    this.currentConfig.currentPage = 1;
+    this.applyFiltersAndUpdate();
   }
 
   toggleSpecialFilter(filterType: string, active: boolean): void {
-    const currentFilters = this.filtersSubject.value;
-    const updatedFilters = { ...currentFilters };
-
     switch (filterType) {
       case 'verified':
-        updatedFilters.verified = active;
+        this.currentFilters.verified = active;
         break;
       case 'instantBook':
-        updatedFilters.instantBook = active;
+        this.currentFilters.instantBook = active;
         break;
       case 'businessFriendly':
         if (active) {
-          updatedFilters.amenities = {
-            ...updatedFilters.amenities,
-            wifi: true,
-            ac: true
-          };
-          updatedFilters.zones = {
-            ...updatedFilters.zones,
-            'norte-centro': true,
-            'villa-liliana': true
-          };
+          this.currentFilters.amenities.wifi = true;
+          this.currentFilters.amenities.ac = true;
+          this.currentFilters.zones['norte-centro'] = true;
+          this.currentFilters.zones['villa-liliana'] = true;
         }
         break;
     }
-
-    this.filtersSubject.next(updatedFilters);
+    
+    this.currentConfig.currentPage = 1;
+    this.applyFiltersAndUpdate();
   }
 
   onPriceFilterClick(priceRange: { priceMin: number; priceMax: number }): void {
-    const currentFilters = this.filtersSubject.value;
-    const updatedFilters = {
-      ...currentFilters,
-      priceMin: priceRange.priceMin,
-      priceMax: priceRange.priceMax
-    };
-    this.filtersSubject.next(updatedFilters);
+    this.currentFilters.priceMin = priceRange.priceMin;
+    this.currentFilters.priceMax = priceRange.priceMax;
+    this.currentConfig.currentPage = 1;
+    this.applyFiltersAndUpdate();
   }
 
   setMinRating(rating: number): void {
     this.currentMinRating = rating;
-    const currentFilters = this.filtersSubject.value;
-    const updatedFilters = {
-      ...currentFilters,
-      minRating: rating
-    };
-    this.filtersSubject.next(updatedFilters);
+    this.currentFilters.minRating = rating;
+    this.currentConfig.currentPage = 1;
+    this.applyFiltersAndUpdate();
   }
 
   clearFilters(): void {
     this.currentMinRating = 0;
-    this.filtersSubject.next(DEFAULT_FILTERS);
+    this.currentFilters = { ...DEFAULT_FILTERS };
+    this.currentConfig.currentPage = 1;
+    this.applyFiltersAndUpdate();
   }
 
   // ================================
@@ -411,7 +325,8 @@ export class SearchResultsComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.searchParamsSubject.next({ ...this.searchData });
+    this.currentConfig.currentPage = 1;
+    this.applyFiltersAndUpdate();
     
     this.router.navigate([], {
       relativeTo: this.route,
@@ -449,7 +364,6 @@ export class SearchResultsComponent implements OnInit, OnDestroy {
       guests: 2
     };
     this.clearFilters();
-    this.performSearch();
   }
 
   // ================================
@@ -457,60 +371,29 @@ export class SearchResultsComponent implements OnInit, OnDestroy {
   // ================================
 
   updateSortBy(sortBy: string): void {
-    const currentConfig = this.configSubject.value;
-    this.configSubject.next({
-      ...currentConfig,
-      sortBy,
-      currentPage: 1
-    });
+    this.currentConfig.sortBy = sortBy;
+    this.currentConfig.currentPage = 1;
+    this.applyFiltersAndUpdate();
   }
 
   setViewMode(viewMode: 'list' | 'map'): void {
-    const currentConfig = this.configSubject.value;
-    this.configSubject.next({
-      ...currentConfig,
-      viewMode
-    });
+    this.currentConfig.viewMode = viewMode;
   }
 
   updateItemsPerPage(itemsPerPage: number): void {
-    const currentConfig = this.configSubject.value;
-    this.configSubject.next({
-      ...currentConfig,
-      itemsPerPage,
-      currentPage: 1
-    });
+    this.currentConfig.itemsPerPage = itemsPerPage;
+    this.currentConfig.currentPage = 1;
+    this.applyFiltersAndUpdate();
   }
-
-  // ================================
-  // 📄 PAGINACIÓN
-  // ================================
-
-  getPaginatedProperties(): Observable<Property[]> {
-    return combineLatest([this.filteredProperties$, this.config$]).pipe(
-      map(([properties, config]) => {
-        const startIndex = (config.currentPage - 1) * config.itemsPerPage;
-        const endIndex = startIndex + config.itemsPerPage;
-        return properties.slice(startIndex, endIndex);
-      })
-    );
-  }
-
-  getPageNumbers(): Observable<number[]> {
-    return combineLatest([this.filteredProperties$, this.config$]).pipe(
-      map(([properties, config]) => {
-        const totalPages = Math.ceil(properties.length / config.itemsPerPage);
-        return Array.from({ length: totalPages }, (_, i) => i + 1);
-      })
-    );
+  getPageNumbers(): number[] {
+    return Array.from({ length: this.totalPages }, (_, i) => i + 1);
   }
 
   goToPage(page: number): void {
-    const currentConfig = this.configSubject.value;
-    this.configSubject.next({
-      ...currentConfig,
-      currentPage: page
-    });
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentConfig.currentPage = page;
+      this.updatePagination();
+    }
   }
 
   // ================================
@@ -530,10 +413,24 @@ export class SearchResultsComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (isFavorite) => {
+          // Actualizar la propiedad en las listas locales
+          this.updatePropertyInLists(propertyId, { isFavorite });
           console.log(`${isFavorite ? '❤️' : '🤍'} Favorito actualizado`);
         },
         error: (error) => console.error('❌ Error actualizando favorito:', error)
       });
+  }
+
+  private updatePropertyInLists(propertyId: string, updates: Partial<Property>): void {
+    this.allProperties = this.allProperties.map(p => 
+      p.id === propertyId ? { ...p, ...updates } : p
+    );
+    this.filteredProperties = this.filteredProperties.map(p => 
+      p.id === propertyId ? { ...p, ...updates } : p
+    );
+    this.paginatedProperties = this.paginatedProperties.map(p => 
+      p.id === propertyId ? { ...p, ...updates } : p
+    );
   }
 
   quickBook(propertyId: string): void {
@@ -585,7 +482,7 @@ export class SearchResultsComponent implements OnInit, OnDestroy {
   }
 
   getMainAmenities(property: Property): AmenityType[] {
-    const priorityAmenities: AmenityType[] = ['wifi', 'ac', 'parking', 'kitchen'];
+    const priorityAmenities: AmenityType[] = ['wifi', 'ac', 'parking', 'kitchen', 'security'];
     return property.amenities
       .filter(amenity => priorityAmenities.includes(amenity))
       .slice(0, 3);
@@ -596,44 +493,33 @@ export class SearchResultsComponent implements OnInit, OnDestroy {
   }
 
   hasActiveFiltersSync(): boolean {
-    const filters = this.filtersSubject.value;
-    
-    return Object.values(filters.zones).some(active => active) ||
-           Object.values(filters.propertyTypes).some(active => active) ||
-           Object.values(filters.amenities).some(active => active) ||
-           Object.values(filters.services).some(active => active) ||
-           filters.minRating > 0 ||
-           filters.priceMin > 0 ||
-           filters.priceMax < 999999 ||
-           filters.verified ||
-           filters.instantBook;
+    return Object.values(this.currentFilters.zones).some(active => active) ||
+           Object.values(this.currentFilters.propertyTypes).some(active => active) ||
+           Object.values(this.currentFilters.amenities).some(active => active) ||
+           Object.values(this.currentFilters.services).some(active => active) ||
+           this.currentFilters.minRating > 0 ||
+           this.currentFilters.priceMin > 0 ||
+           this.currentFilters.priceMax < 200000 ||
+           this.currentFilters.verified ||
+           this.currentFilters.instantBook;
   }
 
   getActiveFiltersCount(): number {
-    const filters = this.filtersSubject.value;
-    
     let count = 0;
-    count += Object.values(filters.zones).filter(active => active).length;
-    count += Object.values(filters.propertyTypes).filter(active => active).length;
-    count += Object.values(filters.amenities).filter(active => active).length;
-    count += Object.values(filters.services).filter(active => active).length;
+    count += Object.values(this.currentFilters.zones).filter(active => active).length;
+    count += Object.values(this.currentFilters.propertyTypes).filter(active => active).length;
+    count += Object.values(this.currentFilters.amenities).filter(active => active).length;
+    count += Object.values(this.currentFilters.services).filter(active => active).length;
     
-    if (filters.minRating > 0) count++;
-    if (filters.priceMin > 0 || filters.priceMax < 999999) count++;
-    if (filters.verified) count++;
-    if (filters.instantBook) count++;
+    if (this.currentFilters.minRating > 0) count++;
+    if (this.currentFilters.priceMin > 0 || this.currentFilters.priceMax < 200000) count++;
+    if (this.currentFilters.verified) count++;
+    if (this.currentFilters.instantBook) count++;
     
     return count;
   }
 
   getZonePropertyCount(zone: ZoneType): number {
-    const counts = {
-      'norte-centro': 8,
-      'la-secreta': 6, 
-      'bosques-pinares': 4,
-      'ciudadela-del-cafe': 5,
-      'villa-liliana': 3
-    };
-    return counts[zone] || 0;
+    return this.allProperties.filter(p => p.zone === zone).length;
   }
 }

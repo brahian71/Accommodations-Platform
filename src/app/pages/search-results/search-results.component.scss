@@ -1,51 +1,7 @@
 /* ================================
    SEARCH RESULTS - OPTIMIZADO
-   Versión reducida manteniendo funcionalidad
+   Usando estilos globales y manteniendo solo específicos
    ================================ */
-
-// Variables
-$primary: #27AE60;
-$secondary: #F1C40F;
-$primary-dark: #1E8449;
-$text-dark: #1A1A1A;
-$text-medium: #5F6368;
-$text-light: #9AA0A6;
-$border: #E8EAED;
-$bg-light: #F8F9FA;
-$white: #FFFFFF;
-
-// Mixins
-@mixin button-base {
-  border: none;
-  border-radius: 0.75rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  &:hover { transform: translateY(-1px); }
-}
-
-@mixin card-base {
-  background: $white;
-  border-radius: 1rem;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.12);
-  border: 1px solid $border;
-  transition: all 0.3s ease;
-}
-
-@mixin input-base {
-  width: 100%;
-  padding: 0.75rem;
-  border: 2px solid $border;
-  border-radius: 0.75rem;
-  background: white;
-  transition: all 0.3s ease;
-  
-  &:focus {
-    outline: none;
-    border-color: $primary;
-    box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.1);
-  }
-}
 
 /* ================================
    LAYOUT PRINCIPAL
@@ -54,7 +10,7 @@ app-search-results {
   display: block;
   width: 100%;
   min-height: 100vh;
-  background: $bg-light;
+  background: var(--background-light);
 }
 
 .search-results-page {
@@ -63,23 +19,23 @@ app-search-results {
 }
 
 /* ================================
-   SEARCH HEADER
+   SEARCH HEADER - ESPECÍFICO
    ================================ */
 .search-header {
-  background: linear-gradient(135deg, $primary 0%, $secondary 100%);
-  padding: 2rem 0;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.12);
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  padding: var(--spacing-2xl) 0;
+  box-shadow: var(--shadow-md);
 }
 
 .search-bar-compact {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20px);
-  border-radius: 1rem;
-  padding: 1rem;
-  box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  box-shadow: var(--shadow-lg);
   display: grid;
   grid-template-columns: 2fr 1fr 1fr 1fr 1.2fr;
-  gap: 1rem;
+  gap: var(--spacing-lg);
   align-items: end;
   max-width: 1200px;
   margin: 0 auto;
@@ -90,192 +46,192 @@ app-search-results {
   flex-direction: column;
   
   label {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: #3C4043;
-    margin-bottom: 0.5rem;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-sm);
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
 }
 
+// ✅ Los inputs usan clases globales directamente en el template HTML
 .search-input,
 .date-input,
 .guests-select {
-  @include input-base;
-  font-size: 0.9rem;
+  font-size: var(--font-size-sm);
 }
 
 .search-btn {
-  @include button-base;
-  background: $primary;
-  color: white;
-  padding: 0.75rem 1rem;
-  font-size: 0.9rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  
-  &:hover { background: $primary-dark; }
-  &:disabled { opacity: 0.5; cursor: not-allowed; }
+  font-size: var(--font-size-sm);
+  gap: var(--spacing-sm);
 }
 
 .search-error {
   grid-column: 1 / -1;
   background: #FEE2E2;
   color: #DC2626;
-  padding: 0.75rem;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  margin-top: 0.5rem;
+  padding: var(--spacing-md);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  margin-top: var(--spacing-sm);
   border: 1px solid #FECACA;
 }
 
 /* ================================
-   LAYOUT Y CONTENIDO
+   LAYOUT ESPECÍFICO
    ================================ */
 .search-content {
-  padding: 2rem 0;
-}
-
-.container-fluid {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 0 1rem;
+  padding: var(--spacing-2xl) 0;
 }
 
 .search-layout {
   display: grid;
   grid-template-columns: 280px 1fr;
-  gap: 2rem;
+  gap: var(--spacing-2xl);
   align-items: start;
 }
 
 /* ================================
-   FILTROS SIDEBAR
+   FILTROS SIDEBAR - ESPECÍFICO
    ================================ */
 .filters-sidebar {
   position: sticky;
-  top: 2rem;
+  top: var(--spacing-2xl);
   height: fit-content;
 }
 
 .filters-panel-armenia-norte {
-  @include card-base;
-  padding: 1.5rem;
+  // ✅ Usando variables CSS como card global
+  background: var(--background-white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
+  transition: var(--transition-normal);
+  padding: var(--spacing-xl);
 }
 
 .filter-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
-  border-bottom: 2px solid $border;
+  margin-bottom: var(--spacing-2xl);
+  padding-bottom: var(--spacing-lg);
+  border-bottom: 2px solid var(--border-color);
   
   h3 {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: $text-dark;
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--text-primary);
     margin: 0;
   }
 }
 
 .clear-filters-btn {
-  background: transparent;
-  color: $text-medium;
-  border: 1px solid $border;
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
+  // ✅ Usando variables CSS como btn ghost global
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: var(--transition-normal);
+  background-color: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
   
   &:hover:not(:disabled) {
-    background: $bg-light;
-    border-color: $primary;
-    color: $primary;
+    background-color: var(--background-light);
+    color: var(--text-primary);
   }
   
-  &:disabled { opacity: 0.5; cursor: not-allowed; }
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 }
 
 .filter-group {
-  margin-bottom: 2rem;
+  margin-bottom: var(--spacing-2xl);
 }
 
 .filter-title {
-  font-size: 1rem;
-  font-weight: 600;
-  color: $text-dark;
-  margin-bottom: 1rem;
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-lg);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--spacing-sm);
 }
 
 .filter-options {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: var(--spacing-md);
 }
 
 .filter-checkbox {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--spacing-md);
   cursor: pointer;
-  transition: all 0.3s ease;
-  padding: 0.5rem;
-  border-radius: 0.5rem;
+  transition: var(--transition-normal);
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-sm);
   
-  &:hover { background: rgba(39, 174, 96, 0.05); }
+  &:hover { 
+    background: rgba(var(--primary-color), 0.05); 
+  }
   
   input[type="checkbox"] {
     width: 18px;
     height: 18px;
-    border: 2px solid $border;
+    border: 2px solid var(--border-color);
     border-radius: 4px;
     cursor: pointer;
     
     &:checked {
-      border-color: $primary;
-      background-color: $primary;
+      border-color: var(--primary-color);
+      background-color: var(--primary-color);
     }
   }
   
   span {
-    font-size: 0.9rem;
-    color: #3C4043;
-    font-weight: 500;
+    font-size: var(--font-size-sm);
+    color: var(--text-primary);
+    font-weight: var(--font-weight-medium);
   }
 }
 
 /* ================================
-   FILTROS ESPECIALES
+   FILTROS ESPECIALES - ESPECÍFICOS
    ================================ */
 .price-suggestions {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.5rem;
+  gap: var(--spacing-sm);
 }
 
 .price-tag {
   background: rgba(39, 174, 96, 0.1);
-  color: #1E8449;
+  color: var(--primary-dark);
   border: 1px solid rgba(39, 174, 96, 0.3);
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 600;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: var(--transition-normal);
   text-align: center;
   
   &:hover {
     background: rgba(39, 174, 96, 0.2);
-    border-color: $primary;
+    border-color: var(--primary-color);
     transform: translateY(-1px);
   }
 }
@@ -283,175 +239,200 @@ app-search-results {
 .rating-filter {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--spacing-sm);
 }
 
 .rating-btn {
   background: rgba(241, 196, 15, 0.1);
-  color: #B7950B;
+  color: var(--secondary-dark);
   border: 1px solid rgba(241, 196, 15, 0.3);
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 600;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: var(--transition-normal);
   
   &:hover {
     background: rgba(241, 196, 15, 0.2);
-    border-color: $secondary;
+    border-color: var(--secondary-color);
   }
   
   &.active {
-    background: $secondary;
-    color: $text-dark;
-    border-color: $secondary;
+    background: var(--secondary-color);
+    color: var(--text-primary);
+    border-color: var(--secondary-color);
   }
 }
 
 /* ================================
-   RESULTS AREA
+   RESULTS HEADER - ESPECÍFICO
    ================================ */
 .search-main {
   min-height: 80vh;
 }
 
 .results-header {
-  @include card-base;
-  padding: 1.5rem;
-  margin-bottom: 2rem;
+  // ✅ Usando variables CSS como card global
+  background: var(--background-white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
+  transition: var(--transition-normal);
+  padding: var(--spacing-xl);
+  margin-bottom: var(--spacing-2xl);
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: var(--spacing-lg);
   
   h2 {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: $text-dark;
-    margin: 0 0 0.5rem 0;
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--text-primary);
+    margin: 0 0 var(--spacing-sm) 0;
   }
 }
 
 .search-location {
-  color: $primary;
-  font-weight: 600;
-  font-size: 0.9rem;
-  margin-bottom: 0.5rem;
+  color: var(--primary-color);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--spacing-sm);
 }
 
 .results-summary {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: var(--spacing-lg);
   
   .result-count {
-    color: $text-medium;
-    font-size: 0.9rem;
-    font-weight: 500;
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
   }
   
   .active-filters {
-    color: $primary;
-    font-size: 0.9rem;
-    font-weight: 600;
+    color: var(--primary-color);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
   }
 }
 
 /* ================================
-   VIEW CONTROLS
+   VIEW CONTROLS - ESPECÍFICOS
    ================================ */
 .view-controls {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: var(--spacing-lg);
   flex-wrap: wrap;
 }
 
 .sort-select,
 .items-per-page-select {
-  @include input-base;
-  padding: 0.5rem 0.75rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
+  // ✅ Usando variables CSS como form-select global
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  background-color: var(--background-white);
+  color: var(--text-primary);
+  transition: var(--transition-normal);
+  font-family: inherit;
+  font-weight: var(--font-weight-medium);
   width: auto;
+  cursor: pointer;
+  
+  &:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.1);
+  }
 }
 
 .view-toggle {
   display: flex;
-  background: $bg-light;
-  border-radius: 0.5rem;
-  padding: 0.25rem;
-  border: 1px solid $border;
+  background: var(--background-light);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-xs);
+  border: 1px solid var(--border-color);
 }
 
 .view-btn {
   background: transparent;
-  color: $text-medium;
+  color: var(--text-secondary);
   border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  font-weight: 500;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: var(--transition-normal);
   
   &.active {
-    background: white;
-    color: $primary;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    background: var(--background-white);
+    color: var(--primary-color);
+    box-shadow: var(--shadow-sm);
   }
   
   &:hover:not(.active) {
     background: rgba(39, 174, 96, 0.05);
-    color: $primary;
+    color: var(--primary-color);
   }
 }
 
 /* ================================
-   PROPERTY CARDS HORIZONTALES
+   PROPERTY CARDS - COMPONENTE ESPECÍFICO
    ================================ */
 .properties-list {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: var(--spacing-xl);
 }
 
 .property-card-horizontal {
-  @include card-base;
-  overflow: hidden;
+  // ✅ Usando variables CSS como card-interactive global
+  background: var(--background-white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
+  transition: var(--transition-normal);
   cursor: pointer;
+  overflow: hidden;
   display: grid;
   grid-template-columns: 300px 1fr auto;
   min-height: 200px;
   
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-xl);
   }
 }
 
 .property-image {
   position: relative;
   overflow: hidden;
-  background: $border;
+  background: var(--border-color);
   
   img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 0.5s ease;
+    transition: transform var(--transition-slow);
   }
   
-  &:hover img { transform: scale(1.05); }
+  &:hover img { 
+    transform: scale(1.05); 
+  }
 }
 
 .favorite-btn {
   position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
+  top: var(--spacing-md);
+  right: var(--spacing-md);
   width: 36px;
   height: 36px;
   border-radius: 50%;
@@ -461,43 +442,56 @@ app-search-results {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.3s ease;
-  font-size: 1.1rem;
+  transition: var(--transition-normal);
+  font-size: var(--font-size-lg);
   z-index: 10;
   
   &:hover {
-    background: white;
+    background: var(--background-white);
     transform: scale(1.1);
   }
 }
 
 .property-badges {
   position: absolute;
-  bottom: 0.75rem;
-  left: 0.75rem;
+  bottom: var(--spacing-md);
+  left: var(--spacing-md);
   z-index: 10;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--spacing-sm);
   
   .badge {
-    padding: 0.25rem 0.75rem;
-    border-radius: 0.5rem;
-    font-size: 0.75rem;
-    font-weight: 600;
+    // ✅ Usando variables CSS como badge global
+    display: inline-flex;
+    align-items: center;
+    padding: var(--spacing-xs) var(--spacing-md);
+    border-radius: 50px;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
     text-transform: uppercase;
+    letter-spacing: 0.5px;
     
-    &.verified-badge { background: $primary; color: white; }
-    &.instant-badge { background: $secondary; color: $text-dark; }
-    &.type-badge { background: rgba(0, 0, 0, 0.8); color: white; }
+    &.verified-badge { 
+      background-color: var(--primary-color);
+      color: white;
+    }
+    &.instant-badge { 
+      background-color: var(--secondary-color);
+      color: var(--text-primary);
+    }
+    &.type-badge { 
+      background: rgba(0, 0, 0, 0.8); 
+      color: white; 
+    }
   }
 }
 
 /* ================================
-   PROPERTY CONTENT
+   PROPERTY CONTENT - ESPECÍFICO
    ================================ */
 .property-content {
-  padding: 1.5rem;
+  padding: var(--spacing-xl);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -507,40 +501,45 @@ app-search-results {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 0.75rem;
+  margin-bottom: var(--spacing-md);
 }
 
 .property-rating {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: $secondary;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--secondary-color);
   
-  .rating-number { color: $text-dark; }
-  .reviews-count { color: $text-medium; font-weight: 500; }
+  .rating-number { 
+    color: var(--text-primary); 
+  }
+  .reviews-count { 
+    color: var(--text-secondary); 
+    font-weight: var(--font-weight-medium); 
+  }
 }
 
 .property-location {
-  color: $text-medium;
-  font-size: 0.875rem;
-  font-weight: 500;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
 }
 
 .property-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: $text-dark;
-  margin-bottom: 0.5rem;
-  transition: color 0.3s ease;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-sm);
+  transition: color var(--transition-normal);
 }
 
 .property-description {
-  color: $text-medium;
+  color: var(--text-secondary);
   line-height: 1.6;
-  margin-bottom: 1rem;
-  font-size: 0.9rem;
+  margin-bottom: var(--spacing-lg);
+  font-size: var(--font-size-sm);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -550,107 +549,107 @@ app-search-results {
 .property-specs {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
-  margin-bottom: 0.75rem;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
 }
 
 .spec-item {
-  color: $text-medium;
-  font-size: 0.875rem;
-  font-weight: 500;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: var(--spacing-xs);
 }
 
-.property-features {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
-}
-
-.feature-tag {
-  background: rgba(39, 174, 96, 0.1);
-  color: #1E8449;
-  padding: 0.25rem 0.5rem;
-  border-radius: 50px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  
-  &.more {
-    background: rgba(95, 99, 104, 0.1);
-    color: $text-medium;
-    font-weight: 600;
-  }
-}
-
+.property-features,
 .main-amenities {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+}
+
+.feature-tag {
+  // ✅ Usando variables CSS como badge-success global
+  display: inline-flex;
+  align-items: center;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: 50px;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  background-color: rgba(39, 174, 96, 0.1);
+  color: var(--primary-dark);
+  
+  &.more {
+    background-color: var(--background-light);
+    color: var(--text-secondary);
+  }
 }
 
 .amenity-tag {
   background: rgba(241, 196, 15, 0.1);
-  color: #B7950B;
-  padding: 0.25rem 0.5rem;
+  color: var(--secondary-dark);
+  padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: 50px;
-  font-size: 0.75rem;
-  font-weight: 500;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
 }
 
 .available-services {
-  margin-bottom: 0.75rem;
+  margin-bottom: var(--spacing-md);
   
   strong {
-    color: $text-dark;
-    font-size: 0.875rem;
-    margin-right: 0.5rem;
+    color: var(--text-primary);
+    font-size: var(--font-size-sm);
+    margin-right: var(--spacing-sm);
   }
 }
 
 .service-tag {
   background: rgba(52, 152, 219, 0.1);
   color: #2980B9;
-  padding: 0.25rem 0.5rem;
+  padding: var(--spacing-xs) var(--spacing-sm);
   border-radius: 50px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  margin-right: 0.5rem;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  margin-right: var(--spacing-sm);
   
   &.more {
-    background: rgba(95, 99, 104, 0.1);
-    color: $text-medium;
-    font-weight: 600;
+    background-color: var(--background-light);
+    color: var(--text-secondary);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: 50px;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    margin-right: var(--spacing-sm);
   }
 }
 
 .host-info {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  font-size: 0.875rem;
-  color: $text-medium;
+  gap: var(--spacing-lg);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
   
   .host-name {
-    font-weight: 600;
-    color: $text-dark;
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
   }
   
   .response-time {
-    color: $primary;
-    font-weight: 500;
+    color: var(--primary-color);
+    font-weight: var(--font-weight-medium);
   }
 }
 
 /* ================================
-   PRICING AND ACTIONS
+   PRICING AND ACTIONS - ESPECÍFICO
    ================================ */
 .property-actions {
-  padding: 1.5rem;
-  border-left: 1px solid $border;
+  padding: var(--spacing-xl);
+  border-left: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -660,93 +659,65 @@ app-search-results {
 
 .pricing {
   text-align: center;
-  margin-bottom: 1rem;
+  margin-bottom: var(--spacing-lg);
   
   .price {
     display: flex;
     align-items: baseline;
     justify-content: center;
-    gap: 0.25rem;
-    margin-bottom: 0.25rem;
+    gap: var(--spacing-xs);
+    margin-bottom: var(--spacing-xs);
     
     .amount {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: $text-dark;
+      font-size: var(--font-size-2xl);
+      font-weight: var(--font-weight-bold);
+      color: var(--text-primary);
     }
     
     .currency {
-      font-size: 0.875rem;
-      color: $text-medium;
-      font-weight: 500;
+      font-size: var(--font-size-sm);
+      color: var(--text-secondary);
+      font-weight: var(--font-weight-medium);
     }
   }
   
   .period {
-    font-size: 0.875rem;
-    color: $text-medium;
-    font-weight: 500;
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    font-weight: var(--font-weight-medium);
   }
 }
 
 .discount-info {
   background: rgba(39, 174, 96, 0.1);
-  padding: 0.5rem;
-  border-radius: 0.5rem;
-  margin-bottom: 0.5rem;
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--spacing-sm);
   text-align: center;
   
   .weekly-price {
-    font-size: 0.875rem;
-    color: #1E8449;
-    font-weight: 600;
+    font-size: var(--font-size-sm);
+    color: var(--primary-dark);
+    font-weight: var(--font-weight-semibold);
     display: block;
   }
   
   .discount-badge {
-    font-size: 0.75rem;
-    color: $primary;
-    font-weight: 700;
+    font-size: var(--font-size-xs);
+    color: var(--primary-color);
+    font-weight: var(--font-weight-bold);
   }
 }
 
 .action-buttons {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: var(--spacing-md);
   width: 100%;
 }
 
-.btn {
-  @include button-base;
-  padding: 0.75rem 1rem;
-  font-size: 0.875rem;
-  text-align: center;
-  
-  &.btn-primary {
-    background: $primary;
-    color: white;
-    
-    &:hover { background: $primary-dark; }
-  }
-  
-  &.btn-outline {
-    background: transparent;
-    color: $primary;
-    border: 2px solid $primary;
-    
-    &:hover {
-      background: $primary;
-      color: white;
-    }
-  }
-}
-
-/* ================================
-   PAGINATION
-   ================================ */
 .pagination {
-  margin-top: 2rem;
+  margin-top: var(--spacing-2xl);
   display: flex;
   justify-content: center;
 }
@@ -754,41 +725,48 @@ app-search-results {
 .pagination-content {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--spacing-sm);
 }
 
 .page-btn {
-  background: white;
-  color: $text-medium;
-  border: 1px solid $border;
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 500;
+  background: var(--background-white);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: var(--transition-normal);
   min-width: 40px;
   
   &:hover:not(:disabled) {
     background: rgba(39, 174, 96, 0.05);
-    border-color: $primary;
-    color: $primary;
+    border-color: var(--primary-color);
+    color: var(--primary-color);
   }
   
   &.active {
-    background: $primary;
+    background: var(--primary-color);
     color: white;
-    border-color: $primary;
+    border-color: var(--primary-color);
   }
   
-  &:disabled { opacity: 0.5; cursor: not-allowed; }
+  &:disabled { 
+    opacity: 0.5; 
+    cursor: not-allowed; 
+  }
 }
 
 /* ================================
-   MAP VIEW
+   MAP VIEW - ESPECÍFICO
    ================================ */
 .map-view {
-  @include card-base;
+  background: var(--background-white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
+  transition: var(--transition-normal);
   overflow: hidden;
 }
 
@@ -800,7 +778,7 @@ app-search-results {
 .map-placeholder {
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, $border 0%, $bg-light 100%);
+  background: linear-gradient(135deg, var(--border-color) 0%, var(--background-light) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -811,42 +789,50 @@ app-search-results {
   text-align: center;
   
   h3 {
-    font-size: 1.5rem;
-    color: $text-dark;
-    margin-bottom: 0.5rem;
+    font-size: var(--font-size-2xl);
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-sm);
   }
   
   p {
-    color: $text-medium;
-    margin-bottom: 2rem;
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-2xl);
   }
 }
 
 /* ================================
-   LOADING & NO RESULTS
+   LOADING & NO RESULTS - ESPECÍFICOS
    ================================ */
 .loading-container {
   text-align: center;
-  padding: 4rem 0;
-  @include card-base;
-  margin: 2rem 0;
+  padding: var(--spacing-4xl) 0;
+  background: var(--background-white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
+  transition: var(--transition-normal);
+  margin: var(--spacing-2xl) 0;
 }
 
 .loading-spinner {
   width: 50px;
   height: 50px;
-  border: 4px solid $border;
-  border-top-color: $primary;
+  border: 4px solid var(--border-color);
+  border-top-color: var(--primary-color);
   border-radius: 50%;
   animation: spin 1s linear infinite;
-  margin: 0 auto 1rem auto;
+  margin: 0 auto var(--spacing-lg) auto;
 }
 
 .no-results {
   text-align: center;
-  padding: 4rem 2rem;
-  @include card-base;
-  margin: 2rem 0;
+  padding: var(--spacing-4xl) var(--spacing-2xl);
+  background: var(--background-white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
+  transition: var(--transition-normal);
+  margin: var(--spacing-2xl) 0;
 }
 
 .no-results-content {
@@ -854,14 +840,14 @@ app-search-results {
   margin: 0 auto;
   
   h3 {
-    font-size: 1.5rem;
-    color: $text-dark;
-    margin-bottom: 1rem;
+    font-size: var(--font-size-2xl);
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-lg);
   }
   
   p {
-    color: $text-medium;
-    margin-bottom: 2rem;
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-2xl);
     line-height: 1.6;
   }
 }
@@ -869,24 +855,24 @@ app-search-results {
 .no-results-actions {
   display: flex;
   justify-content: center;
-  gap: 1rem;
+  gap: var(--spacing-lg);
   flex-wrap: wrap;
 }
 
 /* ================================
-   HOVER EFFECTS
+   HOVER EFFECTS ESPECÍFICOS
    ================================ */
 .property-card-horizontal:hover .property-title {
-  color: $primary;
+  color: var(--primary-color);
 }
 
 /* ================================
-   RESPONSIVE
+   RESPONSIVE ESPECÍFICO
    ================================ */
 @media (max-width: 1200px) {
   .search-layout {
     grid-template-columns: 250px 1fr;
-    gap: 1.5rem;
+    gap: var(--spacing-xl);
   }
   
   .property-card-horizontal {
@@ -897,7 +883,7 @@ app-search-results {
 @media (max-width: 1024px) {
   .search-layout {
     grid-template-columns: 1fr;
-    gap: 1rem;
+    gap: var(--spacing-lg);
   }
   
   .filters-sidebar {
@@ -905,11 +891,16 @@ app-search-results {
     order: 2;
   }
   
-  .search-main { order: 1; }
+  .search-main { 
+    order: 1; 
+  }
   
   .search-bar-compact {
     grid-template-columns: 1fr 1fr;
-    .search-btn { grid-column: 1 / -1; }
+    
+    .search-btn { 
+      grid-column: 1 / -1; 
+    }
   }
   
   .property-card-horizontal {
@@ -917,14 +908,21 @@ app-search-results {
     
     .property-actions {
       border-left: none;
-      border-top: 1px solid $border;
+      border-top: 1px solid var(--border-color);
       flex-direction: row;
       justify-content: space-between;
       align-items: center;
       min-width: auto;
       
-      .pricing { margin-bottom: 0; text-align: left; }
-      .action-buttons { flex-direction: row; width: auto; }
+      .pricing { 
+        margin-bottom: 0; 
+        text-align: left; 
+      }
+      
+      .action-buttons { 
+        flex-direction: row; 
+        width: auto; 
+      }
     }
   }
 }
@@ -932,18 +930,25 @@ app-search-results {
 @media (max-width: 768px) {
   .search-bar-compact {
     grid-template-columns: 1fr;
-    padding: 1rem;
+    padding: var(--spacing-lg);
   }
   
   .property-card-horizontal {
-    .property-image { aspect-ratio: 16/9; }
-    .property-actions .action-buttons { flex-direction: column; width: 100%; }
+    .property-image { 
+      aspect-ratio: 16/9; 
+    }
+    
+    .property-actions .action-buttons { 
+      flex-direction: column; 
+      width: 100%; 
+    }
   }
 }
 
 @media (max-width: 480px) {
-  .container-fluid { padding: 0 0.75rem; }
-  .search-header { padding: 1rem 0; }
+  .search-header { 
+    padding: var(--spacing-lg) 0; 
+  }
 }
 
 @keyframes spin {

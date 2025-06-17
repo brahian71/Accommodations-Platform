@@ -1,5 +1,4 @@
 // 📁 src/app/core/models/search.interface.ts
-// VERSIÓN CORREGIDA - TODOS LOS TIPOS INCLUIDOS
 
 import { PropertyType, ZoneType, AmenityType, ServiceType } from './property.interface';
 
@@ -49,9 +48,9 @@ export interface ServiceFilters {
 }
 
 export interface StayDurationFilters {
-  shortTerm: boolean; // 1-6 noches
-  weekly: boolean; // 7-29 noches  
-  monthly: boolean; // 30+ noches
+  shortTerm: boolean;
+  weekly: boolean;   
+  monthly: boolean; 
 }
 
 export interface Filters {
@@ -91,7 +90,7 @@ export const SORT_OPTIONS: SortOption[] = [
 ];
 
 // ================================
-// 🆕 INTERFAZ SEARCH RESULTS CONFIG - AGREGADA
+//  INTERFAZ SEARCH RESULTS CONFIG
 // ================================
 
 export interface SearchResultsConfig {
@@ -147,11 +146,11 @@ export interface PopularSearch {
   destination: string;
   searchCount: number;
   averageStay: number;
-  popularWith: string[]; // ['familias', 'viajeros de negocios', 'estudiantes']
+  popularWith: string[]; 
 }
 
 // ================================
-// 🔧 CONFIGURACIONES POR DEFECTO - CORREGIDAS
+// 🔧 CONFIGURACIONES POR DEFECTO
 // ================================
 
 export const DEFAULT_SEARCH_PARAMS: SearchParams = {
@@ -203,7 +202,7 @@ export const DEFAULT_FILTERS: Filters = {
   },
   minRating: 0,
   priceMin: 0,
-  priceMax: 200000, // 200k COP por noche
+  priceMax: 200000,
   maxGuests: 10,
   instantBook: false,
   verified: false
