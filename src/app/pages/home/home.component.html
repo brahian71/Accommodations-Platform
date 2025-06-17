@@ -1,8 +1,6 @@
-<!-- ================================
-     HOME COMPONENT - HTML OPTIMIZADO
-     ================================ -->
+<!-- 📁 src/app/pages/home/home.component.html -->
 
-<!-- 🌄 HERO SECTION -->
+
 <section class="hero-quindio">
   <div class="container">
     <div class="hero-content">
@@ -25,8 +23,6 @@
         </span>
       </div>
     </div>
-
-    <!-- 🔍 SEARCH BAR - ✅ OPTIMIZADO -->
     <form #searchForm="ngForm" (ngSubmit)="onSearchSubmit(searchForm)" class="search-bar">
       
       <div class="search-field">
@@ -95,14 +91,10 @@
           <span class="search-text">{{ isLoading ? 'Buscando...' : 'Buscar' }}</span>
         </button>
       </div>
-
-      <!-- Error message -->
       <div *ngIf="searchError" class="search-error" [attr.role]="'alert'">
         ⚠️ {{ searchError }}
       </div>
     </form>
-
-    <!-- ✅ QUICK SUGGESTIONS - MEJORADAS -->
     <div class="quick-suggestions">
       <p class="suggestions-label">Zonas populares:</p>
       <div class="suggestions-list">
@@ -121,15 +113,13 @@
   </div>
 </section>
 
-<!-- 🏠 HABITACIONES DISPONIBLES -->
 <section class="section">
   <div class="container">
     <div class="section-header">
       <h2>Habitaciones Disponibles</h2>
       <p class="subtitle">Alojamientos verificados en el norte de Armenia</p>
     </div>
-    
-    <!-- LOADING STATE -->
+
     <div *ngIf="isLoading" class="loading-container" [attr.aria-live]="'polite'">
       <div class="loading-spinner"></div>
       <p class="loading-text">Cargando habitaciones...</p>
@@ -224,7 +214,6 @@
       </article>
     </div>
 
-    <!-- VER TODAS BUTTON -->
     <div class="text-center" *ngIf="!isLoading">
       <button 
         class="btn btn-outline btn-lg"
@@ -236,7 +225,6 @@
   </div>
 </section>
 
-<!-- 🎯 ZONAS DEL NORTE DE ARMENIA -->
 <section class="section">
   <div class="container">
     <div class="section-header">
@@ -276,7 +264,6 @@
   </div>
 </section>
 
-<!-- 🌟 ¿POR QUÉ EL NORTE DE ARMENIA? -->
 <section class="section bg-light">
   <div class="container">
     <div class="section-header">
@@ -328,7 +315,6 @@
   </div>
 </section>
 
-<!-- 🚀 CTA SECTION -->
 <section class="section bg-quindio-gradient">
   <div class="container">
     <div class="cta-content">

@@ -1,9 +1,5 @@
-/* ================================
-   PROPERTY DETAILS - ESTILOS COMPLETOS
-   Integrado con la arquitectura existente
-   ================================ */
+// 📁 src/app/pages/property-details/property-details.component.scss
 
-// Variables (mantenemos consistencia con search-results)
 $primary: #27AE60;
 $secondary: #F1C40F;
 $primary-dark: #1E8449;
@@ -16,7 +12,6 @@ $white: #FFFFFF;
 $error: #DC2626;
 $success: #10B981;
 
-// Mixins
 @mixin button-base {
   border: none;
   border-radius: 0.75rem;

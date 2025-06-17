@@ -33,7 +33,6 @@ export class BookingService {
   public currentBooking$ = this.currentBookingSubject.asObservable();
   public bookingProgress$ = this.bookingProgressSubject.asObservable();
   
-  // Configuraciones
   private priceConfig: PriceCalculatorConfig = BOOKING_CONSTANTS.DEFAULT_PRICE_CONFIG;
   private validationRules: BookingValidationRules = BOOKING_CONSTANTS.DEFAULT_VALIDATION_RULES;
   private calendarConfig: CalendarConfig = CALENDAR_CONSTANTS.DEFAULT_CONFIG;
@@ -76,7 +75,7 @@ export class BookingService {
     return this.getPropertyAvailability(propertyId, startDate, endDate).pipe(
       map(days => ({
         year,
-        month: month as any, // ✅ Cast temporal para evitar error de tipo
+        month: month as any,
         monthName: CALENDAR_CONSTANTS.MONTH_NAMES[month],
         monthNameShort: CALENDAR_CONSTANTS.MONTH_NAMES_SHORT[month],
         days,
@@ -92,18 +91,13 @@ export class BookingService {
       }))
     );
   }
-
   validateDateSelection(propertyId: string, checkIn: DateString, checkOut: DateString): Observable<DateValidationResult> {
     const errors: DateValidationResult['errors'] = [];
     const warnings: DateValidationResult['warnings'] = [];
-    
-    // Validaciones básicas de fechas
     const checkInDate = new Date(checkIn);
     const checkOutDate = new Date(checkOut);
     const today = new Date();
     const nights = this.calculateNights(checkIn, checkOut);
-    
-    // Check-in no puede ser en el pasado
     if (checkInDate < today) {
       errors.push({
         code: 'PAST_DATE',
@@ -111,8 +105,6 @@ export class BookingService {
         field: 'checkIn'
       });
     }
-    
-    // Check-out debe ser después de check-in
     if (checkOutDate <= checkInDate) {
       errors.push({
         code: 'INVALID_RANGE',
@@ -120,8 +112,6 @@ export class BookingService {
         field: 'checkOut'
       });
     }
-    
-    // Mínimo de anticipación
     const hoursUntilCheckIn = (checkInDate.getTime() - today.getTime()) / (1000 * 60 * 60);
     if (hoursUntilCheckIn < this.validationRules.minAdvanceBookingHours) {
       errors.push({
@@ -130,8 +120,7 @@ export class BookingService {
         field: 'checkIn'
       });
     }
-    
-    // Máximo de anticipación
+
     const daysUntilCheckIn = Math.ceil(hoursUntilCheckIn / 24);
     if (daysUntilCheckIn > this.validationRules.maxAdvanceBookingDays) {
       errors.push({
@@ -140,8 +129,7 @@ export class BookingService {
         field: 'checkIn'
       });
     }
-    
-    // Estancia mínima y máxima
+
     if (nights > this.validationRules.maxStayDays) {
       errors.push({
         code: 'MAX_STAY',
@@ -160,7 +148,6 @@ export class BookingService {
           });
         }
         
-        // Advertencias para optimizar la reserva
         if (nights >= 7 && property?.pricePerWeek) {
           warnings.push({
             code: 'WEEKLY_DISCOUNT',
@@ -208,8 +195,7 @@ export class BookingService {
           total: 0,
           totalCOP: 0
         };
-        
-        // Aplicar descuento semanal
+
         if (this.priceConfig.applyWeeklyDiscount && nights >= 7 && property.pricePerWeek) {
           const weeklyTotal = Math.floor(nights / 7) * property.pricePerWeek;
           const remainingDays = nights % 7;
@@ -224,8 +210,7 @@ export class BookingService {
           subtotal = newSubtotal;
           breakdown.subtotal = subtotal;
         }
-        
-        // Aplicar descuento mensual
+
         if (this.priceConfig.applyMonthlyDiscount && nights >= 28 && property.pricePerMonth) {
           const monthlyTotal = Math.floor(nights / 30) * property.pricePerMonth;
           const remainingDays = nights % 30;
@@ -240,27 +225,22 @@ export class BookingService {
           subtotal = newSubtotal;
           breakdown.subtotal = subtotal;
         }
-        
-        // Tarifa de limpieza
+
         if (this.priceConfig.cleaningFeePercentage > 0) {
           breakdown.cleaningFee = Math.round(subtotal * (this.priceConfig.cleaningFeePercentage / 100));
         }
-        
-        // Tarifa de servicio
+
         if (this.priceConfig.serviceFeePercentage > 0) {
           breakdown.serviceFee = Math.round(subtotal * (this.priceConfig.serviceFeePercentage / 100));
         }
-        
-        // Calcular total antes de impuestos
+
         const totalBeforeTax = subtotal + (breakdown.cleaningFee || 0) + (breakdown.serviceFee || 0);
-        
-        // IVA (Colombia)
+
         breakdown.iva = {
           percentage: this.priceConfig.ivaPercentage,
           amount: Math.round(totalBeforeTax * (this.priceConfig.ivaPercentage / 100))
         };
-        
-        // Total final
+
         breakdown.total = totalBeforeTax + breakdown.iva.amount;
         breakdown.totalCOP = breakdown.total;
         
@@ -427,13 +407,9 @@ export class BookingService {
       isSent: false,
       whatsappUrl
     };
-    
-    // Simular envío exitoso
     setTimeout(() => {
       message.isSent = true;
       message.sentAt = new Date().toISOString();
-      
-      // Actualizar estado de la reserva
       this.updateBookingWhatsAppStatus(booking.id, true);
     }, 1000);
     
@@ -446,8 +422,6 @@ export class BookingService {
     const whatsappUrl = this.generateWhatsAppUrl(booking.hostWhatsapp, messageText);
     
     window.open(whatsappUrl, '_blank');
-    
-    // Marcar como enviado
     this.updateBookingWhatsAppStatus(booking.id, true);
   }
 

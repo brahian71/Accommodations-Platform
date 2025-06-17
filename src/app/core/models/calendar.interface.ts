@@ -4,12 +4,12 @@
 // 📅 TIPOS BASE PARA FECHAS
 // ================================
 
-export type DateString = string; // Format: 'YYYY-MM-DD'
-export type TimeString = string; // Format: 'HH:MM'
-export type DateTimeString = string; // Format: 'YYYY-MM-DDTHH:MM:SS'
+export type DateString = string;
+export type TimeString = string;
+export type DateTimeString = string;
 
-export type DayOfWeek = 0 | 1 | 2 | 3 | 4 | 5 | 6; // 0 = Domingo, 6 = Sábado
-export type MonthNumber = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11; // 0 = Enero
+export type DayOfWeek = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+export type MonthNumber = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
 
 // ================================
 // 📆 DISPONIBILIDAD DIARIA
@@ -20,28 +20,23 @@ export interface DayAvailability {
   dayOfWeek: DayOfWeek;
   dayNumber: number;
   
-  // Estados de disponibilidad
   isAvailable: boolean;
-  isBlocked: boolean;           // Bloqueado por el anfitrión
-  isBooked: boolean;           // Ya tiene reserva confirmada
-  isPastDate: boolean;         // Fecha ya pasó
+  isBlocked: boolean;
+  isBooked: boolean;
+  isPastDate: boolean;
   isToday: boolean;
   
-  // Restricciones especiales
-  minimumStay?: number;        // Estancia mínima para esta fecha
-  maximumStay?: number;        // Estancia máxima para esta fecha
-  
-  // Precios dinámicos
-  priceOverride?: number;      // Precio especial para esta fecha
+  minimumStay?: number;
+  maximumStay?: number;
+
+  priceOverride?: number;
   hasSpecialPrice: boolean;
-  
-  // Información adicional
-  blockReason?: string;        // Razón del bloqueo
-  bookingId?: string;          // ID de la reserva si está ocupado
-  checkInAllowed: boolean;     // Permitir check-in este día
-  checkOutAllowed: boolean;    // Permitir check-out este día
-  
-  // Metadata
+
+  blockReason?: string;
+  bookingId?: string;
+  checkInAllowed: boolean;
+  checkOutAllowed: boolean;
+
   notes?: string;
   isHoliday?: boolean;
   holidayName?: string;
@@ -50,27 +45,22 @@ export interface DayAvailability {
 // ================================
 // 🗓️ CALENDARIO MENSUAL
 // ================================
-
 export interface CalendarMonth {
   year: number;
   month: MonthNumber;
   monthName: string;
   monthNameShort: string;
-  
-  // Días del mes
+
   days: DayAvailability[];
   totalDays: number;
-  
-  // Días de otros meses para completar la grilla
+
   previousMonthDays: DayAvailability[];
   nextMonthDays: DayAvailability[];
-  
-  // Estadísticas del mes
+
   availableDays: number;
   bookedDays: number;
   blockedDays: number;
-  
-  // Navegación
+
   isCurrentMonth: boolean;
   isPastMonth: boolean;
   isFutureMonth: boolean;
@@ -81,29 +71,24 @@ export interface CalendarMonth {
 // ================================
 
 export interface CalendarConfig {
-  // Configuración visual
   startWeekOnMonday: boolean;
   showPreviousMonth: boolean;
   showNextMonth: boolean;
   highlightToday: boolean;
-  
-  // Restricciones de fechas
-  minDate?: DateString;        // Fecha mínima seleccionable
-  maxDate?: DateString;        // Fecha máxima seleccionable
-  disabledDates: DateString[]; // Fechas específicas deshabilitadas
-  
-  // Reglas de negocio
+
+  minDate?: DateString;
+  maxDate?: DateString;
+  disabledDates: DateString[];
+
   allowSameDayBooking: boolean;
-  minAdvanceHours: number;     // Horas mínimas de anticipación
-  maxAdvanceDays: number;      // Días máximos de anticipación
+  minAdvanceHours: number;
+  maxAdvanceDays: number;
   
-  // Configuración de estancia
   globalMinimumStay: number;
   globalMaximumStay: number;
-  
-  // Días de la semana
-  checkInDaysAllowed: DayOfWeek[];  // Días permitidos para check-in
-  checkOutDaysAllowed: DayOfWeek[]; // Días permitidos para check-out
+
+  checkInDaysAllowed: DayOfWeek[];
+  checkOutDaysAllowed: DayOfWeek[];
   
   // Precios y descuentos
   showPricesOnCalendar: boolean;
@@ -118,22 +103,18 @@ export interface CalendarConfig {
 export interface DateSelection {
   checkIn: DateString | null;
   checkOut: DateString | null;
-  
-  // Cálculos automáticos
+
   nights: number;
   totalDays: number;
-  
-  // Validaciones
+
   isValid: boolean;
   errors: string[];
   warnings: string[];
+
+  weekendNights: number;
+  weekdayNights: number;
+  hasHolidays: boolean;
   
-  // Información adicional
-  weekendNights: number;       // Noches de fin de semana
-  weekdayNights: number;       // Noches entre semana
-  hasHolidays: boolean;        // Incluye días festivos
-  
-  // Precios preliminares
   estimatedTotal?: number;
   applicableDiscounts: string[];
 }
@@ -153,7 +134,7 @@ export interface AvailabilityRule {
   // Aplicación de la regla
   startDate: DateString;
   endDate: DateString;
-  daysOfWeek?: DayOfWeek[];    // Días específicos de la semana
+  daysOfWeek?: DayOfWeek[];
   
   // Configuración según tipo
   blockReason?: string;
@@ -165,13 +146,13 @@ export interface AvailabilityRule {
   
   // Metadata
   isActive: boolean;
-  priority: number;            // Mayor número = mayor prioridad
+  priority: number;
   createdAt: DateTimeString;
   updatedAt: DateTimeString;
   
   // Descripción para el anfitrión
   description?: string;
-  isRecurring: boolean;        // Si se repite anualmente
+  isRecurring: boolean;
 }
 
 // ================================
@@ -182,7 +163,7 @@ export interface Holiday {
   date: DateString;
   name: string;
   type: 'national' | 'regional' | 'religious';
-  isFixedDate: boolean;        // Si siempre es la misma fecha
+  isFixedDate: boolean;
   description?: string;
 }
 
@@ -224,8 +205,7 @@ export interface CalendarStats {
     endDate: DateString;
     occupancyRate: number;
   }[];
-  
-  // Días más populares
+
   popularCheckInDays: DayOfWeek[];
   popularCheckOutDays: DayOfWeek[];
 }
@@ -261,24 +241,21 @@ export interface PriceCalendarDay extends DayAvailability {
 // ================================
 
 export interface CalendarTheme {
-  // Colores principales
+
   primaryColor: string;
   secondaryColor: string;
   backgroundColor: string;
-  
-  // Estados de días
+
   availableColor: string;
   blockedColor: string;
   bookedColor: string;
   selectedColor: string;
   hoverColor: string;
-  
-  // Texto
+
   textColor: string;
   mutedTextColor: string;
   headerTextColor: string;
-  
-  // Bordes y espaciado
+
   borderColor: string;
   borderRadius: string;
   cellPadding: string;
@@ -289,7 +266,6 @@ export interface CalendarTheme {
 // ================================
 
 export const CALENDAR_CONSTANTS = {
-  // Configuración por defecto
   DEFAULT_CONFIG: {
     startWeekOnMonday: true,
     showPreviousMonth: true,
@@ -300,15 +276,14 @@ export const CALENDAR_CONSTANTS = {
     maxAdvanceDays: 365,
     globalMinimumStay: 1,
     globalMaximumStay: 90,
-    checkInDaysAllowed: [0, 1, 2, 3, 4, 5, 6], // Todos los días
-    checkOutDaysAllowed: [0, 1, 2, 3, 4, 5, 6], // Todos los días
+    checkInDaysAllowed: [0, 1, 2, 3, 4, 5, 6],
+    checkOutDaysAllowed: [0, 1, 2, 3, 4, 5, 6],
     showPricesOnCalendar: true,
     weeklyDiscountDays: 7,
     monthlyDiscountDays: 28,
     disabledDates: []
   } as CalendarConfig,
   
-  // Nombres de meses en español
   MONTH_NAMES: [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
@@ -319,12 +294,10 @@ export const CALENDAR_CONSTANTS = {
     'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'
   ],
   
-  // Nombres de días en español
   DAY_NAMES: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
   DAY_NAMES_SHORT: ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'],
   DAY_NAMES_MINIMAL: ['D', 'L', 'M', 'X', 'J', 'V', 'S'],
   
-  // Días festivos fijos de Colombia 2025
   COLOMBIA_HOLIDAYS_2025: [
     { date: '2025-01-01', name: 'Año Nuevo', type: 'national' },
     { date: '2025-01-06', name: 'Día de los Reyes Magos', type: 'religious' },
@@ -354,7 +327,6 @@ export const CALENDAR_CONSTANTS = {
 export type CalendarMode = 'selection' | 'availability' | 'pricing' | 'blocked';
 export type CalendarView = 'month' | 'year';
 
-// Para el selector de fechas del booking
 export interface BookingDatePicker {
   mode: 'check-in' | 'check-out' | 'range';
   selectedDates: DateSelection;

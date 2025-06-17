@@ -1,41 +1,36 @@
 <!-- 📁 src/app/pages/booking/booking.component.html -->
 
 <div class="booking-page" *ngIf="!isLoading">
-  
-  <!-- ================================ -->
-  <!-- 🏠 HEADER CON INFORMACIÓN BÁSICA -->
-  <!-- ================================ -->
-  
-  <header class="booking-header">
+
+  <header class="booking-header card border-0 mb-4">
     <div class="container">
-      <div class="booking-header-content">
-        
-        <!-- Breadcrumb -->
-        <nav class="breadcrumb">
-          <a routerLink="/home" class="breadcrumb-link">Inicio</a>
-          <span class="breadcrumb-separator">></span>
-          <a [routerLink]="['/property', property?.id]" class="breadcrumb-link">{{ property?.title }}</a>
-          <span class="breadcrumb-separator">></span>
-          <span class="breadcrumb-current">Reservar</span>
+      <div class="d-flex flex-column gap-4">
+
+        <nav class="breadcrumb d-flex align-center text-sm text-secondary">
+          <a routerLink="/home" class="breadcrumb-link text-primary">Inicio</a>
+          <span class="mx-2">></span>
+          <a [routerLink]="['/property', property?.id]" class="breadcrumb-link text-primary">{{ property?.title }}</a>
+          <span class="mx-2">></span>
+          <span class="text-primary font-medium">Reservar</span>
         </nav>
-        
-        <!-- Información de la propiedad -->
-        <div class="property-info" *ngIf="property">
-          <div class="property-info-left">
-            <h1 class="property-title">{{ property.title }}</h1>
-            <p class="property-location">
-              <i class="icon-location"></i>
+        <div class="d-flex justify-between align-start gap-4" *ngIf="property">
+          <div class="flex-1">
+            <h1 class="text-3xl font-bold text-primary mb-2">{{ property.title }}</h1>
+            <p class="d-flex align-center text-secondary mb-3">
+              <i class="icon-location mr-1"></i>
               {{ property.location }}
             </p>
-            <div class="property-features">
-              <span class="feature">{{ property.bedrooms }} hab</span>
-              <span class="feature">{{ property.bathrooms }} baños</span>
-              <span class="feature">{{ property.maxGuests }} huéspedes</span>
-              <span class="feature" *ngIf="property.isVerified">✅ Verificado</span>
+            <div class="d-flex gap-4 flex-wrap">
+              <span class="badge badge-light">{{ property.bedrooms }} hab</span>
+              <span class="badge badge-light">{{ property.bathrooms }} baños</span>
+              <span class="badge badge-light">{{ property.maxGuests }} huéspedes</span>
+              <span class="badge badge-success" *ngIf="property.isVerified">✅ Verificado</span>
             </div>
           </div>
-          <div class="property-info-right">
-            <img [src]="property.image" [alt]="property.title" class="property-image">
+          <div class="flex-shrink-0">
+            <img [src]="property.image" [alt]="property.title" 
+                 class="property-image" 
+                 style="width: 120px; height: 80px; object-fit: cover; border-radius: var(--radius-md);">
           </div>
         </div>
         
@@ -43,56 +38,47 @@
     </div>
   </header>
 
-  <!-- ================================ -->
-  <!-- 📊 BARRA DE PROGRESO -->
-  <!-- ================================ -->
-  
-  <div class="progress-section">
-    <div class="container">
+  <div class="progress-section card bg-white border-0 shadow-md">
+    <div class="container p-6">
       <div class="progress-bar">
-        <div class="progress-steps">
-          
-          <div class="progress-step" 
+        <div class="progress-steps d-flex justify-between align-center mb-4">
+          <div class="progress-step d-flex flex-column align-center cursor-pointer" 
                [class.active]="currentStep >= 1" 
                [class.completed]="currentStep > 1"
                (click)="goToStep(1)">
-            <div class="step-number">1</div>
-            <span class="step-label">Fechas</span>
+            <div class="step-number d-flex align-center justify-center">1</div>
+            <span class="step-label text-sm text-center">Fechas</span>
           </div>
           
-          <div class="progress-line" [class.completed]="currentStep > 1"></div>
+          <div class="progress-line flex-1 mx-4" [class.completed]="currentStep > 1"></div>
           
-          <div class="progress-step" 
+          <div class="progress-step d-flex flex-column align-center cursor-pointer" 
                [class.active]="currentStep >= 2" 
                [class.completed]="currentStep > 2"
                (click)="goToStep(2)">
-            <div class="step-number">2</div>
-            <span class="step-label">Huéspedes</span>
+            <div class="step-number d-flex align-center justify-center">2</div>
+            <span class="step-label text-sm text-center">Huéspedes</span>
           </div>
           
-          <div class="progress-line" [class.completed]="currentStep > 2"></div>
+          <div class="progress-line flex-1 mx-4" [class.completed]="currentStep > 2"></div>
           
-          <div class="progress-step" 
+          <div class="progress-step d-flex flex-column align-center cursor-pointer" 
                [class.active]="currentStep >= 3" 
                [class.completed]="currentStep > 3"
                (click)="goToStep(3)">
-            <div class="step-number">3</div>
-            <span class="step-label">Detalles</span>
+            <div class="step-number d-flex align-center justify-center">3</div>
+            <span class="step-label text-sm text-center">Detalles</span>
           </div>
+          <div class="progress-line flex-1 mx-4" [class.completed]="currentStep > 3"></div>
           
-          <div class="progress-line" [class.completed]="currentStep > 3"></div>
-          
-          <div class="progress-step" 
+          <div class="progress-step d-flex flex-column align-center cursor-pointer" 
                [class.active]="currentStep >= 4" 
                [class.completed]="currentStep > 4"
                (click)="goToStep(4)">
-            <div class="step-number">4</div>
-            <span class="step-label">Confirmar</span>
-          </div>
-          
+            <div class="step-number d-flex align-center justify-center">4</div>
+            <span class="step-label text-sm text-center">Confirmar</span>
+          </div>  
         </div>
-        
-        <!-- Barra de progreso visual -->
         <div class="progress-track">
           <div class="progress-fill" [style.width.%]="progressPercentage"></div>
         </div>
@@ -107,106 +93,103 @@
   
   <main class="booking-main">
     <div class="container">
-      <div class="booking-layout">
-        
-        <!-- Contenido del formulario -->
+      <div class="booking-layout grid gap-8">
         <div class="booking-content">
-          
-          <!-- Error global -->
-          <div class="alert alert-error" *ngIf="error">
+          <div class="alert alert-error d-flex align-center gap-2 p-4 mb-4" *ngIf="error">
             <i class="icon-warning"></i>
-            {{ error }}
-            <button class="btn btn-sm" (click)="error = null">✕</button>
+            <span class="flex-1">{{ error }}</span>
+            <button class="btn btn-sm btn-ghost" (click)="error = null">✕</button>
           </div>
 
           <!-- ================================ -->
           <!-- 📅 PASO 1: SELECCIÓN DE FECHAS -->
           <!-- ================================ -->
           
-          <div class="booking-step" *ngIf="currentStep === 1">
-            <h2 class="step-title">¿Cuándo te alojarás?</h2>
-            <p class="step-description">Selecciona las fechas de tu estancia</p>
+          <div class="booking-step card card-hover p-6 mb-4" *ngIf="currentStep === 1">
+            <h2 class="text-2xl font-bold text-primary mb-2">¿Cuándo te alojarás?</h2>
+            <p class="text-secondary mb-6">Selecciona las fechas de tu estancia</p>
             
             <form [formGroup]="datesForm" class="dates-form">
-              
-              <!-- Selectores de fecha -->
-              <div class="date-inputs">
+              <div class="grid grid-cols-2 gap-4 mb-6">
                 <div class="date-input-group">
                   <label class="form-label">Llegada</label>
-                  <input 
-                    type="text" 
-                    formControlName="checkInDate"
-                    class="form-input date-input"
-                    [value]="selectedDates.checkIn ? formatDate(selectedDates.checkIn) : ''"
-                    (click)="toggleCalendar('check-in')"
-                    readonly
-                    placeholder="Seleccionar fecha">
-                  <i class="icon-calendar"></i>
+                  <div class="position-relative">
+                    <input 
+                      type="text" 
+                      formControlName="checkInDate"
+                      class="form-input cursor-pointer"
+                      [value]="selectedDates.checkIn ? formatDate(selectedDates.checkIn) : ''"
+                      (click)="toggleCalendar('check-in')"
+                      readonly
+                      placeholder="Seleccionar fecha">
+                    <i class="icon-calendar position-absolute" 
+                       style="right: 0.75rem; top: 50%; transform: translateY(-50%); margin-top: 1.25rem; pointer-events: none;"></i>
+                  </div>
                 </div>
                 
                 <div class="date-input-group">
                   <label class="form-label">Salida</label>
-                  <input 
-                    type="text" 
-                    formControlName="checkOutDate"
-                    class="form-input date-input"
-                    [value]="selectedDates.checkOut ? formatDate(selectedDates.checkOut) : ''"
-                    (click)="toggleCalendar('check-out')"
-                    readonly
-                    placeholder="Seleccionar fecha">
-                  <i class="icon-calendar"></i>
+                  <div class="position-relative">
+                    <input 
+                      type="text" 
+                      formControlName="checkOutDate"
+                      class="form-input cursor-pointer"
+                      [value]="selectedDates.checkOut ? formatDate(selectedDates.checkOut) : ''"
+                      (click)="toggleCalendar('check-out')"
+                      readonly
+                      placeholder="Seleccionar fecha">
+                    <i class="icon-calendar position-absolute" 
+                       style="right: 0.75rem; top: 50%; transform: translateY(-50%); margin-top: 1.25rem; pointer-events: none;"></i>
+                  </div>
                 </div>
               </div>
-              
-              <!-- Información de la selección -->
-              <div class="date-selection-info" *ngIf="selectedDates.checkIn && selectedDates.checkOut">
-                <div class="nights-info">
-                  <strong>{{ selectedDates.nights }} noches</strong>
-                  <span *ngIf="selectedDates.checkIn && selectedDates.checkOut">
+
+              <div class="card bg-light border p-4 mb-4" 
+                   *ngIf="selectedDates.checkIn && selectedDates.checkOut">
+                <div class="d-flex flex-column gap-1 mb-3">
+                  <strong class="text-primary text-lg">{{ selectedDates.nights }} noches</strong>
+                  <span class="text-secondary text-sm" 
+                        *ngIf="selectedDates.checkIn && selectedDates.checkOut">
                     del {{ formatDate(selectedDates.checkIn) }} al {{ formatDate(selectedDates.checkOut) }}
                   </span>
                 </div>
-                
-                <!-- Descuentos disponibles -->
-                <div class="discounts-info" *ngIf="selectedDates.applicableDiscounts.length > 0">
+
+                <div class="d-flex align-center gap-2 text-success text-sm" 
+                     *ngIf="selectedDates.applicableDiscounts.length > 0">
                   <i class="icon-tag"></i>
-                  <div class="discount-list">
-                    <span *ngFor="let discount of selectedDates.applicableDiscounts" class="discount-item">
+                  <div class="d-flex flex-column gap-1">
+                    <span *ngFor="let discount of selectedDates.applicableDiscounts">
                       {{ discount }}
                     </span>
                   </div>
                 </div>
               </div>
               
-              <!-- Calendario -->
+              <!-- ================================ -->
+              <!-- 📅 CALENDARIO-->
+              <!-- ================================ -->
               <div class="calendar-container" *ngIf="showCalendar && currentMonth">
                 <div class="calendar">
-                  
-                  <!-- Header del calendario -->
                   <div class="calendar-header">
-                    <button class="btn btn-icon" (click)="onCalendarNavigate('prev')">
+                    <button class="btn-calendar-nav" (click)="onCalendarNavigate('prev')">
                       <i class="icon-chevron-left"></i>
                     </button>
                     <h3 class="calendar-title">
                       {{ currentMonth.monthName }} {{ currentMonth.year }}
                     </h3>
-                    <button class="btn btn-icon" (click)="onCalendarNavigate('next')">
+                    <button class="btn-calendar-nav" (click)="onCalendarNavigate('next')">
                       <i class="icon-chevron-right"></i>
                     </button>
                   </div>
-                  
-                  <!-- Días de la semana -->
                   <div class="calendar-weekdays">
-                    <div class="weekday">Dom</div>
-                    <div class="weekday">Lun</div>
-                    <div class="weekday">Mar</div>
-                    <div class="weekday">Mié</div>
-                    <div class="weekday">Jue</div>
-                    <div class="weekday">Vie</div>
-                    <div class="weekday">Sáb</div>
+                    <div class="calendar-weekday">Dom</div>
+                    <div class="calendar-weekday">Lun</div>
+                    <div class="calendar-weekday">Mar</div>
+                    <div class="calendar-weekday">Mié</div>
+                    <div class="calendar-weekday">Jue</div>
+                    <div class="calendar-weekday">Vie</div>
+                    <div class="calendar-weekday">Sáb</div>
                   </div>
-                  
-                  <!-- Días del mes -->
                   <div class="calendar-days">
                     <button 
                       *ngFor="let day of currentMonth.days"
@@ -223,39 +206,38 @@
                       {{ day.dayNumber }}
                     </button>
                   </div>
-                  
-                  <!-- Leyenda -->
+
                   <div class="calendar-legend">
                     <div class="legend-item">
                       <div class="legend-color available"></div>
-                      <span>Disponible</span>
+                      <span class="legend-text">Disponible</span>
                     </div>
                     <div class="legend-item">
                       <div class="legend-color booked"></div>
-                      <span>Ocupado</span>
+                      <span class="legend-text">Ocupado</span>
                     </div>
                     <div class="legend-item">
                       <div class="legend-color blocked"></div>
-                      <span>No disponible</span>
+                      <span class="legend-text">No disponible</span>
                     </div>
                   </div>
                   
                 </div>
               </div>
-              
-              <!-- Errores de validación -->
-              <div class="validation-errors" *ngIf="dateValidation && !dateValidation.isValid">
-                <div class="alert alert-warning" *ngFor="let error of dateValidation.errors">
+
+              <div class="validation-errors mt-4" *ngIf="dateValidation && !dateValidation.isValid">
+                <div class="alert alert-warning d-flex align-start gap-2 p-3 mb-2" 
+                     *ngFor="let error of dateValidation.errors">
                   <i class="icon-warning"></i>
-                  {{ error.message }}
+                  <span>{{ error.message }}</span>
                 </div>
               </div>
               
-              <!-- Advertencias -->
-              <div class="validation-warnings" *ngIf="dateValidation && dateValidation.warnings.length > 0">
-                <div class="alert alert-info" *ngFor="let warning of dateValidation.warnings">
+              <div class="validation-warnings mt-4" *ngIf="dateValidation && dateValidation.warnings.length > 0">
+                <div class="alert alert-info d-flex align-start gap-2 p-3 mb-2" 
+                     *ngFor="let warning of dateValidation.warnings">
                   <i class="icon-info"></i>
-                  {{ warning.message }}
+                  <span>{{ warning.message }}</span>
                 </div>
               </div>
               
@@ -266,32 +248,34 @@
           <!-- 👥 PASO 2: SELECCIÓN DE HUÉSPEDES -->
           <!-- ================================ -->
           
-          <div class="booking-step" *ngIf="currentStep === 2">
-            <h2 class="step-title">¿Cuántos huéspedes?</h2>
-            <p class="step-description">Esta propiedad puede alojar hasta {{ maxGuests }} huéspedes</p>
+          <div class="booking-step card card-hover p-6 mb-4" *ngIf="currentStep === 2">
+            <h2 class="text-2xl font-bold text-primary mb-2">¿Cuántos huéspedes?</h2>
+            <p class="text-secondary mb-6">Esta propiedad puede alojar hasta {{ maxGuests }} huéspedes</p>
             
             <form [formGroup]="guestsForm" class="guests-form">
               
-              <div class="guest-selector">
-                
-                <!-- Adultos -->
-                <div class="guest-type">
-                  <div class="guest-info">
-                    <strong>Adultos</strong>
-                    <span>Edad 18+</span>
+              <div class="d-flex flex-column gap-6 mb-6">
+                <div class="guest-type card p-4 d-flex justify-between align-center">
+                  <div class="guest-info d-flex flex-column">
+                    <strong class="text-primary mb-1">Adultos</strong>
+                    <span class="text-secondary text-sm">Edad 18+</span>
                   </div>
-                  <div class="guest-counter">
+                  <div class="guest-counter d-flex align-center gap-4">
                     <button 
                       type="button" 
-                      class="btn btn-icon counter-btn"
+                      class="btn btn-ghost counter-btn"
+                      style="width: 32px; height: 32px; border-radius: 50%;"
                       [disabled]="guestsForm.get('adults')?.value <= 1"
                       (click)="guestsForm.patchValue({ adults: guestsForm.get('adults')?.value - 1 })">
                       -
                     </button>
-                    <span class="counter-value">{{ guestsForm.get('adults')?.value }}</span>
+                    <span class="counter-value font-semibold text-primary text-center" style="min-width: 20px;">
+                      {{ guestsForm.get('adults')?.value }}
+                    </span>
                     <button 
                       type="button" 
-                      class="btn btn-icon counter-btn"
+                      class="btn btn-ghost counter-btn"
+                      style="width: 32px; height: 32px; border-radius: 50%;"
                       [disabled]="(guestsForm.get('adults')?.value + guestsForm.get('children')?.value + guestsForm.get('infants')?.value) >= maxGuests"
                       (click)="guestsForm.patchValue({ adults: guestsForm.get('adults')?.value + 1 })">
                       +
@@ -299,24 +283,27 @@
                   </div>
                 </div>
                 
-                <!-- Niños -->
-                <div class="guest-type">
-                  <div class="guest-info">
-                    <strong>Niños</strong>
-                    <span>Edad 2-17</span>
+                <div class="guest-type card p-4 d-flex justify-between align-center">
+                  <div class="guest-info d-flex flex-column">
+                    <strong class="text-primary mb-1">Niños</strong>
+                    <span class="text-secondary text-sm">Edad 2-17</span>
                   </div>
-                  <div class="guest-counter">
+                  <div class="guest-counter d-flex align-center gap-4">
                     <button 
                       type="button" 
-                      class="btn btn-icon counter-btn"
+                      class="btn btn-ghost counter-btn"
+                      style="width: 32px; height: 32px; border-radius: 50%;"
                       [disabled]="guestsForm.get('children')?.value <= 0"
                       (click)="guestsForm.patchValue({ children: guestsForm.get('children')?.value - 1 })">
                       -
                     </button>
-                    <span class="counter-value">{{ guestsForm.get('children')?.value }}</span>
+                    <span class="counter-value font-semibold text-primary text-center" style="min-width: 20px;">
+                      {{ guestsForm.get('children')?.value }}
+                    </span>
                     <button 
                       type="button" 
-                      class="btn btn-icon counter-btn"
+                      class="btn btn-ghost counter-btn"
+                      style="width: 32px; height: 32px; border-radius: 50%;"
                       [disabled]="(guestsForm.get('adults')?.value + guestsForm.get('children')?.value + guestsForm.get('infants')?.value) >= maxGuests"
                       (click)="guestsForm.patchValue({ children: guestsForm.get('children')?.value + 1 })">
                       +
@@ -324,24 +311,27 @@
                   </div>
                 </div>
                 
-                <!-- Bebés -->
-                <div class="guest-type">
-                  <div class="guest-info">
-                    <strong>Bebés</strong>
-                    <span>Menos de 2 años</span>
+                <div class="guest-type card p-4 d-flex justify-between align-center">
+                  <div class="guest-info d-flex flex-column">
+                    <strong class="text-primary mb-1">Bebés</strong>
+                    <span class="text-secondary text-sm">Menos de 2 años</span>
                   </div>
-                  <div class="guest-counter">
+                  <div class="guest-counter d-flex align-center gap-4">
                     <button 
                       type="button" 
-                      class="btn btn-icon counter-btn"
+                      class="btn btn-ghost counter-btn"
+                      style="width: 32px; height: 32px; border-radius: 50%;"
                       [disabled]="guestsForm.get('infants')?.value <= 0"
                       (click)="guestsForm.patchValue({ infants: guestsForm.get('infants')?.value - 1 })">
                       -
                     </button>
-                    <span class="counter-value">{{ guestsForm.get('infants')?.value }}</span>
+                    <span class="counter-value font-semibold text-primary text-center" style="min-width: 20px;">
+                      {{ guestsForm.get('infants')?.value }}
+                    </span>
                     <button 
                       type="button" 
-                      class="btn btn-icon counter-btn"
+                      class="btn btn-ghost counter-btn"
+                      style="width: 32px; height: 32px; border-radius: 50%;"
                       [disabled]="guestsForm.get('infants')?.value >= 3"
                       (click)="guestsForm.patchValue({ infants: guestsForm.get('infants')?.value + 1 })">
                       +
@@ -350,12 +340,13 @@
                 </div>
                 
               </div>
-              
-              <!-- Resumen de huéspedes -->
-              <div class="guests-summary">
-                <strong>Total: {{ (guestsForm.get('adults')?.value || 0) + (guestsForm.get('children')?.value || 0) + (guestsForm.get('infants')?.value || 0) }} huéspedes</strong>
+
+              <div class="guests-summary card bg-light p-4 text-center">
+                <strong class="text-primary d-block mb-2">
+                  Total: {{ (guestsForm.get('adults')?.value || 0) + (guestsForm.get('children')?.value || 0) + (guestsForm.get('infants')?.value || 0) }} huéspedes
+                </strong>
                 <span *ngIf="(guestsForm.get('adults')?.value || 0) + (guestsForm.get('children')?.value || 0) + (guestsForm.get('infants')?.value || 0) > maxGuests" 
-                      class="error-text">
+                      class="text-error text-sm">
                   Esta propiedad puede alojar máximo {{ maxGuests }} huéspedes
                 </span>
               </div>
@@ -367,17 +358,15 @@
           <!-- 📝 PASO 3: DETALLES DEL HUÉSPED -->
           <!-- ================================ -->
           
-          <div class="booking-step" *ngIf="currentStep === 3">
-            <h2 class="step-title">Información del huésped</h2>
-            <p class="step-description">Completa tus datos para la reserva</p>
+          <div class="booking-step card card-hover p-6 mb-4" *ngIf="currentStep === 3">
+            <h2 class="text-2xl font-bold text-primary mb-2">Información del huésped</h2>
+            <p class="text-secondary mb-6">Completa tus datos para la reserva</p>
             
             <form [formGroup]="detailsForm" class="details-form">
-              
-              <!-- Información personal -->
-              <div class="form-section">
-                <h3 class="section-title">Datos personales</h3>
+              <div class="form-section mb-8 pb-6" style="border-bottom: 1px solid var(--border-color);">
+                <h3 class="text-xl font-semibold text-primary mb-6">Datos personales</h3>
                 
-                <div class="form-row">
+                <div class="grid grid-cols-2 gap-4">
                   <div class="form-group">
                     <label class="form-label">Nombre *</label>
                     <input 
@@ -385,7 +374,8 @@
                       formControlName="firstName"
                       class="form-input"
                       placeholder="Tu nombre">
-                    <div class="form-error" *ngIf="detailsForm.get('firstName')?.invalid && detailsForm.get('firstName')?.touched">
+                    <div class="text-error text-sm mt-2" 
+                         *ngIf="detailsForm.get('firstName')?.invalid && detailsForm.get('firstName')?.touched">
                       El nombre es requerido (mín. 2 caracteres)
                     </div>
                   </div>
@@ -397,13 +387,14 @@
                       formControlName="lastName"
                       class="form-input"
                       placeholder="Tu apellido">
-                    <div class="form-error" *ngIf="detailsForm.get('lastName')?.invalid && detailsForm.get('lastName')?.touched">
+                    <div class="text-error text-sm mt-2" 
+                         *ngIf="detailsForm.get('lastName')?.invalid && detailsForm.get('lastName')?.touched">
                       El apellido es requerido (mín. 2 caracteres)
                     </div>
                   </div>
                 </div>
                 
-                <div class="form-row">
+                <div class="grid grid-cols-2 gap-4">
                   <div class="form-group">
                     <label class="form-label">Email *</label>
                     <input 
@@ -411,7 +402,8 @@
                       formControlName="email"
                       class="form-input"
                       placeholder="tu@email.com">
-                    <div class="form-error" *ngIf="detailsForm.get('email')?.invalid && detailsForm.get('email')?.touched">
+                    <div class="text-error text-sm mt-2" 
+                         *ngIf="detailsForm.get('email')?.invalid && detailsForm.get('email')?.touched">
                       Email válido requerido
                     </div>
                   </div>
@@ -423,7 +415,8 @@
                       formControlName="phone"
                       class="form-input"
                       placeholder="+57 300 123 4567">
-                    <div class="form-error" *ngIf="detailsForm.get('phone')?.invalid && detailsForm.get('phone')?.touched">
+                    <div class="text-error text-sm mt-2" 
+                         *ngIf="detailsForm.get('phone')?.invalid && detailsForm.get('phone')?.touched">
                       Teléfono válido requerido
                     </div>
                   </div>
@@ -439,11 +432,10 @@
                 </div>
               </div>
               
-              <!-- Documentación -->
-              <div class="form-section">
-                <h3 class="section-title">Documentación</h3>
+              <div class="form-section mb-8 pb-6" style="border-bottom: 1px solid var(--border-color);">
+                <h3 class="text-xl font-semibold text-primary mb-6">Documentación</h3>
                 
-                <div class="form-row">
+                <div class="grid grid-cols-2 gap-4">
                   <div class="form-group">
                     <label class="form-label">Tipo de documento *</label>
                     <select formControlName="documentType" class="form-select">
@@ -460,7 +452,8 @@
                       formControlName="documentNumber"
                       class="form-input"
                       placeholder="Número de identificación">
-                    <div class="form-error" *ngIf="detailsForm.get('documentNumber')?.invalid && detailsForm.get('documentNumber')?.touched">
+                    <div class="text-error text-sm mt-2" 
+                         *ngIf="detailsForm.get('documentNumber')?.invalid && detailsForm.get('documentNumber')?.touched">
                       Número de documento requerido (mín. 6 caracteres)
                     </div>
                   </div>
@@ -476,11 +469,10 @@
                 </div>
               </div>
               
-              <!-- Detalles del viaje -->
-              <div class="form-section">
-                <h3 class="section-title">Detalles del viaje</h3>
+              <div class="form-section mb-8 pb-6" style="border-bottom: 1px solid var(--border-color);">
+                <h3 class="text-xl font-semibold text-primary mb-6">Detalles del viaje</h3>
                 
-                <div class="form-row">
+                <div class="grid grid-cols-2 gap-4">
                   <div class="form-group">
                     <label class="form-label">Motivo del viaje</label>
                     <select formControlName="purposeOfStay" class="form-select">
@@ -501,7 +493,7 @@
                 </div>
                 
                 <div class="form-group">
-                  <label class="form-label">
+                  <label class="form-label d-flex align-center gap-2">
                     <input 
                       type="checkbox" 
                       formControlName="isFirstTimeInArmenia"
@@ -519,12 +511,10 @@
                     placeholder="Cualquier solicitud especial para tu estancia..."></textarea>
                 </div>
               </div>
-              
-              <!-- Contacto de emergencia -->
               <div class="form-section">
-                <h3 class="section-title">Contacto de emergencia (opcional)</h3>
+                <h3 class="text-xl font-semibold text-primary mb-6">Contacto de emergencia (opcional)</h3>
                 
-                <div class="form-row">
+                <div class="grid grid-cols-2 gap-4">
                   <div class="form-group">
                     <label class="form-label">Nombre completo</label>
                     <input 
@@ -533,7 +523,6 @@
                       class="form-input"
                       placeholder="Nombre del contacto de emergencia">
                   </div>
-                  
                   <div class="form-group">
                     <label class="form-label">Teléfono</label>
                     <input 
@@ -543,7 +532,6 @@
                       placeholder="+57 300 123 4567">
                   </div>
                 </div>
-                
                 <div class="form-group">
                   <label class="form-label">Relación</label>
                   <input 
@@ -561,77 +549,75 @@
           <!-- ✅ PASO 4: REVISIÓN Y CONFIRMACIÓN -->
           <!-- ================================ -->
           
-          <div class="booking-step" *ngIf="currentStep === 4">
-            <h2 class="step-title">Confirma tu reserva</h2>
-            <p class="step-description">Revisa todos los detalles antes de confirmar</p>
+          <div class="booking-step card card-hover p-6 mb-4" *ngIf="currentStep === 4">
+            <h2 class="text-2xl font-bold text-primary mb-2">Confirma tu reserva</h2>
+            <p class="text-secondary mb-6">Revisa todos los detalles antes de confirmar</p>
             
-            <div class="booking-review">
-              
-              <!-- Resumen de fechas -->
-              <div class="review-section">
-                <h3 class="review-title">Fechas de tu estancia</h3>
-                <div class="review-content">
-                  <div class="date-summary">
-                    <div class="date-item">
-                      <strong>Llegada:</strong>
-                      <span>{{ formatDate(selectedDates.checkIn!) }}</span>
+            <div class="d-flex flex-column gap-6">
+              <div class="review-section card border p-6">
+                <h3 class="text-lg font-semibold text-primary mb-4">Fechas de tu estancia</h3>
+                <div class="d-flex justify-between align-start">
+                  <div class="d-flex flex-column gap-2">
+                    <div class="d-flex justify-between gap-4">
+                      <strong class="text-primary">Llegada:</strong>
+                      <span class="text-secondary">{{ formatDate(selectedDates.checkIn!) }}</span>
                     </div>
-                    <div class="date-item">
-                      <strong>Salida:</strong>
-                      <span>{{ formatDate(selectedDates.checkOut!) }}</span>
+                    <div class="d-flex justify-between gap-4">
+                      <strong class="text-primary">Salida:</strong>
+                      <span class="text-secondary">{{ formatDate(selectedDates.checkOut!) }}</span>
                     </div>
-                    <div class="date-item">
-                      <strong>Duración:</strong>
-                      <span>{{ selectedDates.nights }} noches</span>
+                    <div class="d-flex justify-between gap-4">
+                      <strong class="text-primary">Duración:</strong>
+                      <span class="text-secondary">{{ selectedDates.nights }} noches</span>
                     </div>
                   </div>
-                  <button class="btn btn-link" (click)="goToStep(1)">Editar fechas</button>
+                  <button class="btn btn-link btn-sm" (click)="goToStep(1)">Editar fechas</button>
                 </div>
               </div>
-              
-              <!-- Resumen de huéspedes -->
-              <div class="review-section">
-                <h3 class="review-title">Huéspedes</h3>
-                <div class="review-content">
-                  <div class="guests-summary" *ngIf="currentBooking && currentBooking.guests">
+
+              <div class="review-section card border p-6">
+                <h3 class="text-lg font-semibold text-primary mb-4">Huéspedes</h3>
+                <div class="d-flex justify-between align-start">
+                  <div class="d-flex flex-column gap-1 text-secondary" 
+                       *ngIf="currentBooking && currentBooking.guests">
                     <span *ngIf="currentBooking.guests.adults">{{ currentBooking.guests.adults }} adulto(s)</span>
                     <span *ngIf="currentBooking.guests.children">{{ currentBooking.guests.children }} niño(s)</span>
                     <span *ngIf="currentBooking.guests.infants">{{ currentBooking.guests.infants }} bebé(s)</span>
                   </div>
-                  <button class="btn btn-link" (click)="goToStep(2)">Editar huéspedes</button>
+                  <button class="btn btn-link btn-sm" (click)="goToStep(2)">Editar huéspedes</button>
                 </div>
               </div>
-              
-              <!-- Información del huésped -->
-              <div class="review-section">
-                <h3 class="review-title">Información del huésped principal</h3>
-                <div class="review-content">
-                  <div class="guest-info-summary">
-                    <p><strong>{{ currentBooking?.guestInfo?.firstName }} {{ currentBooking?.guestInfo?.lastName }}</strong></p>
-                    <p>{{ currentBooking?.guestInfo?.email }}</p>
-                    <p>{{ currentBooking?.guestInfo?.phone }}</p>
+
+              <div class="review-section card border p-6">
+                <h3 class="text-lg font-semibold text-primary mb-4">Información del huésped principal</h3>
+                <div class="d-flex justify-between align-start">
+                  <div class="guest-info-summary text-secondary">
+                    <p class="mb-1"><strong class="text-primary">{{ currentBooking?.guestInfo?.firstName }} {{ currentBooking?.guestInfo?.lastName }}</strong></p>
+                    <p class="mb-1">{{ currentBooking?.guestInfo?.email }}</p>
+                    <p class="mb-0">{{ currentBooking?.guestInfo?.phone }}</p>
                   </div>
-                  <button class="btn btn-link" (click)="goToStep(3)">Editar información</button>
+                  <button class="btn btn-link btn-sm" (click)="goToStep(3)">Editar información</button>
                 </div>
               </div>
-              
-              <!-- Políticas importantes -->
-              <div class="review-section">
-                <h3 class="review-title">Políticas importantes</h3>
-                <div class="review-content">
-                  <div class="policies">
-                    <div class="policy-item">
-                      <strong>Check-in:</strong> {{ property?.checkInTime || '15:00' }}
-                    </div>
-                    <div class="policy-item">
-                      <strong>Check-out:</strong> {{ property?.checkOutTime || '11:00' }}
-                    </div>
-                    <div class="policy-item">
-                      <strong>Cancelación:</strong> Política {{ property?.cancellationPolicy || 'moderada' }}
-                    </div>
-                    <div class="policy-item" *ngIf="property?.minimumStay">
-                      <strong>Estancia mínima:</strong> {{ property?.minimumStay || 1 }} noche(s)
-                    </div>
+
+              <div class="review-section card border p-6">
+                <h3 class="text-lg font-semibold text-primary mb-4">Políticas importantes</h3>
+                <div class="d-flex flex-column gap-2">
+                  <div class="d-flex justify-between gap-4">
+                    <strong class="text-primary">Check-in:</strong>
+                    <span class="text-secondary">{{ property?.checkInTime || '15:00' }}</span>
+                  </div>
+                  <div class="d-flex justify-between gap-4">
+                    <strong class="text-primary">Check-out:</strong>
+                    <span class="text-secondary">{{ property?.checkOutTime || '11:00' }}</span>
+                  </div>
+                  <div class="d-flex justify-between gap-4">
+                    <strong class="text-primary">Cancelación:</strong>
+                    <span class="text-secondary">Política {{ property?.cancellationPolicy || 'moderada' }}</span>
+                  </div>
+                  <div class="d-flex justify-between gap-4" *ngIf="property?.minimumStay">
+                    <strong class="text-primary">Estancia mínima:</strong>
+                    <span class="text-secondary">{{ property?.minimumStay || 1 }} noche(s)</span>
                   </div>
                 </div>
               </div>
@@ -643,7 +629,8 @@
           <!-- 🎮 NAVEGACIÓN ENTRE PASOS -->
           <!-- ================================ -->
           
-          <div class="step-navigation">
+          <div class="step-navigation d-flex justify-between align-center mt-8 pt-8" 
+               style="border-top: 1px solid var(--border-color);">
             <button 
               class="btn btn-secondary"
               *ngIf="currentStep > 1"
@@ -651,7 +638,7 @@
               ← Anterior
             </button>
             
-            <div class="navigation-spacer"></div>
+            <div class="flex-1"></div>
             
             <button 
               class="btn btn-primary"
@@ -662,7 +649,7 @@
             </button>
             
             <button 
-              class="btn btn-primary btn-large"
+              class="btn btn-primary btn-lg font-semibold"
               *ngIf="currentStep === totalSteps"
               [disabled]="!isValidToSubmit || isSubmitting"
               (click)="submitBooking()">
@@ -672,103 +659,104 @@
           </div>
 
         </div>
-
         <!-- ================================ -->
         <!-- 💰 SIDEBAR CON RESUMEN DE PRECIO -->
         <!-- ================================ -->
         
         <aside class="booking-sidebar">
-          <div class="price-summary card">
-            
-            <!-- Header del resumen -->
-            <div class="summary-header">
-              <div class="property-summary">
-                <img [src]="property?.image" [alt]="property?.title" class="summary-image">
-                <div class="summary-info">
-                  <h4 class="summary-title">{{ property?.title }}</h4>
-                  <p class="summary-location">{{ property?.location }}</p>
-                  <div class="summary-rating">
-                    <span class="rating">⭐ {{ property?.rating }}</span>
-                    <span class="reviews">({{ property?.reviewsCount }} reseñas)</span>
+          <div class="price-summary card shadow-lg border-0">
+
+            <div class="summary-header card-header">
+              <div class="d-flex gap-4">
+                <img [src]="property?.image" [alt]="property?.title" 
+                     class="summary-image flex-shrink-0"
+                     style="width: 80px; height: 60px; object-fit: cover; border-radius: var(--radius-sm);">
+                <div class="flex-1">
+                  <h4 class="text-base font-semibold text-primary mb-1 leading-tight">{{ property?.title }}</h4>
+                  <p class="text-secondary text-sm mb-2">{{ property?.location }}</p>
+                  <div class="d-flex align-center gap-2 text-sm">
+                    <span class="text-warning font-semibold">⭐ {{ property?.rating }}</span>
+                    <span class="text-secondary">({{ property?.reviewsCount }} reseñas)</span>
                   </div>
                 </div>
               </div>
             </div>
-            
-            <!-- Detalles de la reserva -->
-            <div class="summary-details" *ngIf="selectedDates.checkIn && selectedDates.checkOut">
-              <div class="detail-row">
-                <span>Llegada:</span>
-                <span>{{ selectedDates.checkIn | date:'shortDate' }}</span>
+
+            <div class="summary-details card-content" *ngIf="selectedDates.checkIn && selectedDates.checkOut">
+              <div class="d-flex justify-between text-sm mb-2">
+                <span class="text-secondary">Llegada:</span>
+                <span class="text-primary font-medium">{{ selectedDates.checkIn | date:'shortDate' }}</span>
               </div>
-              <div class="detail-row">
-                <span>Salida:</span>
-                <span>{{ selectedDates.checkOut | date:'shortDate' }}</span>
+              <div class="d-flex justify-between text-sm mb-2">
+                <span class="text-secondary">Salida:</span>
+                <span class="text-primary font-medium">{{ selectedDates.checkOut | date:'shortDate' }}</span>
               </div>
-              <div class="detail-row">
-                <span>Huéspedes:</span>
-                <span>{{ currentBooking?.guests?.total || 1 }}</span>
+              <div class="d-flex justify-between text-sm mb-2">
+                <span class="text-secondary">Huéspedes:</span>
+                <span class="text-primary font-medium">{{ currentBooking?.guests?.total || 1 }}</span>
               </div>
-              <div class="detail-row">
-                <span>Noches:</span>
-                <span>{{ selectedDates.nights }}</span>
+              <div class="d-flex justify-between text-sm">
+                <span class="text-secondary">Noches:</span>
+                <span class="text-primary font-medium">{{ selectedDates.nights }}</span>
               </div>
             </div>
-            
-            <!-- Desglose de precios -->
-            <div class="price-breakdown" *ngIf="priceBreakdown">
-              <div class="breakdown-row">
-                <span>{{ formatPrice(priceBreakdown.pricePerNight) }} × {{ priceBreakdown.nights }} noches</span>
-                <span>{{ formatPrice(priceBreakdown.subtotal) }}</span>
+            <div class="price-breakdown card-content" *ngIf="priceBreakdown">
+              <div class="d-flex justify-between text-sm mb-3">
+                <span class="text-secondary">{{ formatPrice(priceBreakdown.pricePerNight) }} × {{ priceBreakdown.nights }} noches</span>
+                <span class="text-primary font-medium">{{ formatPrice(priceBreakdown.subtotal) }}</span>
               </div>
               
-              <div class="breakdown-row discount" *ngIf="priceBreakdown.weeklyDiscount">
+              <div class="d-flex justify-between text-sm mb-3 text-success" 
+                   *ngIf="priceBreakdown.weeklyDiscount">
                 <span>Descuento semanal ({{ priceBreakdown.weeklyDiscount.percentage }}%)</span>
-                <span class="discount-amount">-{{ formatPrice(priceBreakdown.weeklyDiscount.amount) }}</span>
+                <span class="font-semibold">-{{ formatPrice(priceBreakdown.weeklyDiscount.amount) }}</span>
               </div>
               
-              <div class="breakdown-row discount" *ngIf="priceBreakdown.monthlyDiscount">
+              <div class="d-flex justify-between text-sm mb-3 text-success" 
+                   *ngIf="priceBreakdown.monthlyDiscount">
                 <span>Descuento mensual ({{ priceBreakdown.monthlyDiscount.percentage }}%)</span>
-                <span class="discount-amount">-{{ formatPrice(priceBreakdown.monthlyDiscount.amount) }}</span>
+                <span class="font-semibold">-{{ formatPrice(priceBreakdown.monthlyDiscount.amount) }}</span>
               </div>
               
-              <div class="breakdown-row" *ngIf="priceBreakdown.cleaningFee">
-                <span>Tarifa de limpieza</span>
-                <span>{{ formatPrice(priceBreakdown.cleaningFee) }}</span>
+              <div class="d-flex justify-between text-sm mb-3" *ngIf="priceBreakdown.cleaningFee">
+                <span class="text-secondary">Tarifa de limpieza</span>
+                <span class="text-primary font-medium">{{ formatPrice(priceBreakdown.cleaningFee) }}</span>
               </div>
               
-              <div class="breakdown-row" *ngIf="priceBreakdown.serviceFee">
-                <span>Tarifa de servicio</span>
-                <span>{{ formatPrice(priceBreakdown.serviceFee) }}</span>
+              <div class="d-flex justify-between text-sm mb-3" *ngIf="priceBreakdown.serviceFee">
+                <span class="text-secondary">Tarifa de servicio</span>
+                <span class="text-primary font-medium">{{ formatPrice(priceBreakdown.serviceFee) }}</span>
               </div>
               
-              <div class="breakdown-row">
-                <span>IVA ({{ priceBreakdown.iva.percentage }}%)</span>
-                <span>{{ formatPrice(priceBreakdown.iva.amount) }}</span>
+              <div class="d-flex justify-between text-sm mb-4">
+                <span class="text-secondary">IVA ({{ priceBreakdown.iva.percentage }}%)</span>
+                <span class="text-primary font-medium">{{ formatPrice(priceBreakdown.iva.amount) }}</span>
               </div>
               
-              <div class="breakdown-total">
-                <span>Total</span>
-                <span>{{ formatPrice(priceBreakdown.total) }}</span>
+              <div class="d-flex justify-between font-semibold text-base pt-4" 
+                   style="border-top: 1px solid var(--border-color);">
+                <span class="text-primary">Total</span>
+                <span class="text-primary">{{ formatPrice(priceBreakdown.total) }}</span>
               </div>
             </div>
-            
-            <!-- Información del anfitrión -->
-            <div class="host-info" *ngIf="property">
-              <h4>Tu anfitrión</h4>
-              <div class="host-details">
-                <img [src]="property.hostPhoto" [alt]="property.hostName" class="host-avatar">
-                <div class="host-text">
-                  <strong>{{ property.hostName }}</strong>
-                  <span>{{ property.responseTime || 'Respuesta rápida' }}</span>
+
+            <div class="host-info card-footer" *ngIf="property">
+              <h4 class="text-base font-semibold text-primary mb-4">Tu anfitrión</h4>
+              <div class="d-flex align-center gap-3 mb-4">
+                <img [src]="property.hostPhoto" [alt]="property.hostName" 
+                     class="host-avatar"
+                     style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover;">
+                <div class="d-flex flex-column">
+                  <strong class="text-primary mb-1">{{ property.hostName }}</strong>
+                  <span class="text-secondary text-sm">{{ property.responseTime || 'Respuesta rápida' }}</span>
                 </div>
               </div>
               
               <button 
-                class="btn btn-outline btn-full"
+                class="btn btn-outline btn-full d-flex align-center justify-center gap-2"
                 *ngIf="currentStep === 4"
                 (click)="openWhatsApp()">
-                <i class="icon-whatsapp"></i>
+                <i class="icon-whatsapp text-success"></i>
                 Contactar por WhatsApp
               </button>
             </div>
@@ -781,12 +769,12 @@
   </main>
 
 </div>
-
 <!-- ================================ -->
 <!-- 🔄 LOADING STATE -->
 <!-- ================================ -->
 
-<div class="loading-container" *ngIf="isLoading">
-  <div class="loading-spinner"></div>
-  <p>Cargando información de la propiedad...</p>
+<div class="loading-container d-flex flex-column align-center justify-center text-center" 
+     *ngIf="isLoading" style="min-height: 400px;">
+  <div class="loading-spinner mb-4"></div>
+  <p class="text-secondary m-0">Cargando información de la propiedad...</p>
 </div>

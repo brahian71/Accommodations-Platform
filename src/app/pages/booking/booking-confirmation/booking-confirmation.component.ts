@@ -24,7 +24,7 @@ import { Property } from '../../../core/models/property.interface';
       
       <header class="confirmation-header">
         <div class="container">
-          <div class="success-message">
+          <div class="success-message d-flex flex-column align-center gap-4">
             <div class="success-icon">✅</div>
             <div class="success-content">
               <h1 class="success-title">¡Reserva Confirmada!</h1>
@@ -46,7 +46,7 @@ import { Property } from '../../../core/models/property.interface';
           <div class="confirmation-layout">
             
             <!-- Información principal -->
-            <div class="confirmation-content">
+            <div class="confirmation-content d-flex flex-column gap-8">
               
               <!-- Detalles de la propiedad -->
               <section class="detail-section" *ngIf="booking && property">

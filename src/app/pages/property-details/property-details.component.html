@@ -1,8 +1,4 @@
 <!-- 📁 src/app/pages/property-details/property-details.component.html -->
-<!-- ================================
-     PROPERTY DETAILS - ACCOMMODATIONS PLATFORM
-     Vista completa de habitaciones/alojamientos del Norte de Armenia
-     ================================ -->
 
 <div class="property-details-page" *ngIf="property$ | async as property; else loadingTemplate">
 
@@ -25,14 +21,12 @@
   <section class="hero-gallery-section">
     <div class="container">
       <div class="gallery-grid">
-        <!-- Imagen principal -->
         <div class="main-image" (click)="openImageGallery(0)">
           <img 
             [src]="property.image" 
             [alt]="property.title"
             loading="eager">
-          
-          <!-- Overlay con acciones -->
+
           <div class="image-overlay">
             <button class="action-btn favorite-btn" (click)="toggleFavorite(property); $event.stopPropagation()">
               <span [class]="property.isFavorite ? 'heart-filled' : 'heart-empty'">
@@ -49,7 +43,6 @@
             </button>
           </div>
 
-          <!-- Badges -->
           <div class="property-badges">
             <span *ngIf="property.isVerified" class="badge verified-badge">
               ✅ Verificado
@@ -62,16 +55,12 @@
             </span>
           </div>
         </div>
-
-        <!-- Galería secundaria (si hay más imágenes) -->
         <div class="secondary-images" *ngIf="getPropertyImages(property).length > 1">
           <div 
             *ngFor="let image of getPropertyImages(property).slice(1, 5); let i = index"
             class="secondary-image"
             (click)="openImageGallery(i + 1)">
             <img [src]="image" [alt]="property.title + ' - Imagen ' + (i + 2)">
-            
-            <!-- Mostrar contador en la última imagen si hay más -->
             <div 
               *ngIf="i === 3 && getPropertyImages(property).length > 5" 
               class="more-images-overlay">
@@ -87,11 +76,8 @@
   <section class="main-content">
     <div class="container">
       <div class="content-layout">
-        
-        <!-- 📝 PROPERTY INFO COLUMN -->
         <main class="property-info-column">
           
-          <!-- ✨ PROPERTY HEADER -->
           <div class="property-header">
             <div class="property-title-section">
               <h1 class="property-title">{{ property.title }}</h1>
@@ -109,14 +95,11 @@
               </div>
             </div>
           </div>
-
-          <!-- 📝 DESCRIPTION -->
           <div class="description-section">
             <h2>Acerca de este alojamiento</h2>
             <p class="description-text">{{ property.description }}</p>
           </div>
 
-          <!-- 🏠 PROPERTY SPECS -->
           <div class="specs-section">
             <h2>Detalles del alojamiento</h2>
             <div class="specs-grid">
@@ -162,7 +145,6 @@
             </div>
           </div>
 
-          <!-- ✨ FEATURES -->
           <div class="features-section" *ngIf="property.features.length > 0">
             <h2>Características destacadas</h2>
             <div class="features-grid">
@@ -175,11 +157,8 @@
             </div>
           </div>
 
-          <!-- 🔧 AMENITIES -->
           <div class="amenities-section" *ngIf="property.amenities.length > 0">
             <h2>Amenidades disponibles</h2>
-            
-            <!-- Amenidades principales -->
             <div class="main-amenities" *ngIf="getMainAmenities(property).length > 0">
               <h3>Principales</h3>
               <div class="amenities-grid">
@@ -190,8 +169,6 @@
                 </div>
               </div>
             </div>
-
-            <!-- Amenidades adicionales -->
             <div class="secondary-amenities" *ngIf="getSecondaryAmenities(property).length > 0">
               <h3>Adicionales</h3>
               <div class="amenities-grid">
@@ -226,7 +203,6 @@
                 <p>{{ getZoneDescription(property.zone) }}</p>
               </div>
 
-              <!-- Lugares cercanos -->
               <div class="nearby-places" *ngIf="property.nearbyPlaces.length > 0">
                 <h3>Lugares de interés cercanos</h3>
                 <div class="places-list">
@@ -238,8 +214,6 @@
                   </div>
                 </div>
               </div>
-
-              <!-- Acceso de transporte -->
               <div class="transport-access" *ngIf="property.transportAccess.length > 0">
                 <h3>Acceso y transporte</h3>
                 <div class="transport-list">
@@ -327,9 +301,7 @@
 
         <!-- 💰 BOOKING SIDEBAR -->
         <aside class="booking-sidebar">
-          <div class="booking-widget" [class.sticky]="!showBookingWidget">
-            
-            <!-- Precio principal -->
+          <div class="booking-widget" [class.sticky]="!showBookingWidget"> 
             <div class="pricing-header">
               <div class="main-price">
                 <span class="amount">{{ formatCurrency(property.pricePerNight) }}</span>
@@ -341,8 +313,6 @@
                 <span class="reviews">({{ property.reviewsCount }})</span>
               </div>
             </div>
-
-            <!-- Descuentos disponibles -->
             <div class="discounts" *ngIf="property.pricePerWeek || property.pricePerMonth">
               <div class="discount-item" *ngIf="property.pricePerWeek">
                 <span class="discount-label">Semanal</span>
@@ -355,10 +325,7 @@
                 <span class="discount-badge">{{ getMonthlyDiscount(property) }}% desc.</span>
               </div>
             </div>
-
-            <!-- Formulario de reserva -->
             <div class="booking-form">
-              <!-- Fechas -->
               <div class="date-inputs">
                 <div class="date-input-group">
                   <label>Llegada</label>
@@ -382,7 +349,6 @@
                 </div>
               </div>
 
-              <!-- Huéspedes -->
               <div class="guests-input">
                 <label>Huéspedes</label>
                 <select 
@@ -397,7 +363,6 @@
                 </select>
               </div>
 
-              <!-- Resumen de precios -->
               <div class="price-breakdown" *ngIf="bookingData.totalNights > 0">
                 <div class="price-item">
                   <span class="price-label">{{ formatCurrency(property.pricePerNight) }} x {{ bookingData.totalNights }} noches</span>
@@ -412,8 +377,6 @@
                   <span class="total-value">{{ formatCurrency(bookingData.total) }}</span>
                 </div>
               </div>
-
-              <!-- Botones de acción -->
               <div class="booking-actions">
                 <button 
                   *ngIf="property.isInstantBook"
@@ -438,7 +401,6 @@
                 </button>
               </div>
 
-              <!-- Nota de disponibilidad -->
               <div class="availability-note">
                 <p>💡 Este alojamiento suele reservarse rápidamente</p>
               </div>

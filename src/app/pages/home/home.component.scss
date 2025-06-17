@@ -1,19 +1,11 @@
-/* ================================
-   HOME COMPONENT - OPTIMIZADO
-   Aprovecha estilos globales + específicos del componente
-   ================================ */
+// 📁 src/app/pages/home/home.component.scss
 
-// Solo variables específicas del HOME que no están en global
 $hero-min-height: 80vh;
 $search-grid-desktop: 2fr 1fr 1fr 1fr 1.2fr;
 $search-grid-tablet: 1fr 1fr;
 $properties-grid-min-width: 350px;
 
-/* ================================
-   HERO SECTION - ESPECÍFICO DEL HOME
-   ================================ */
 .hero-quindio {
-  // Usar variables globales en lugar de hardcoded
   background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
   color: var(--background-white);
   padding: var(--spacing-4xl) 0;
@@ -22,8 +14,6 @@ $properties-grid-min-width: 350px;
   align-items: center;
   position: relative;
   overflow: hidden;
-
-  // Efecto de parallax sutil
   &::before {
     content: '';
     position: absolute;
@@ -50,7 +40,7 @@ $properties-grid-min-width: 350px;
 }
 
 .hero-title {
-  font-size: clamp(2rem, 5vw, 3.5rem); // Responsive title
+  font-size: clamp(2rem, 5vw, 3.5rem);
   font-weight: var(--font-weight-extrabold);
   margin-bottom: var(--spacing-xl);
   line-height: 1.2;
@@ -103,10 +93,6 @@ $properties-grid-min-width: 350px;
     box-shadow: var(--shadow-md);
   }
 }
-
-/* ================================
-   SEARCH BAR - MEJORADO
-   ================================ */
 .search-bar {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20px);
@@ -138,11 +124,9 @@ $properties-grid-min-width: 350px;
   }
 }
 
-// Sobrescribir estilos globales de inputs específicamente para search
 .search-input,
 .date-input,
 .guests-select {
-  // Heredar estilos base de .form-input global pero personalizar
   width: 100%;
   padding: var(--spacing-md);
   border: 2px solid var(--border-color);
@@ -164,7 +148,6 @@ $properties-grid-min-width: 350px;
 }
 
 .search-btn {
-  // Usar base global .btn pero personalizar
   background: var(--primary-color);
   color: var(--background-white);
   padding: var(--spacing-md) var(--spacing-xl);
@@ -255,9 +238,6 @@ $properties-grid-min-width: 350px;
   }
 }
 
-/* ================================
-   PROPERTIES GRID - MEJORADO
-   ================================ */
 .properties-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax($properties-grid-min-width, 1fr));
@@ -266,7 +246,6 @@ $properties-grid-min-width: 350px;
 }
 
 .property-card {
-  // Usar .card global como base pero personalizar
   overflow: hidden;
   cursor: pointer;
   border: 1px solid var(--border-color);
@@ -407,7 +386,7 @@ $properties-grid-min-width: 350px;
   font-size: var(--font-size-sm);
   display: -webkit-box;
   -webkit-line-clamp: 3;
-  line-clamp: 3; /* Propiedad estándar agregada */
+  line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -440,10 +419,6 @@ $properties-grid-min-width: 350px;
     display: block;
   }
 }
-
-/* ================================
-   LOADING STATE
-   ================================ */
 .loading-container {
   text-align: center;
   padding: var(--spacing-4xl) 0;
@@ -470,9 +445,6 @@ $properties-grid-min-width: 350px;
   to { transform: rotate(360deg); }
 }
 
-/* ================================
-   SECTION HEADER OVERRIDE
-   ================================ */
 .section-header {
   h2::after {
     content: '';
@@ -487,9 +459,6 @@ $properties-grid-min-width: 350px;
   }
 }
 
-/* ================================
-   CTA SECTION ESPECÍFICA
-   ================================ */
 .bg-quindio-gradient {
   background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
   position: relative;
@@ -561,9 +530,6 @@ $properties-grid-min-width: 350px;
   }
 }
 
-/* ================================
-   RESPONSIVE DESIGN
-   ================================ */
 @media (max-width: 1024px) {
   .search-bar {
     grid-template-columns: $search-grid-tablet;
@@ -582,10 +548,8 @@ $properties-grid-min-width: 350px;
   
   .features-grid {
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: var(--spacing-2xl); /* Aumentado de xl a 2xl */
+    gap: var(--spacing-2xl);
   }
-  
-  // Responsive para zonas usando grid global
   .grid.grid-cols-3 {
     grid-template-columns: repeat(2, 1fr);
     &.gap-6 {
@@ -613,10 +577,8 @@ $properties-grid-min-width: 350px;
   
   .features-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: var(--spacing-xl); /* Aumentado de lg a xl */
+    gap: var(--spacing-xl);
   }
-  
-  // Responsive móvil para zonas
   .grid.grid-cols-3 {
     grid-template-columns: 1fr;
     &.gap-6 {
@@ -660,7 +622,7 @@ $properties-grid-min-width: 350px;
   
   .features-grid {
     grid-template-columns: 1fr;
-    gap: var(--spacing-xl); /* Mantener buen espaciado vertical */
+    gap: var(--spacing-xl);
   }
   
   .feature-icon,

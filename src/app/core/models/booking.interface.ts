@@ -9,13 +9,11 @@ export type PaymentMethod = 'whatsapp' | 'transfer' | 'pse' | 'credit-card';
 // ================================
 
 export interface BookingRequest {
-  // Información básica
   propertyId: string;
-  checkInDate: string;    // Format: 'YYYY-MM-DD'
-  checkOutDate: string;   // Format: 'YYYY-MM-DD'
+  checkInDate: string;
+  checkOutDate: string;
   nights: number;
   
-  // Huéspedes
   guests: {
     adults: number;
     children: number;
@@ -23,7 +21,6 @@ export interface BookingRequest {
     total: number;
   };
   
-  // Información del huésped principal
   guestInfo: {
     firstName: string;
     lastName: string;
@@ -40,13 +37,11 @@ export interface BookingRequest {
     };
   };
   
-  // Detalles adicionales
   specialRequests?: string;
   estimatedArrivalTime?: string;
   purposeOfStay: 'vacation' | 'business' | 'family-visit' | 'other';
   isFirstTimeInArmenia: boolean;
-  
-  // Información de contacto del anfitrión
+
   hostWhatsapp: string;
   hostName: string;
 }
@@ -56,12 +51,10 @@ export interface BookingRequest {
 // ================================
 
 export interface PriceBreakdown {
-  // Precios base
   pricePerNight: number;
   nights: number;
   subtotal: number;
   
-  // Descuentos aplicables
   weeklyDiscount?: {
     percentage: number;
     amount: number;
@@ -70,18 +63,15 @@ export interface PriceBreakdown {
     percentage: number;
     amount: number;
   };
-  
-  // Tarifas adicionales
+
   cleaningFee?: number;
   serviceFee?: number;
-  
-  // Impuestos (Colombia)
+
   iva: {
     percentage: number;
     amount: number;
   };
   
-  // Total final
   total: number;
   totalCOP: number;
 }
@@ -99,7 +89,7 @@ export interface PriceCalculatorConfig {
 // ================================
 
 export interface AvailabilityInfo {
-  date: string;              // 'YYYY-MM-DD'
+  date: string;
   isAvailable: boolean;
   isBlocked: boolean;
   isBooked: boolean;
@@ -111,7 +101,7 @@ export interface AvailabilityInfo {
 
 export interface CalendarMonth {
   year: number;
-  month: number;              // 0-11 (JavaScript format)
+  month: number;
   monthName: string;
   days: AvailabilityInfo[];
 }
@@ -129,54 +119,43 @@ export interface BookingDates {
 // ================================
 
 export interface Booking {
-  // Identificación
   id: string;
   bookingReference: string;    // Formato: ARM-20250616-001
   
-  // Estado
   status: BookingStatus;
   paymentStatus: PaymentStatus;
   
-  // Información de la reserva
   propertyId: string;
   propertyTitle: string;
   propertyImage: string;
   propertyAddress: string;
   propertyZone: string;
-  
-  // Fechas y duración
+
   checkInDate: string;
   checkOutDate: string;
   nights: number;
-  
-  // Huéspedes
+
   guests: BookingRequest['guests'];
   guestInfo: BookingRequest['guestInfo'];
-  
-  // Precio
+
   priceBreakdown: PriceBreakdown;
-  
-  // Anfitrión
+
   hostName: string;
   hostWhatsapp: string;
   hostEmail?: string;
-  
-  // Comunicación
+
   whatsappMessageSent: boolean;
   whatsappMessageId?: string;
-  
-  // Detalles adicionales
+
   specialRequests?: string;
   estimatedArrivalTime?: string;
   purposeOfStay: BookingRequest['purposeOfStay'];
-  
-  // Metadata
+
   createdAt: string;
   updatedAt: string;
   confirmedAt?: string;
   cancelledAt?: string;
   
-  // Políticas aplicadas
   cancellationPolicy: 'flexible' | 'moderada' | 'estricta';
   minimumStay: number;
 }
@@ -186,21 +165,17 @@ export interface Booking {
 // ================================
 
 export interface BookingValidationRules {
-  // Fechas
-  maxAdvanceBookingDays: number;     // Máximo 365 días adelante
-  minAdvanceBookingHours: number;    // Mínimo 2 horas adelante
-  maxStayDays: number;               // Máximo 90 días
-  
-  // Huéspedes
+  maxAdvanceBookingDays: number;
+  minAdvanceBookingHours: number;
+  maxStayDays: number;
+
   maxGuestsPerProperty: number;
   requireEmergencyContact: boolean;
-  
-  // Documentación
+
   requiredDocuments: string[];
-  
-  // Check-in/out
-  defaultCheckInTime: string;        // '15:00'
-  defaultCheckOutTime: string;       // '11:00'
+
+  defaultCheckInTime: string;
+  defaultCheckOutTime: string;
   allowSameDayBooking: boolean;
 }
 
@@ -261,7 +236,6 @@ export interface BookingStats {
 // ================================
 
 export const BOOKING_CONSTANTS = {
-  // Configuración por defecto
   DEFAULT_PRICE_CONFIG: {
     applyWeeklyDiscount: true,
     applyMonthlyDiscount: true,
@@ -270,7 +244,6 @@ export const BOOKING_CONSTANTS = {
     ivaPercentage: 19
   } as PriceCalculatorConfig,
   
-  // Reglas de validación
   DEFAULT_VALIDATION_RULES: {
     maxAdvanceBookingDays: 365,
     minAdvanceBookingHours: 2,
@@ -331,13 +304,9 @@ export type BookingRequestKeys = keyof BookingRequest;
 export type BookingKeys = keyof Booking;
 export type RequiredGuestInfo = Required<BookingRequest['guestInfo']>;
 
-// Tipo para formularios parciales durante el proceso
 export type PartialBookingRequest = Partial<BookingRequest>;
 
-// Tipo para actualizaciones de reserva
 export type BookingUpdate = Partial<Pick<Booking, 'status' | 'paymentStatus' | 'specialRequests' | 'estimatedArrivalTime'>>;
-
-// Tipo para búsqueda de reservas
 export interface BookingSearchParams {
   propertyId?: string;
   guestEmail?: string;

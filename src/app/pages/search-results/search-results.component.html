@@ -1,16 +1,13 @@
 <!-- 📁 src/app/pages/search-results/search-results.component.html -->
 
 <div class="search-results-page">
-  
-  <!-- 🔍 HEADER CON BÚSQUEDA COMPACTA -->
+
   <section class="search-header">
     <div class="container">
       <form 
         #searchForm="ngForm" 
         (ngSubmit)="performSearch()"
         class="search-bar-compact">
-        
-        <!-- Zona del Norte -->
         <div class="search-field">
           <label>Zona del Norte</label>
           <select 
@@ -25,8 +22,6 @@
             </option>
           </select>
         </div>
-
-        <!-- Fechas -->
         <div class="search-field">
           <label>Llegada</label>
           <input 
@@ -46,8 +41,6 @@
             [min]="tomorrow"
             class="form-input">
         </div>
-
-        <!-- Huéspedes -->
         <div class="search-field">
           <label>Huéspedes</label>
           <select 
@@ -61,8 +54,6 @@
             <option value="5">5+ Huéspedes</option>
           </select>
         </div>
-
-        <!-- Botón búsqueda -->
         <button 
           type="submit"
           class="btn btn-primary search-btn"
@@ -71,8 +62,6 @@
           {{ isLoading ? 'Buscando...' : 'Buscar' }}
         </button>
       </form>
-
-      <!-- Error de búsqueda -->
       <div *ngIf="searchError" class="search-error">
         {{ searchError }}
       </div>
@@ -83,8 +72,6 @@
   <section class="search-content">
     <div class="container-fluid">
       <div class="search-layout">
-        
-        <!-- 🎯 SIDEBAR DE FILTROS OPTIMIZADO -->
         <aside class="filters-sidebar">
           
           <div class="filters-panel-armenia-norte">
@@ -315,7 +302,6 @@
         <!-- 📋 ÁREA PRINCIPAL DE RESULTADOS -->
         <main class="search-main">
           
-          <!-- 📊 HEADER DE RESULTADOS -->
           <div class="results-header">
             <div class="results-info">
               <h2>{{ totalResults }} habitaciones en el Norte de Armenia</h2>
@@ -330,9 +316,7 @@
               </div>
             </div>
 
-            <!-- 🎛️ CONTROLES DE VISTA -->
             <div class="view-controls">
-              <!-- Ordenamiento -->
               <select 
                 [value]="currentConfig.sortBy" 
                 (change)="updateSortBy($any($event.target).value)"
@@ -343,8 +327,6 @@
                   {{ option.icon }} {{ option.label }}
                 </option>
               </select>
-
-              <!-- Toggle vista -->
               <div class="view-toggle">
                 <button 
                   class="view-btn"
@@ -359,8 +341,6 @@
                   🗺️ Mapa
                 </button>
               </div>
-
-              <!-- Items por página -->
               <select 
                 [value]="currentConfig.itemsPerPage" 
                 (change)="updateItemsPerPage(+$any($event.target).value)"
@@ -373,19 +353,15 @@
               </select>
             </div>
           </div>
-
-          <!-- 🔄 LOADING STATE -->
           <div *ngIf="isLoading" class="loading-container">
             <div class="loading-spinner"></div>
             <p>Buscando habitaciones en el Norte de Armenia...</p>
           </div>
 
-          <!-- 📋 VISTA DE LISTA - ✅ CORREGIDA -->
           <div 
             *ngIf="!isLoading && currentConfig.viewMode === 'list'" 
             class="properties-list">
-            
-            <!-- ✅ PROPIEDADES SIMPLIFICADAS -->
+
             <div 
               *ngFor="let property of paginatedProperties; trackBy: trackByPropertyId"
               class="property-card-horizontal card-interactive"
@@ -398,7 +374,6 @@
                   [alt]="property.title"
                   loading="lazy">
                 
-                <!-- Botón favorito -->
                 <button 
                   class="favorite-btn" 
                   (click)="toggleFavorite(property.id); $event.stopPropagation()">
@@ -406,8 +381,7 @@
                     {{ property.isFavorite ? '❤️' : '🤍' }}
                   </span>
                 </button>
-                
-                <!-- Badges mejorados -->
+
                 <div class="property-badges">
                   <span *ngIf="property.isVerified" class="badge verified-badge">
                     ✅ Verificado
@@ -423,7 +397,6 @@
 
               <!-- 📝 CONTENIDO -->
               <div class="property-content">
-                <!-- Header con rating y ubicación -->
                 <div class="property-header">
                   <div class="property-rating">
                     <span class="stars">⭐</span>
@@ -435,11 +408,9 @@
                   </div>
                 </div>
 
-                <!-- Título y descripción -->
                 <h3 class="property-title">{{ property.title }}</h3>
                 <p class="property-description">{{ property.description }}</p>
 
-                <!-- Información de habitación -->
                 <div class="property-specs">
                   <span class="spec-item">🛏️ {{ property.bedrooms }} habitación{{ property.bedrooms > 1 ? 'es' : '' }}</span>
                   <span class="spec-item">🚿 {{ property.bathrooms }} baño{{ property.bathrooms > 1 ? 's' : '' }}</span>
@@ -447,7 +418,6 @@
                   <span *ngIf="property.area" class="spec-item">📐 {{ property.area }}m²</span>
                 </div>
 
-                <!-- Features -->
                 <div class="property-features">
                   <span 
                     *ngFor="let feature of property.features.slice(0, 3)" 
@@ -461,7 +431,6 @@
                   </span>
                 </div>
 
-                <!-- Amenidades principales -->
                 <div class="main-amenities">
                   <span 
                     *ngFor="let amenity of getMainAmenities(property)" 
@@ -470,7 +439,6 @@
                   </span>
                 </div>
 
-                <!-- Servicios disponibles -->
                 <div class="available-services" *ngIf="property.services.length > 0">
                   <strong>Servicios:</strong>
                   <span 
@@ -485,7 +453,6 @@
                   </span>
                 </div>
 
-                <!-- Información del anfitrión -->
                 <div class="host-info">
                   <span class="host-name">Anfitrión: {{ property.hostName }}</span>
                   <span *ngIf="property.responseTime" class="response-time">
@@ -503,7 +470,6 @@
                   </div>
                   <div class="period">por noche</div>
                   
-                  <!-- Descuentos por estancia larga -->
                   <div *ngIf="property.pricePerWeek" class="discount-info">
                     <span class="weekly-price">Semanal: ${{ property.pricePerWeek | number }}</span>
                     <span class="discount-badge">{{ getWeeklyDiscount(property) }}% desc.</span>
@@ -514,7 +480,6 @@
                   </div>
                 </div>
 
-                <!-- Botones de acción -->
                 <div class="action-buttons">
                   <button 
                     class="btn btn-primary view-property-btn"
@@ -539,7 +504,6 @@
               </div>
             </div>
 
-            <!-- 📄 PAGINACIÓN SIMPLIFICADA -->
             <div class="pagination" *ngIf="totalPages > 1">
               <div class="pagination-content">
                 <button 
@@ -567,7 +531,6 @@
             </div>
           </div>
 
-          <!-- 🗺️ VISTA DE MAPA -->
           <div 
             *ngIf="!isLoading && currentConfig.viewMode === 'map'" 
             class="map-view">
@@ -576,8 +539,7 @@
                 <div class="map-content">
                   <h3>🗺️ Mapa del Norte de Armenia</h3>
                   <p>Vista de mapa con {{ totalResults }} habitaciones</p>
-                  
-                  <!-- Marcadores por zona -->
+
                   <div class="map-zones">
                     <div class="zone-marker norte-centro">
                       <span class="zone-name">Norte Centro</span>
@@ -593,7 +555,6 @@
                     </div>
                   </div>
                   
-                  <!-- Propiedades destacadas en el mapa -->
                   <div class="map-properties">
                     <div 
                       *ngFor="let property of filteredProperties.slice(0, 6)"
@@ -608,8 +569,6 @@
               </div>
             </div>
           </div>
-
-          <!-- 🚫 NO HAY RESULTADOS -->
           <div 
             *ngIf="!isLoading && totalResults === 0" 
             class="no-results">

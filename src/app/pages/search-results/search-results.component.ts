@@ -249,7 +249,7 @@ export class SearchResultsComponent implements OnInit, OnDestroy {
 
   toggleZone(zone: ZoneType, active: boolean): void {
     this.currentFilters.zones[zone] = active;
-    this.currentConfig.currentPage = 1; // Reset pagination
+    this.currentConfig.currentPage = 1;
     this.applyFiltersAndUpdate();
   }
 
@@ -413,7 +413,6 @@ export class SearchResultsComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (isFavorite) => {
-          // Actualizar la propiedad en las listas locales
           this.updatePropertyInLists(propertyId, { isFavorite });
           console.log(`${isFavorite ? '❤️' : '🤍'} Favorito actualizado`);
         },

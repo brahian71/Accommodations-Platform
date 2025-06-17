@@ -23,13 +23,9 @@ export class PropertyService {
     this.loadFavoritesFromStorage();
   }
 
-  // ================================
-  //  MÉTODOS BÁSICOS DE BÚSQUEDA
-  // ================================
-
   getProperties(): Observable<Property[]> {
     return this.properties$.pipe(
-      delay(300) // Simular delay de API
+      delay(300)
     );
   }
   getFeaturedProperties(): Observable<Property[]> {

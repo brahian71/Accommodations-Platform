@@ -1,11 +1,8 @@
 // 📁 src/app/core/services/search.service.ts
-// SEARCH SERVICE PARA HABITACIONES DEL NORTE DE ARMENIA
 
 import { Injectable } from '@angular/core';
 import { Observable, BehaviorSubject, combineLatest } from 'rxjs';
 import { map, debounceTime, distinctUntilChanged } from 'rxjs/operators';
-
-// Importar tipos actualizados
 import { 
   Property, 
   ZoneType, 

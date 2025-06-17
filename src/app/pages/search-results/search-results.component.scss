@@ -1,11 +1,5 @@
-/* ================================
-   SEARCH RESULTS - OPTIMIZADO
-   Usando estilos globales y manteniendo solo específicos
-   ================================ */
+// 📁 src/app/pages/search-results/search-results.component.scss
 
-/* ================================
-   LAYOUT PRINCIPAL
-   ================================ */
 app-search-results {
   display: block;
   width: 100%;
@@ -18,9 +12,6 @@ app-search-results {
   min-height: 100vh;
 }
 
-/* ================================
-   SEARCH HEADER - ESPECÍFICO
-   ================================ */
 .search-header {
   background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
   padding: var(--spacing-2xl) 0;
@@ -55,7 +46,6 @@ app-search-results {
   }
 }
 
-// ✅ Los inputs usan clases globales directamente en el template HTML
 .search-input,
 .date-input,
 .guests-select {
@@ -78,9 +68,6 @@ app-search-results {
   border: 1px solid #FECACA;
 }
 
-/* ================================
-   LAYOUT ESPECÍFICO
-   ================================ */
 .search-content {
   padding: var(--spacing-2xl) 0;
 }
@@ -92,9 +79,6 @@ app-search-results {
   align-items: start;
 }
 
-/* ================================
-   FILTROS SIDEBAR - ESPECÍFICO
-   ================================ */
 .filters-sidebar {
   position: sticky;
   top: var(--spacing-2xl);
@@ -102,7 +86,6 @@ app-search-results {
 }
 
 .filters-panel-armenia-norte {
-  // ✅ Usando variables CSS como card global
   background: var(--background-white);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
@@ -128,7 +111,6 @@ app-search-results {
 }
 
 .clear-filters-btn {
-  // ✅ Usando variables CSS como btn ghost global
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -208,9 +190,6 @@ app-search-results {
   }
 }
 
-/* ================================
-   FILTROS ESPECIALES - ESPECÍFICOS
-   ================================ */
 .price-suggestions {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -265,15 +244,11 @@ app-search-results {
   }
 }
 
-/* ================================
-   RESULTS HEADER - ESPECÍFICO
-   ================================ */
 .search-main {
   min-height: 80vh;
 }
 
 .results-header {
-  // ✅ Usando variables CSS como card global
   background: var(--background-white);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
@@ -320,9 +295,6 @@ app-search-results {
   }
 }
 
-/* ================================
-   VIEW CONTROLS - ESPECÍFICOS
-   ================================ */
 .view-controls {
   display: flex;
   align-items: center;
@@ -332,7 +304,6 @@ app-search-results {
 
 .sort-select,
 .items-per-page-select {
-  // ✅ Usando variables CSS como form-select global
   width: 100%;
   padding: var(--spacing-sm) var(--spacing-md);
   border: 2px solid var(--border-color);
@@ -383,10 +354,6 @@ app-search-results {
     color: var(--primary-color);
   }
 }
-
-/* ================================
-   PROPERTY CARDS - COMPONENTE ESPECÍFICO
-   ================================ */
 .properties-list {
   display: flex;
   flex-direction: column;
@@ -394,7 +361,6 @@ app-search-results {
 }
 
 .property-card-horizontal {
-  // ✅ Usando variables CSS como card-interactive global
   background: var(--background-white);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
@@ -462,7 +428,6 @@ app-search-results {
   gap: var(--spacing-sm);
   
   .badge {
-    // ✅ Usando variables CSS como badge global
     display: inline-flex;
     align-items: center;
     padding: var(--spacing-xs) var(--spacing-md);
@@ -487,9 +452,6 @@ app-search-results {
   }
 }
 
-/* ================================
-   PROPERTY CONTENT - ESPECÍFICO
-   ================================ */
 .property-content {
   padding: var(--spacing-xl);
   display: flex;
@@ -541,7 +503,7 @@ app-search-results {
   margin-bottom: var(--spacing-lg);
   font-size: var(--font-size-sm);
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -571,7 +533,6 @@ app-search-results {
 }
 
 .feature-tag {
-  // ✅ Usando variables CSS como badge-success global
   display: inline-flex;
   align-items: center;
   padding: var(--spacing-xs) var(--spacing-sm);
@@ -643,10 +604,6 @@ app-search-results {
     font-weight: var(--font-weight-medium);
   }
 }
-
-/* ================================
-   PRICING AND ACTIONS - ESPECÍFICO
-   ================================ */
 .property-actions {
   padding: var(--spacing-xl);
   border-left: 1px solid var(--border-color);
@@ -758,9 +715,6 @@ app-search-results {
   }
 }
 
-/* ================================
-   MAP VIEW - ESPECÍFICO
-   ================================ */
 .map-view {
   background: var(--background-white);
   border-radius: var(--radius-lg);
@@ -800,9 +754,6 @@ app-search-results {
   }
 }
 
-/* ================================
-   LOADING & NO RESULTS - ESPECÍFICOS
-   ================================ */
 .loading-container {
   text-align: center;
   padding: var(--spacing-4xl) 0;
@@ -858,17 +809,10 @@ app-search-results {
   gap: var(--spacing-lg);
   flex-wrap: wrap;
 }
-
-/* ================================
-   HOVER EFFECTS ESPECÍFICOS
-   ================================ */
 .property-card-horizontal:hover .property-title {
   color: var(--primary-color);
 }
 
-/* ================================
-   RESPONSIVE ESPECÍFICO
-   ================================ */
 @media (max-width: 1200px) {
   .search-layout {
     grid-template-columns: 250px 1fr;

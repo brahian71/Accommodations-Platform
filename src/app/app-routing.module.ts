@@ -21,9 +21,7 @@ const routes: Routes = [
     path: 'property/:id', 
     loadChildren: () => import('./pages/property-details/property-details.module').then(m => m.PropertyDetailsModule)
   },
-  // ================================
-  // 🚀 NUEVAS RUTAS BOOKING SYSTEM
-  // ================================
+
   {
     path: 'booking',
     loadChildren: () => import('./pages/booking/booking.module').then(m => m.BookingModule),
@@ -36,9 +34,7 @@ const routes: Routes = [
     path: 'booking-confirmation/:bookingId',
     loadChildren: () => import('./pages/booking/booking.module').then(m => m.BookingModule)
   },
-  // ================================
-  // 🔄 RUTAS DE COMPATIBILIDAD
-  // ================================
+
   {
     path: 'search',
     redirectTo: '/search-results'

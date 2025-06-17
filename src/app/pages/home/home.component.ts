@@ -1,5 +1,4 @@
 // 📁 src/app/pages/home/home.component.ts
-// ✅ VERSIÓN CORREGIDA Y OPTIMIZADA
 
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -23,11 +22,7 @@ import { PropertyService } from '../../core/services/property.service';
   styleUrls: ['./home.component.scss']
 })
 export class HomeComponent implements OnInit, OnDestroy {
-  
-  // 🎯 DATOS REACTIVOS
   featuredProperties$: Observable<Property[]>;
-  
-  // 📊 ESTADO
   isLoading = true;
   searchError: string | null = null;
 
@@ -37,15 +32,9 @@ export class HomeComponent implements OnInit, OnDestroy {
     checkOut: '',  
     guests: 2
   };
-  
-  // 🧹 CLEANUP
   private destroy$ = new Subject<void>();
-
-  // 📅 COMPUTED PROPERTIES
   readonly today = new Date().toISOString().split('T')[0];
   readonly tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
-
-  // 🚀 CONFIGURACIONES ESTÁTICAS
   readonly quickSuggestions = QUICK_SUGGESTIONS;
   readonly zonasDelNorte = Object.entries(ARMENIA_NORTH_ZONES).map(([key, value]) => ({
     key: key as ZoneType,
@@ -70,11 +59,6 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.destroy$.next();
     this.destroy$.complete();
   }
-
-  // ================================
-  // 🔧 INICIALIZACIÓN
-  // ================================
-
   private initializeDefaultDates(): void {
     this.searchData.checkIn = this.getDateString(1); 
     this.searchData.checkOut = this.getDateString(3);
@@ -85,11 +69,6 @@ export class HomeComponent implements OnInit, OnDestroy {
     date.setDate(date.getDate() + daysFromNow);
     return date.toISOString().split('T')[0];
   }
-
-  // ================================
-  // 🔄 DATA LOADING
-  // ================================
-  
   private loadFeaturedProperties(): void {
     setTimeout(() => {
       this.isLoading = false;

@@ -84,11 +84,6 @@ export class PropertyDetailsComponent implements OnInit, OnDestroy {
     this.destroy$.next();
     this.destroy$.complete();
   }
-
-  // ================================
-  // 🔄 INICIALIZACIÓN
-  // ================================
-
   private loadPropertyFromRoute(): void {
     this.route.params
       .pipe(takeUntil(this.destroy$))
@@ -102,7 +97,6 @@ export class PropertyDetailsComponent implements OnInit, OnDestroy {
         }
       });
 
-    // Cargar parámetros de búsqueda si vienen de search-results
     this.route.queryParams
       .pipe(takeUntil(this.destroy$))
       .subscribe(params => {
@@ -125,12 +119,9 @@ export class PropertyDetailsComponent implements OnInit, OnDestroy {
             this.notFound = !property;
             
             if (property) {
-              // Incrementar vistas
               this.propertyService.incrementPropertyViews(property.id)
                 .pipe(takeUntil(this.destroy$))
                 .subscribe();
-              
-              // Cargar propiedades similares
               this.loadSimilarProperties(property.id);
             }
           }),
@@ -150,7 +141,6 @@ export class PropertyDetailsComponent implements OnInit, OnDestroy {
   }
 
   private initializeBookingData(): void {
-    // Inicializar con fechas por defecto si no vienen de query params
     if (!this.bookingData.checkIn) {
       this.bookingData.checkIn = this.today;
     }
@@ -245,8 +235,6 @@ export class PropertyDetailsComponent implements OnInit, OnDestroy {
 
   proceedToBooking(property: Property): void {
     if (!this.validateBookingData()) return;
-
-    // Navegar a la página de booking con los datos
     this.router.navigate(['/booking', property.id], {
       queryParams: {
         checkIn: this.bookingData.checkIn,
@@ -288,7 +276,6 @@ export class PropertyDetailsComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (isFavorite) => {
           console.log(`${isFavorite ? '❤️' : '🤍'} Favorito actualizado`);
-          // La actualización del estado se maneja automáticamente por el service
         },
         error: (error) => console.error('❌ Error actualizando favorito:', error)
       });
@@ -317,7 +304,6 @@ export class PropertyDetailsComponent implements OnInit, OnDestroy {
         url: window.location.href
       });
     } else {
-      // Fallback: copiar URL al clipboard
       navigator.clipboard.writeText(window.location.href);
       alert('Enlace copiado al portapapeles');
     }
@@ -336,7 +322,6 @@ export class PropertyDetailsComponent implements OnInit, OnDestroy {
       }
     });
   }
-
   // ================================
   // 📍 NAVEGACIÓN DE SECCIONES
   // ================================
@@ -359,45 +344,35 @@ export class PropertyDetailsComponent implements OnInit, OnDestroy {
   getZoneName(zoneKey: ZoneType): string {
     return ARMENIA_NORTH_ZONES[zoneKey]?.name || zoneKey;
   }
-
   getZoneDescription(zoneKey: ZoneType): string {
     return ARMENIA_NORTH_ZONES[zoneKey]?.description || '';
   }
-
   getZoneIcon(zoneKey: ZoneType): string {
     return ARMENIA_NORTH_ZONES[zoneKey]?.icon || '📍';
   }
-
   getPropertyTypeLabel(type: PropertyType): string {
     return PROPERTY_TYPE_LABELS[type] || type;
   }
-
   getAmenityLabel(amenity: AmenityType): string {
     return AMENITY_LABELS[amenity] || amenity;
   }
-
   getServiceLabel(service: ServiceType): string {
     return SERVICE_LABELS[service] || service;
   }
-
   getMainAmenities(property: Property): AmenityType[] {
     const priorityAmenities: AmenityType[] = ['wifi', 'ac', 'parking', 'kitchen', 'tv'];
     return property.amenities.filter(amenity => priorityAmenities.includes(amenity));
   }
-
   getSecondaryAmenities(property: Property): AmenityType[] {
     const priorityAmenities: AmenityType[] = ['wifi', 'ac', 'parking', 'kitchen', 'tv'];
     return property.amenities.filter(amenity => !priorityAmenities.includes(amenity));
   }
-
   getWeeklyDiscount(property: Property): number {
     return this.propertyService.calculateWeeklyDiscount(property);
   }
-
   getMonthlyDiscount(property: Property): number {
     return this.propertyService.calculateMonthlyDiscount(property);
   }
-
   getCancellationPolicyLabel(policy: string): string {
     const policies = {
       'flexible': 'Cancelación flexible - Reembolso completo hasta 24h antes',
@@ -406,7 +381,6 @@ export class PropertyDetailsComponent implements OnInit, OnDestroy {
     };
     return policies[policy as keyof typeof policies] || policy;
   }
-
   formatCurrency(amount: number): string {
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',
@@ -414,7 +388,6 @@ export class PropertyDetailsComponent implements OnInit, OnDestroy {
       minimumFractionDigits: 0
     }).format(amount);
   }
-
   formatDate(dateString: string): string {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat('es-CO', {
