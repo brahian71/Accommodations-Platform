@@ -1,0 +1,792 @@
+<!-- 📁 src/app/pages/booking/booking.component.html -->
+
+<div class="booking-page" *ngIf="!isLoading">
+  
+  <!-- ================================ -->
+  <!-- 🏠 HEADER CON INFORMACIÓN BÁSICA -->
+  <!-- ================================ -->
+  
+  <header class="booking-header">
+    <div class="container">
+      <div class="booking-header-content">
+        
+        <!-- Breadcrumb -->
+        <nav class="breadcrumb">
+          <a routerLink="/home" class="breadcrumb-link">Inicio</a>
+          <span class="breadcrumb-separator">></span>
+          <a [routerLink]="['/property', property?.id]" class="breadcrumb-link">{{ property?.title }}</a>
+          <span class="breadcrumb-separator">></span>
+          <span class="breadcrumb-current">Reservar</span>
+        </nav>
+        
+        <!-- Información de la propiedad -->
+        <div class="property-info" *ngIf="property">
+          <div class="property-info-left">
+            <h1 class="property-title">{{ property.title }}</h1>
+            <p class="property-location">
+              <i class="icon-location"></i>
+              {{ property.location }}
+            </p>
+            <div class="property-features">
+              <span class="feature">{{ property.bedrooms }} hab</span>
+              <span class="feature">{{ property.bathrooms }} baños</span>
+              <span class="feature">{{ property.maxGuests }} huéspedes</span>
+              <span class="feature" *ngIf="property.isVerified">✅ Verificado</span>
+            </div>
+          </div>
+          <div class="property-info-right">
+            <img [src]="property.image" [alt]="property.title" class="property-image">
+          </div>
+        </div>
+        
+      </div>
+    </div>
+  </header>
+
+  <!-- ================================ -->
+  <!-- 📊 BARRA DE PROGRESO -->
+  <!-- ================================ -->
+  
+  <div class="progress-section">
+    <div class="container">
+      <div class="progress-bar">
+        <div class="progress-steps">
+          
+          <div class="progress-step" 
+               [class.active]="currentStep >= 1" 
+               [class.completed]="currentStep > 1"
+               (click)="goToStep(1)">
+            <div class="step-number">1</div>
+            <span class="step-label">Fechas</span>
+          </div>
+          
+          <div class="progress-line" [class.completed]="currentStep > 1"></div>
+          
+          <div class="progress-step" 
+               [class.active]="currentStep >= 2" 
+               [class.completed]="currentStep > 2"
+               (click)="goToStep(2)">
+            <div class="step-number">2</div>
+            <span class="step-label">Huéspedes</span>
+          </div>
+          
+          <div class="progress-line" [class.completed]="currentStep > 2"></div>
+          
+          <div class="progress-step" 
+               [class.active]="currentStep >= 3" 
+               [class.completed]="currentStep > 3"
+               (click)="goToStep(3)">
+            <div class="step-number">3</div>
+            <span class="step-label">Detalles</span>
+          </div>
+          
+          <div class="progress-line" [class.completed]="currentStep > 3"></div>
+          
+          <div class="progress-step" 
+               [class.active]="currentStep >= 4" 
+               [class.completed]="currentStep > 4"
+               (click)="goToStep(4)">
+            <div class="step-number">4</div>
+            <span class="step-label">Confirmar</span>
+          </div>
+          
+        </div>
+        
+        <!-- Barra de progreso visual -->
+        <div class="progress-track">
+          <div class="progress-fill" [style.width.%]="progressPercentage"></div>
+        </div>
+        
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================ -->
+  <!-- 📋 CONTENIDO PRINCIPAL -->
+  <!-- ================================ -->
+  
+  <main class="booking-main">
+    <div class="container">
+      <div class="booking-layout">
+        
+        <!-- Contenido del formulario -->
+        <div class="booking-content">
+          
+          <!-- Error global -->
+          <div class="alert alert-error" *ngIf="error">
+            <i class="icon-warning"></i>
+            {{ error }}
+            <button class="btn btn-sm" (click)="error = null">✕</button>
+          </div>
+
+          <!-- ================================ -->
+          <!-- 📅 PASO 1: SELECCIÓN DE FECHAS -->
+          <!-- ================================ -->
+          
+          <div class="booking-step" *ngIf="currentStep === 1">
+            <h2 class="step-title">¿Cuándo te alojarás?</h2>
+            <p class="step-description">Selecciona las fechas de tu estancia</p>
+            
+            <form [formGroup]="datesForm" class="dates-form">
+              
+              <!-- Selectores de fecha -->
+              <div class="date-inputs">
+                <div class="date-input-group">
+                  <label class="form-label">Llegada</label>
+                  <input 
+                    type="text" 
+                    formControlName="checkInDate"
+                    class="form-input date-input"
+                    [value]="selectedDates.checkIn ? formatDate(selectedDates.checkIn) : ''"
+                    (click)="toggleCalendar('check-in')"
+                    readonly
+                    placeholder="Seleccionar fecha">
+                  <i class="icon-calendar"></i>
+                </div>
+                
+                <div class="date-input-group">
+                  <label class="form-label">Salida</label>
+                  <input 
+                    type="text" 
+                    formControlName="checkOutDate"
+                    class="form-input date-input"
+                    [value]="selectedDates.checkOut ? formatDate(selectedDates.checkOut) : ''"
+                    (click)="toggleCalendar('check-out')"
+                    readonly
+                    placeholder="Seleccionar fecha">
+                  <i class="icon-calendar"></i>
+                </div>
+              </div>
+              
+              <!-- Información de la selección -->
+              <div class="date-selection-info" *ngIf="selectedDates.checkIn && selectedDates.checkOut">
+                <div class="nights-info">
+                  <strong>{{ selectedDates.nights }} noches</strong>
+                  <span *ngIf="selectedDates.checkIn && selectedDates.checkOut">
+                    del {{ formatDate(selectedDates.checkIn) }} al {{ formatDate(selectedDates.checkOut) }}
+                  </span>
+                </div>
+                
+                <!-- Descuentos disponibles -->
+                <div class="discounts-info" *ngIf="selectedDates.applicableDiscounts.length > 0">
+                  <i class="icon-tag"></i>
+                  <div class="discount-list">
+                    <span *ngFor="let discount of selectedDates.applicableDiscounts" class="discount-item">
+                      {{ discount }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Calendario -->
+              <div class="calendar-container" *ngIf="showCalendar && currentMonth">
+                <div class="calendar">
+                  
+                  <!-- Header del calendario -->
+                  <div class="calendar-header">
+                    <button class="btn btn-icon" (click)="onCalendarNavigate('prev')">
+                      <i class="icon-chevron-left"></i>
+                    </button>
+                    <h3 class="calendar-title">
+                      {{ currentMonth.monthName }} {{ currentMonth.year }}
+                    </h3>
+                    <button class="btn btn-icon" (click)="onCalendarNavigate('next')">
+                      <i class="icon-chevron-right"></i>
+                    </button>
+                  </div>
+                  
+                  <!-- Días de la semana -->
+                  <div class="calendar-weekdays">
+                    <div class="weekday">Dom</div>
+                    <div class="weekday">Lun</div>
+                    <div class="weekday">Mar</div>
+                    <div class="weekday">Mié</div>
+                    <div class="weekday">Jue</div>
+                    <div class="weekday">Vie</div>
+                    <div class="weekday">Sáb</div>
+                  </div>
+                  
+                  <!-- Días del mes -->
+                  <div class="calendar-days">
+                    <button 
+                      *ngFor="let day of currentMonth.days"
+                      class="calendar-day"
+                      [class.available]="isDayAvailable(day)"
+                      [class.blocked]="day.isBlocked"
+                      [class.booked]="day.isBooked"
+                      [class.past]="day.isPastDate"
+                      [class.selected]="isDaySelected(day)"
+                      [class.in-range]="isDayInRange(day)"
+                      [class.today]="day.isToday"
+                      [disabled]="!isDayAvailable(day)"
+                      (click)="onDateSelect(day.date)">
+                      {{ day.dayNumber }}
+                    </button>
+                  </div>
+                  
+                  <!-- Leyenda -->
+                  <div class="calendar-legend">
+                    <div class="legend-item">
+                      <div class="legend-color available"></div>
+                      <span>Disponible</span>
+                    </div>
+                    <div class="legend-item">
+                      <div class="legend-color booked"></div>
+                      <span>Ocupado</span>
+                    </div>
+                    <div class="legend-item">
+                      <div class="legend-color blocked"></div>
+                      <span>No disponible</span>
+                    </div>
+                  </div>
+                  
+                </div>
+              </div>
+              
+              <!-- Errores de validación -->
+              <div class="validation-errors" *ngIf="dateValidation && !dateValidation.isValid">
+                <div class="alert alert-warning" *ngFor="let error of dateValidation.errors">
+                  <i class="icon-warning"></i>
+                  {{ error.message }}
+                </div>
+              </div>
+              
+              <!-- Advertencias -->
+              <div class="validation-warnings" *ngIf="dateValidation && dateValidation.warnings.length > 0">
+                <div class="alert alert-info" *ngFor="let warning of dateValidation.warnings">
+                  <i class="icon-info"></i>
+                  {{ warning.message }}
+                </div>
+              </div>
+              
+            </form>
+          </div>
+
+          <!-- ================================ -->
+          <!-- 👥 PASO 2: SELECCIÓN DE HUÉSPEDES -->
+          <!-- ================================ -->
+          
+          <div class="booking-step" *ngIf="currentStep === 2">
+            <h2 class="step-title">¿Cuántos huéspedes?</h2>
+            <p class="step-description">Esta propiedad puede alojar hasta {{ maxGuests }} huéspedes</p>
+            
+            <form [formGroup]="guestsForm" class="guests-form">
+              
+              <div class="guest-selector">
+                
+                <!-- Adultos -->
+                <div class="guest-type">
+                  <div class="guest-info">
+                    <strong>Adultos</strong>
+                    <span>Edad 18+</span>
+                  </div>
+                  <div class="guest-counter">
+                    <button 
+                      type="button" 
+                      class="btn btn-icon counter-btn"
+                      [disabled]="guestsForm.get('adults')?.value <= 1"
+                      (click)="guestsForm.patchValue({ adults: guestsForm.get('adults')?.value - 1 })">
+                      -
+                    </button>
+                    <span class="counter-value">{{ guestsForm.get('adults')?.value }}</span>
+                    <button 
+                      type="button" 
+                      class="btn btn-icon counter-btn"
+                      [disabled]="(guestsForm.get('adults')?.value + guestsForm.get('children')?.value + guestsForm.get('infants')?.value) >= maxGuests"
+                      (click)="guestsForm.patchValue({ adults: guestsForm.get('adults')?.value + 1 })">
+                      +
+                    </button>
+                  </div>
+                </div>
+                
+                <!-- Niños -->
+                <div class="guest-type">
+                  <div class="guest-info">
+                    <strong>Niños</strong>
+                    <span>Edad 2-17</span>
+                  </div>
+                  <div class="guest-counter">
+                    <button 
+                      type="button" 
+                      class="btn btn-icon counter-btn"
+                      [disabled]="guestsForm.get('children')?.value <= 0"
+                      (click)="guestsForm.patchValue({ children: guestsForm.get('children')?.value - 1 })">
+                      -
+                    </button>
+                    <span class="counter-value">{{ guestsForm.get('children')?.value }}</span>
+                    <button 
+                      type="button" 
+                      class="btn btn-icon counter-btn"
+                      [disabled]="(guestsForm.get('adults')?.value + guestsForm.get('children')?.value + guestsForm.get('infants')?.value) >= maxGuests"
+                      (click)="guestsForm.patchValue({ children: guestsForm.get('children')?.value + 1 })">
+                      +
+                    </button>
+                  </div>
+                </div>
+                
+                <!-- Bebés -->
+                <div class="guest-type">
+                  <div class="guest-info">
+                    <strong>Bebés</strong>
+                    <span>Menos de 2 años</span>
+                  </div>
+                  <div class="guest-counter">
+                    <button 
+                      type="button" 
+                      class="btn btn-icon counter-btn"
+                      [disabled]="guestsForm.get('infants')?.value <= 0"
+                      (click)="guestsForm.patchValue({ infants: guestsForm.get('infants')?.value - 1 })">
+                      -
+                    </button>
+                    <span class="counter-value">{{ guestsForm.get('infants')?.value }}</span>
+                    <button 
+                      type="button" 
+                      class="btn btn-icon counter-btn"
+                      [disabled]="guestsForm.get('infants')?.value >= 3"
+                      (click)="guestsForm.patchValue({ infants: guestsForm.get('infants')?.value + 1 })">
+                      +
+                    </button>
+                  </div>
+                </div>
+                
+              </div>
+              
+              <!-- Resumen de huéspedes -->
+              <div class="guests-summary">
+                <strong>Total: {{ (guestsForm.get('adults')?.value || 0) + (guestsForm.get('children')?.value || 0) + (guestsForm.get('infants')?.value || 0) }} huéspedes</strong>
+                <span *ngIf="(guestsForm.get('adults')?.value || 0) + (guestsForm.get('children')?.value || 0) + (guestsForm.get('infants')?.value || 0) > maxGuests" 
+                      class="error-text">
+                  Esta propiedad puede alojar máximo {{ maxGuests }} huéspedes
+                </span>
+              </div>
+              
+            </form>
+          </div>
+
+          <!-- ================================ -->
+          <!-- 📝 PASO 3: DETALLES DEL HUÉSPED -->
+          <!-- ================================ -->
+          
+          <div class="booking-step" *ngIf="currentStep === 3">
+            <h2 class="step-title">Información del huésped</h2>
+            <p class="step-description">Completa tus datos para la reserva</p>
+            
+            <form [formGroup]="detailsForm" class="details-form">
+              
+              <!-- Información personal -->
+              <div class="form-section">
+                <h3 class="section-title">Datos personales</h3>
+                
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Nombre *</label>
+                    <input 
+                      type="text" 
+                      formControlName="firstName"
+                      class="form-input"
+                      placeholder="Tu nombre">
+                    <div class="form-error" *ngIf="detailsForm.get('firstName')?.invalid && detailsForm.get('firstName')?.touched">
+                      El nombre es requerido (mín. 2 caracteres)
+                    </div>
+                  </div>
+                  
+                  <div class="form-group">
+                    <label class="form-label">Apellido *</label>
+                    <input 
+                      type="text" 
+                      formControlName="lastName"
+                      class="form-input"
+                      placeholder="Tu apellido">
+                    <div class="form-error" *ngIf="detailsForm.get('lastName')?.invalid && detailsForm.get('lastName')?.touched">
+                      El apellido es requerido (mín. 2 caracteres)
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Email *</label>
+                    <input 
+                      type="email" 
+                      formControlName="email"
+                      class="form-input"
+                      placeholder="tu@email.com">
+                    <div class="form-error" *ngIf="detailsForm.get('email')?.invalid && detailsForm.get('email')?.touched">
+                      Email válido requerido
+                    </div>
+                  </div>
+                  
+                  <div class="form-group">
+                    <label class="form-label">Teléfono *</label>
+                    <input 
+                      type="tel" 
+                      formControlName="phone"
+                      class="form-input"
+                      placeholder="+57 300 123 4567">
+                    <div class="form-error" *ngIf="detailsForm.get('phone')?.invalid && detailsForm.get('phone')?.touched">
+                      Teléfono válido requerido
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="form-group">
+                  <label class="form-label">WhatsApp (opcional)</label>
+                  <input 
+                    type="tel" 
+                    formControlName="whatsapp"
+                    class="form-input"
+                    placeholder="Mismo número o diferente">
+                </div>
+              </div>
+              
+              <!-- Documentación -->
+              <div class="form-section">
+                <h3 class="section-title">Documentación</h3>
+                
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Tipo de documento *</label>
+                    <select formControlName="documentType" class="form-select">
+                      <option value="cedula">Cédula de ciudadanía</option>
+                      <option value="pasaporte">Pasaporte</option>
+                      <option value="tarjeta-identidad">Tarjeta de identidad</option>
+                    </select>
+                  </div>
+                  
+                  <div class="form-group">
+                    <label class="form-label">Número de documento *</label>
+                    <input 
+                      type="text" 
+                      formControlName="documentNumber"
+                      class="form-input"
+                      placeholder="Número de identificación">
+                    <div class="form-error" *ngIf="detailsForm.get('documentNumber')?.invalid && detailsForm.get('documentNumber')?.touched">
+                      Número de documento requerido (mín. 6 caracteres)
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="form-group">
+                  <label class="form-label">Nacionalidad *</label>
+                  <input 
+                    type="text" 
+                    formControlName="nationality"
+                    class="form-input"
+                    placeholder="Ej: Colombiana">
+                </div>
+              </div>
+              
+              <!-- Detalles del viaje -->
+              <div class="form-section">
+                <h3 class="section-title">Detalles del viaje</h3>
+                
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Motivo del viaje</label>
+                    <select formControlName="purposeOfStay" class="form-select">
+                      <option value="vacation">Vacaciones</option>
+                      <option value="business">Negocios</option>
+                      <option value="family-visit">Visita familiar</option>
+                      <option value="other">Otro</option>
+                    </select>
+                  </div>
+                  
+                  <div class="form-group">
+                    <label class="form-label">Hora estimada de llegada</label>
+                    <input 
+                      type="time" 
+                      formControlName="estimatedArrivalTime"
+                      class="form-input">
+                  </div>
+                </div>
+                
+                <div class="form-group">
+                  <label class="form-label">
+                    <input 
+                      type="checkbox" 
+                      formControlName="isFirstTimeInArmenia"
+                      class="form-checkbox">
+                    Es mi primera vez en Armenia, Quindío
+                  </label>
+                </div>
+                
+                <div class="form-group">
+                  <label class="form-label">Solicitudes especiales (opcional)</label>
+                  <textarea 
+                    formControlName="specialRequests"
+                    class="form-textarea"
+                    rows="3"
+                    placeholder="Cualquier solicitud especial para tu estancia..."></textarea>
+                </div>
+              </div>
+              
+              <!-- Contacto de emergencia -->
+              <div class="form-section">
+                <h3 class="section-title">Contacto de emergencia (opcional)</h3>
+                
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Nombre completo</label>
+                    <input 
+                      type="text" 
+                      formControlName="emergencyContactName"
+                      class="form-input"
+                      placeholder="Nombre del contacto de emergencia">
+                  </div>
+                  
+                  <div class="form-group">
+                    <label class="form-label">Teléfono</label>
+                    <input 
+                      type="tel" 
+                      formControlName="emergencyContactPhone"
+                      class="form-input"
+                      placeholder="+57 300 123 4567">
+                  </div>
+                </div>
+                
+                <div class="form-group">
+                  <label class="form-label">Relación</label>
+                  <input 
+                    type="text" 
+                    formControlName="emergencyContactRelationship"
+                    class="form-input"
+                    placeholder="Ej: Familiar, Amigo, Pareja">
+                </div>
+              </div>
+              
+            </form>
+          </div>
+
+          <!-- ================================ -->
+          <!-- ✅ PASO 4: REVISIÓN Y CONFIRMACIÓN -->
+          <!-- ================================ -->
+          
+          <div class="booking-step" *ngIf="currentStep === 4">
+            <h2 class="step-title">Confirma tu reserva</h2>
+            <p class="step-description">Revisa todos los detalles antes de confirmar</p>
+            
+            <div class="booking-review">
+              
+              <!-- Resumen de fechas -->
+              <div class="review-section">
+                <h3 class="review-title">Fechas de tu estancia</h3>
+                <div class="review-content">
+                  <div class="date-summary">
+                    <div class="date-item">
+                      <strong>Llegada:</strong>
+                      <span>{{ formatDate(selectedDates.checkIn!) }}</span>
+                    </div>
+                    <div class="date-item">
+                      <strong>Salida:</strong>
+                      <span>{{ formatDate(selectedDates.checkOut!) }}</span>
+                    </div>
+                    <div class="date-item">
+                      <strong>Duración:</strong>
+                      <span>{{ selectedDates.nights }} noches</span>
+                    </div>
+                  </div>
+                  <button class="btn btn-link" (click)="goToStep(1)">Editar fechas</button>
+                </div>
+              </div>
+              
+              <!-- Resumen de huéspedes -->
+              <div class="review-section">
+                <h3 class="review-title">Huéspedes</h3>
+                <div class="review-content">
+                  <div class="guests-summary" *ngIf="currentBooking && currentBooking.guests">
+                    <span *ngIf="currentBooking.guests.adults">{{ currentBooking.guests.adults }} adulto(s)</span>
+                    <span *ngIf="currentBooking.guests.children">{{ currentBooking.guests.children }} niño(s)</span>
+                    <span *ngIf="currentBooking.guests.infants">{{ currentBooking.guests.infants }} bebé(s)</span>
+                  </div>
+                  <button class="btn btn-link" (click)="goToStep(2)">Editar huéspedes</button>
+                </div>
+              </div>
+              
+              <!-- Información del huésped -->
+              <div class="review-section">
+                <h3 class="review-title">Información del huésped principal</h3>
+                <div class="review-content">
+                  <div class="guest-info-summary">
+                    <p><strong>{{ currentBooking?.guestInfo?.firstName }} {{ currentBooking?.guestInfo?.lastName }}</strong></p>
+                    <p>{{ currentBooking?.guestInfo?.email }}</p>
+                    <p>{{ currentBooking?.guestInfo?.phone }}</p>
+                  </div>
+                  <button class="btn btn-link" (click)="goToStep(3)">Editar información</button>
+                </div>
+              </div>
+              
+              <!-- Políticas importantes -->
+              <div class="review-section">
+                <h3 class="review-title">Políticas importantes</h3>
+                <div class="review-content">
+                  <div class="policies">
+                    <div class="policy-item">
+                      <strong>Check-in:</strong> {{ property?.checkInTime || '15:00' }}
+                    </div>
+                    <div class="policy-item">
+                      <strong>Check-out:</strong> {{ property?.checkOutTime || '11:00' }}
+                    </div>
+                    <div class="policy-item">
+                      <strong>Cancelación:</strong> Política {{ property?.cancellationPolicy || 'moderada' }}
+                    </div>
+                    <div class="policy-item" *ngIf="property?.minimumStay">
+                      <strong>Estancia mínima:</strong> {{ property?.minimumStay || 1 }} noche(s)
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+            </div>
+          </div>
+
+          <!-- ================================ -->
+          <!-- 🎮 NAVEGACIÓN ENTRE PASOS -->
+          <!-- ================================ -->
+          
+          <div class="step-navigation">
+            <button 
+              class="btn btn-secondary"
+              *ngIf="currentStep > 1"
+              (click)="previousStep()">
+              ← Anterior
+            </button>
+            
+            <div class="navigation-spacer"></div>
+            
+            <button 
+              class="btn btn-primary"
+              *ngIf="currentStep < totalSteps"
+              [disabled]="!canProceed"
+              (click)="nextStep()">
+              Siguiente →
+            </button>
+            
+            <button 
+              class="btn btn-primary btn-large"
+              *ngIf="currentStep === totalSteps"
+              [disabled]="!isValidToSubmit || isSubmitting"
+              (click)="submitBooking()">
+              <span *ngIf="!isSubmitting">Confirmar Reserva</span>
+              <span *ngIf="isSubmitting">Procesando...</span>
+            </button>
+          </div>
+
+        </div>
+
+        <!-- ================================ -->
+        <!-- 💰 SIDEBAR CON RESUMEN DE PRECIO -->
+        <!-- ================================ -->
+        
+        <aside class="booking-sidebar">
+          <div class="price-summary card">
+            
+            <!-- Header del resumen -->
+            <div class="summary-header">
+              <div class="property-summary">
+                <img [src]="property?.image" [alt]="property?.title" class="summary-image">
+                <div class="summary-info">
+                  <h4 class="summary-title">{{ property?.title }}</h4>
+                  <p class="summary-location">{{ property?.location }}</p>
+                  <div class="summary-rating">
+                    <span class="rating">⭐ {{ property?.rating }}</span>
+                    <span class="reviews">({{ property?.reviewsCount }} reseñas)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Detalles de la reserva -->
+            <div class="summary-details" *ngIf="selectedDates.checkIn && selectedDates.checkOut">
+              <div class="detail-row">
+                <span>Llegada:</span>
+                <span>{{ selectedDates.checkIn | date:'shortDate' }}</span>
+              </div>
+              <div class="detail-row">
+                <span>Salida:</span>
+                <span>{{ selectedDates.checkOut | date:'shortDate' }}</span>
+              </div>
+              <div class="detail-row">
+                <span>Huéspedes:</span>
+                <span>{{ currentBooking?.guests?.total || 1 }}</span>
+              </div>
+              <div class="detail-row">
+                <span>Noches:</span>
+                <span>{{ selectedDates.nights }}</span>
+              </div>
+            </div>
+            
+            <!-- Desglose de precios -->
+            <div class="price-breakdown" *ngIf="priceBreakdown">
+              <div class="breakdown-row">
+                <span>{{ formatPrice(priceBreakdown.pricePerNight) }} × {{ priceBreakdown.nights }} noches</span>
+                <span>{{ formatPrice(priceBreakdown.subtotal) }}</span>
+              </div>
+              
+              <div class="breakdown-row discount" *ngIf="priceBreakdown.weeklyDiscount">
+                <span>Descuento semanal ({{ priceBreakdown.weeklyDiscount.percentage }}%)</span>
+                <span class="discount-amount">-{{ formatPrice(priceBreakdown.weeklyDiscount.amount) }}</span>
+              </div>
+              
+              <div class="breakdown-row discount" *ngIf="priceBreakdown.monthlyDiscount">
+                <span>Descuento mensual ({{ priceBreakdown.monthlyDiscount.percentage }}%)</span>
+                <span class="discount-amount">-{{ formatPrice(priceBreakdown.monthlyDiscount.amount) }}</span>
+              </div>
+              
+              <div class="breakdown-row" *ngIf="priceBreakdown.cleaningFee">
+                <span>Tarifa de limpieza</span>
+                <span>{{ formatPrice(priceBreakdown.cleaningFee) }}</span>
+              </div>
+              
+              <div class="breakdown-row" *ngIf="priceBreakdown.serviceFee">
+                <span>Tarifa de servicio</span>
+                <span>{{ formatPrice(priceBreakdown.serviceFee) }}</span>
+              </div>
+              
+              <div class="breakdown-row">
+                <span>IVA ({{ priceBreakdown.iva.percentage }}%)</span>
+                <span>{{ formatPrice(priceBreakdown.iva.amount) }}</span>
+              </div>
+              
+              <div class="breakdown-total">
+                <span>Total</span>
+                <span>{{ formatPrice(priceBreakdown.total) }}</span>
+              </div>
+            </div>
+            
+            <!-- Información del anfitrión -->
+            <div class="host-info" *ngIf="property">
+              <h4>Tu anfitrión</h4>
+              <div class="host-details">
+                <img [src]="property.hostPhoto" [alt]="property.hostName" class="host-avatar">
+                <div class="host-text">
+                  <strong>{{ property.hostName }}</strong>
+                  <span>{{ property.responseTime || 'Respuesta rápida' }}</span>
+                </div>
+              </div>
+              
+              <button 
+                class="btn btn-outline btn-full"
+                *ngIf="currentStep === 4"
+                (click)="openWhatsApp()">
+                <i class="icon-whatsapp"></i>
+                Contactar por WhatsApp
+              </button>
+            </div>
+            
+          </div>
+        </aside>
+
+      </div>
+    </div>
+  </main>
+
+</div>
+
+<!-- ================================ -->
+<!-- 🔄 LOADING STATE -->
+<!-- ================================ -->
+
+<div class="loading-container" *ngIf="isLoading">
+  <div class="loading-spinner"></div>
+  <p>Cargando información de la propiedad...</p>
+</div>

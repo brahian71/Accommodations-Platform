@@ -1,5 +1,4 @@
 // 📁 src/app/app-routing.module.ts
-// ✅ VERSIÓN CORREGIDA CON ARQUITECTURA CONSISTENTE
 
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
@@ -20,11 +19,37 @@ const routes: Routes = [
   },
   {
     path: 'property/:id', 
-    loadChildren: () => import('./pages/property-details/property-details.module').then(m => m.PropertyDetailsModule) // ✅ CAMBIO: loadChildren
+    loadChildren: () => import('./pages/property-details/property-details.module').then(m => m.PropertyDetailsModule)
   },
+  // ================================
+  // 🚀 NUEVAS RUTAS BOOKING SYSTEM
+  // ================================
+  {
+    path: 'booking',
+    loadChildren: () => import('./pages/booking/booking.module').then(m => m.BookingModule),
+    data: { 
+      title: 'Sistema de Reservas',
+      description: 'Reserva tu alojamiento en el Norte de Armenia' 
+    }
+  },
+  {
+    path: 'booking-confirmation/:bookingId',
+    loadChildren: () => import('./pages/booking/booking.module').then(m => m.BookingModule)
+  },
+  // ================================
+  // 🔄 RUTAS DE COMPATIBILIDAD
+  // ================================
   {
     path: 'search',
     redirectTo: '/search-results'
+  },
+  {
+    path: 'reserve/:id',
+    redirectTo: '/booking/:id'
+  },
+  {
+    path: 'book/:id',
+    redirectTo: '/booking/:id'
   },
   {
     path: '**',
@@ -33,7 +58,12 @@ const routes: Routes = [
 ];
 
 @NgModule({
-  imports: [RouterModule.forRoot(routes)],
+  imports: [RouterModule.forRoot(routes, {
+    enableTracing: false,
+    scrollPositionRestoration: 'top',
+    anchorScrolling: 'enabled',
+    onSameUrlNavigation: 'reload'
+  })],
   exports: [RouterModule]
 })
 export class AppRoutingModule { }
