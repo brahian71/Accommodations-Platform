@@ -2,35 +2,37 @@
 
 <div class="booking-page" *ngIf="!isLoading">
 
-  <header class="booking-header card border-0 mb-4">
+  <header class="booking-header card mb-4">
     <div class="container">
       <div class="d-flex flex-column gap-4">
 
         <nav class="breadcrumb d-flex align-center text-sm text-secondary">
           <a routerLink="/home" class="breadcrumb-link text-primary">Inicio</a>
           <span class="mx-2">></span>
-          <a [routerLink]="['/property', property?.id]" class="breadcrumb-link text-primary">{{ property?.title }}</a>
+          <a routerLink="/rooms" class="breadcrumb-link text-primary">Habitaciones</a>
+          <span class="mx-2">></span>
+          <a [routerLink]="['/rooms', room.id]" class="breadcrumb-link text-primary" *ngIf="room">{{ room.name }}</a>
           <span class="mx-2">></span>
           <span class="text-primary font-medium">Reservar</span>
         </nav>
-        <div class="d-flex justify-between align-start gap-4" *ngIf="property">
+
+        <div class="d-flex justify-between align-start gap-4" *ngIf="room && establishment">
           <div class="flex-1">
-            <h1 class="text-3xl font-bold text-primary mb-2">{{ property.title }}</h1>
+            <h1 class="title-3xl font-bold text-primary mb-2">{{ room.name }}</h1>
             <p class="d-flex align-center text-secondary mb-3">
-              <i class="icon-location mr-1"></i>
-              {{ property.location }}
+              <i class="icon-location mr-2"></i>
+              {{ establishment.name }} - {{ establishment.areaInfo.neighborhood }}
             </p>
             <div class="d-flex gap-4 flex-wrap">
-              <span class="badge badge-light">{{ property.bedrooms }} hab</span>
-              <span class="badge badge-light">{{ property.bathrooms }} baños</span>
-              <span class="badge badge-light">{{ property.maxGuests }} huéspedes</span>
-              <span class="badge badge-success" *ngIf="property.isVerified">✅ Verificado</span>
+              <span class="badge badge-light">{{ room.roomNumber }}</span>
+              <span class="badge badge-light">{{ room.maxGuests }} huéspedes</span>
+              <span class="badge badge-light">{{ room.bathroomType === 'privado' ? 'Baño privado' : 'Baño compartido' }}</span>
+              <span class="badge badge-success" *ngIf="establishment.isVerified">✅ Verificado</span>
             </div>
           </div>
           <div class="flex-shrink-0">
-            <img [src]="property.image" [alt]="property.title" 
-                 class="property-image" 
-                 style="width: 120px; height: 80px; object-fit: cover; border-radius: var(--radius-md);">
+            <img [src]="room.images.main" [alt]="room.name" 
+                 class="room-image">
           </div>
         </div>
         
@@ -38,8 +40,8 @@
     </div>
   </header>
 
-  <div class="progress-section card bg-white border-0 shadow-md">
-    <div class="container p-6">
+  <div class="progress-section card p-6 mb-4">
+    <div class="container">
       <div class="progress-bar">
         <div class="progress-steps d-flex justify-between align-center mb-4">
           <div class="progress-step d-flex flex-column align-center cursor-pointer" 
@@ -82,7 +84,6 @@
         <div class="progress-track">
           <div class="progress-fill" [style.width.%]="progressPercentage"></div>
         </div>
-        
       </div>
     </div>
   </div>
@@ -106,7 +107,7 @@
           <!-- ================================ -->
           
           <div class="booking-step card card-hover p-6 mb-4" *ngIf="currentStep === 1">
-            <h2 class="text-2xl font-bold text-primary mb-2">¿Cuándo te alojarás?</h2>
+            <h2 class="title-2xl font-bold text-primary mb-2">¿Cuándo te alojarás?</h2>
             <p class="text-secondary mb-6">Selecciona las fechas de tu estancia</p>
             
             <form [formGroup]="datesForm" class="dates-form">
@@ -122,8 +123,7 @@
                       (click)="toggleCalendar('check-in')"
                       readonly
                       placeholder="Seleccionar fecha">
-                    <i class="icon-calendar position-absolute" 
-                       style="right: 0.75rem; top: 50%; transform: translateY(-50%); margin-top: 1.25rem; pointer-events: none;"></i>
+                    <i class="icon-calendar position-absolute"></i>
                   </div>
                 </div>
                 
@@ -138,8 +138,7 @@
                       (click)="toggleCalendar('check-out')"
                       readonly
                       placeholder="Seleccionar fecha">
-                    <i class="icon-calendar position-absolute" 
-                       style="right: 0.75rem; top: 50%; transform: translateY(-50%); margin-top: 1.25rem; pointer-events: none;"></i>
+                    <i class="icon-calendar position-absolute"></i>
                   </div>
                 </div>
               </div>
@@ -147,7 +146,7 @@
               <div class="card bg-light border p-4 mb-4" 
                    *ngIf="selectedDates.checkIn && selectedDates.checkOut">
                 <div class="d-flex flex-column gap-1 mb-3">
-                  <strong class="text-primary text-lg">{{ selectedDates.nights }} noches</strong>
+                  <strong class="text-primary title-lg">{{ selectedDates.nights }} noches</strong>
                   <span class="text-secondary text-sm" 
                         *ngIf="selectedDates.checkIn && selectedDates.checkOut">
                     del {{ formatDate(selectedDates.checkIn) }} al {{ formatDate(selectedDates.checkOut) }}
@@ -171,14 +170,25 @@
               <div class="calendar-container" *ngIf="showCalendar && currentMonth">
                 <div class="calendar">
                   <div class="calendar-header">
-                    <button class="btn-calendar-nav" (click)="onCalendarNavigate('prev')">
-                      <i class="icon-chevron-left"></i>
+                    <button 
+                      type="button" 
+                      class="btn-calendar-nav" 
+                      (click)="onCalendarNavigate('prev')"
+                      [disabled]="false"
+                      title="Mes anterior">
+                      <span>&lsaquo;</span>
                     </button>
+                    
                     <h3 class="calendar-title">
                       {{ currentMonth.monthName }} {{ currentMonth.year }}
                     </h3>
-                    <button class="btn-calendar-nav" (click)="onCalendarNavigate('next')">
-                      <i class="icon-chevron-right"></i>
+                    <button 
+                      type="button" 
+                      class="btn-calendar-nav" 
+                      (click)="onCalendarNavigate('next')"
+                      [disabled]="false"
+                      title="Mes siguiente">
+                      <span>&rsaquo;</span>
                     </button>
                   </div>
                   <div class="calendar-weekdays">
@@ -193,6 +203,7 @@
                   <div class="calendar-days">
                     <button 
                       *ngFor="let day of currentMonth.days"
+                      type="button"
                       class="calendar-day"
                       [class.available]="isDayAvailable(day)"
                       [class.blocked]="day.isBlocked"
@@ -249,8 +260,8 @@
           <!-- ================================ -->
           
           <div class="booking-step card card-hover p-6 mb-4" *ngIf="currentStep === 2">
-            <h2 class="text-2xl font-bold text-primary mb-2">¿Cuántos huéspedes?</h2>
-            <p class="text-secondary mb-6">Esta propiedad puede alojar hasta {{ maxGuests }} huéspedes</p>
+            <h2 class="title-2xl font-bold text-primary mb-2">¿Cuántos huéspedes?</h2>
+            <p class="text-secondary mb-6">Esta habitación puede alojar hasta {{ maxGuests }} huéspedes</p>
             
             <form [formGroup]="guestsForm" class="guests-form">
               
@@ -264,18 +275,16 @@
                     <button 
                       type="button" 
                       class="btn btn-ghost counter-btn"
-                      style="width: 32px; height: 32px; border-radius: 50%;"
                       [disabled]="guestsForm.get('adults')?.value <= 1"
                       (click)="guestsForm.patchValue({ adults: guestsForm.get('adults')?.value - 1 })">
                       -
                     </button>
-                    <span class="counter-value font-semibold text-primary text-center" style="min-width: 20px;">
+                    <span class="counter-value font-semibold text-primary text-center">
                       {{ guestsForm.get('adults')?.value }}
                     </span>
                     <button 
                       type="button" 
                       class="btn btn-ghost counter-btn"
-                      style="width: 32px; height: 32px; border-radius: 50%;"
                       [disabled]="(guestsForm.get('adults')?.value + guestsForm.get('children')?.value + guestsForm.get('infants')?.value) >= maxGuests"
                       (click)="guestsForm.patchValue({ adults: guestsForm.get('adults')?.value + 1 })">
                       +
@@ -292,18 +301,16 @@
                     <button 
                       type="button" 
                       class="btn btn-ghost counter-btn"
-                      style="width: 32px; height: 32px; border-radius: 50%;"
                       [disabled]="guestsForm.get('children')?.value <= 0"
                       (click)="guestsForm.patchValue({ children: guestsForm.get('children')?.value - 1 })">
                       -
                     </button>
-                    <span class="counter-value font-semibold text-primary text-center" style="min-width: 20px;">
+                    <span class="counter-value font-semibold text-primary text-center">
                       {{ guestsForm.get('children')?.value }}
                     </span>
                     <button 
                       type="button" 
                       class="btn btn-ghost counter-btn"
-                      style="width: 32px; height: 32px; border-radius: 50%;"
                       [disabled]="(guestsForm.get('adults')?.value + guestsForm.get('children')?.value + guestsForm.get('infants')?.value) >= maxGuests"
                       (click)="guestsForm.patchValue({ children: guestsForm.get('children')?.value + 1 })">
                       +
@@ -320,18 +327,16 @@
                     <button 
                       type="button" 
                       class="btn btn-ghost counter-btn"
-                      style="width: 32px; height: 32px; border-radius: 50%;"
                       [disabled]="guestsForm.get('infants')?.value <= 0"
                       (click)="guestsForm.patchValue({ infants: guestsForm.get('infants')?.value - 1 })">
                       -
                     </button>
-                    <span class="counter-value font-semibold text-primary text-center" style="min-width: 20px;">
+                    <span class="counter-value font-semibold text-primary text-center">
                       {{ guestsForm.get('infants')?.value }}
                     </span>
                     <button 
                       type="button" 
                       class="btn btn-ghost counter-btn"
-                      style="width: 32px; height: 32px; border-radius: 50%;"
                       [disabled]="guestsForm.get('infants')?.value >= 3"
                       (click)="guestsForm.patchValue({ infants: guestsForm.get('infants')?.value + 1 })">
                       +
@@ -347,7 +352,7 @@
                 </strong>
                 <span *ngIf="(guestsForm.get('adults')?.value || 0) + (guestsForm.get('children')?.value || 0) + (guestsForm.get('infants')?.value || 0) > maxGuests" 
                       class="text-error text-sm">
-                  Esta propiedad puede alojar máximo {{ maxGuests }} huéspedes
+                  Esta habitación puede alojar máximo {{ maxGuests }} huéspedes
                 </span>
               </div>
               
@@ -359,12 +364,12 @@
           <!-- ================================ -->
           
           <div class="booking-step card card-hover p-6 mb-4" *ngIf="currentStep === 3">
-            <h2 class="text-2xl font-bold text-primary mb-2">Información del huésped</h2>
+            <h2 class="title-2xl font-bold text-primary mb-2">Información del huésped</h2>
             <p class="text-secondary mb-6">Completa tus datos para la reserva</p>
             
             <form [formGroup]="detailsForm" class="details-form">
-              <div class="form-section mb-8 pb-6" style="border-bottom: 1px solid var(--border-color);">
-                <h3 class="text-xl font-semibold text-primary mb-6">Datos personales</h3>
+              <div class="form-section mb-8 pb-6">
+                <h3 class="title-xl font-semibold text-primary mb-6">Datos personales</h3>
                 
                 <div class="grid grid-cols-2 gap-4">
                   <div class="form-group">
@@ -432,8 +437,8 @@
                 </div>
               </div>
               
-              <div class="form-section mb-8 pb-6" style="border-bottom: 1px solid var(--border-color);">
-                <h3 class="text-xl font-semibold text-primary mb-6">Documentación</h3>
+              <div class="form-section mb-8 pb-6">
+                <h3 class="title-xl font-semibold text-primary mb-6">Documentación</h3>
                 
                 <div class="grid grid-cols-2 gap-4">
                   <div class="form-group">
@@ -469,8 +474,8 @@
                 </div>
               </div>
               
-              <div class="form-section mb-8 pb-6" style="border-bottom: 1px solid var(--border-color);">
-                <h3 class="text-xl font-semibold text-primary mb-6">Detalles del viaje</h3>
+              <div class="form-section mb-8 pb-6">
+                <h3 class="title-xl font-semibold text-primary mb-6">Detalles del viaje</h3>
                 
                 <div class="grid grid-cols-2 gap-4">
                   <div class="form-group">
@@ -511,8 +516,9 @@
                     placeholder="Cualquier solicitud especial para tu estancia..."></textarea>
                 </div>
               </div>
+              
               <div class="form-section">
-                <h3 class="text-xl font-semibold text-primary mb-6">Contacto de emergencia (opcional)</h3>
+                <h3 class="title-xl font-semibold text-primary mb-6">Contacto de emergencia (opcional)</h3>
                 
                 <div class="grid grid-cols-2 gap-4">
                   <div class="form-group">
@@ -550,12 +556,12 @@
           <!-- ================================ -->
           
           <div class="booking-step card card-hover p-6 mb-4" *ngIf="currentStep === 4">
-            <h2 class="text-2xl font-bold text-primary mb-2">Confirma tu reserva</h2>
+            <h2 class="title-2xl font-bold text-primary mb-2">Confirma tu reserva</h2>
             <p class="text-secondary mb-6">Revisa todos los detalles antes de confirmar</p>
             
             <div class="d-flex flex-column gap-6">
               <div class="review-section card border p-6">
-                <h3 class="text-lg font-semibold text-primary mb-4">Fechas de tu estancia</h3>
+                <h3 class="title-lg font-semibold text-primary mb-4">Fechas de tu estancia</h3>
                 <div class="d-flex justify-between align-start">
                   <div class="d-flex flex-column gap-2">
                     <div class="d-flex justify-between gap-4">
@@ -571,12 +577,12 @@
                       <span class="text-secondary">{{ selectedDates.nights }} noches</span>
                     </div>
                   </div>
-                  <button class="btn btn-link btn-sm" (click)="goToStep(1)">Editar fechas</button>
+                  <button type="button" class="btn btn-link btn-sm" (click)="goToStep(1)">Editar fechas</button>
                 </div>
               </div>
 
               <div class="review-section card border p-6">
-                <h3 class="text-lg font-semibold text-primary mb-4">Huéspedes</h3>
+                <h3 class="title-lg font-semibold text-primary mb-4">Huéspedes</h3>
                 <div class="d-flex justify-between align-start">
                   <div class="d-flex flex-column gap-1 text-secondary" 
                        *ngIf="currentBooking && currentBooking.guests">
@@ -584,40 +590,40 @@
                     <span *ngIf="currentBooking.guests.children">{{ currentBooking.guests.children }} niño(s)</span>
                     <span *ngIf="currentBooking.guests.infants">{{ currentBooking.guests.infants }} bebé(s)</span>
                   </div>
-                  <button class="btn btn-link btn-sm" (click)="goToStep(2)">Editar huéspedes</button>
+                  <button type="button" class="btn btn-link btn-sm" (click)="goToStep(2)">Editar huéspedes</button>
                 </div>
               </div>
 
               <div class="review-section card border p-6">
-                <h3 class="text-lg font-semibold text-primary mb-4">Información del huésped principal</h3>
+                <h3 class="title-lg font-semibold text-primary mb-4">Información del huésped principal</h3>
                 <div class="d-flex justify-between align-start">
                   <div class="guest-info-summary text-secondary">
                     <p class="mb-1"><strong class="text-primary">{{ currentBooking?.guestInfo?.firstName }} {{ currentBooking?.guestInfo?.lastName }}</strong></p>
                     <p class="mb-1">{{ currentBooking?.guestInfo?.email }}</p>
                     <p class="mb-0">{{ currentBooking?.guestInfo?.phone }}</p>
                   </div>
-                  <button class="btn btn-link btn-sm" (click)="goToStep(3)">Editar información</button>
+                  <button type="button" class="btn btn-link btn-sm" (click)="goToStep(3)">Editar información</button>
                 </div>
               </div>
 
-              <div class="review-section card border p-6">
-                <h3 class="text-lg font-semibold text-primary mb-4">Políticas importantes</h3>
+              <div class="review-section card border p-6" *ngIf="establishment">
+                <h3 class="title-lg font-semibold text-primary mb-4">Políticas importantes</h3>
                 <div class="d-flex flex-column gap-2">
                   <div class="d-flex justify-between gap-4">
                     <strong class="text-primary">Check-in:</strong>
-                    <span class="text-secondary">{{ property?.checkInTime || '15:00' }}</span>
+                    <span class="text-secondary">{{ establishment.policies.checkInTime }}</span>
                   </div>
                   <div class="d-flex justify-between gap-4">
                     <strong class="text-primary">Check-out:</strong>
-                    <span class="text-secondary">{{ property?.checkOutTime || '11:00' }}</span>
+                    <span class="text-secondary">{{ establishment.policies.checkOutTime }}</span>
                   </div>
                   <div class="d-flex justify-between gap-4">
                     <strong class="text-primary">Cancelación:</strong>
-                    <span class="text-secondary">Política {{ property?.cancellationPolicy || 'moderada' }}</span>
+                    <span class="text-secondary">Política {{ establishment.policies.cancellationPolicy }}</span>
                   </div>
-                  <div class="d-flex justify-between gap-4" *ngIf="property?.minimumStay">
+                  <div class="d-flex justify-between gap-4" *ngIf="room && room.availability && room.availability.minimumStay">
                     <strong class="text-primary">Estancia mínima:</strong>
-                    <span class="text-secondary">{{ property?.minimumStay || 1 }} noche(s)</span>
+                    <span class="text-secondary">{{ room.availability.minimumStay }} noche(s)</span>
                   </div>
                 </div>
               </div>
@@ -629,9 +635,9 @@
           <!-- 🎮 NAVEGACIÓN ENTRE PASOS -->
           <!-- ================================ -->
           
-          <div class="step-navigation d-flex justify-between align-center mt-8 pt-8" 
-               style="border-top: 1px solid var(--border-color);">
+          <div class="step-navigation d-flex justify-between align-center mt-8 pt-8">
             <button 
+              type="button"
               class="btn btn-secondary"
               *ngIf="currentStep > 1"
               (click)="previousStep()">
@@ -641,6 +647,7 @@
             <div class="flex-1"></div>
             
             <button 
+              type="button"
               class="btn btn-primary"
               *ngIf="currentStep < totalSteps"
               [disabled]="!canProceed"
@@ -649,6 +656,7 @@
             </button>
             
             <button 
+              type="button"
               class="btn btn-primary btn-lg font-semibold"
               *ngIf="currentStep === totalSteps"
               [disabled]="!isValidToSubmit || isSubmitting"
@@ -659,24 +667,24 @@
           </div>
 
         </div>
+        
         <!-- ================================ -->
         <!-- 💰 SIDEBAR CON RESUMEN DE PRECIO -->
         <!-- ================================ -->
         
         <aside class="booking-sidebar">
-          <div class="price-summary card shadow-lg border-0">
+          <div class="price-summary card">
 
-            <div class="summary-header card-header">
+            <div class="summary-header card-header" *ngIf="room && establishment">
               <div class="d-flex gap-4">
-                <img [src]="property?.image" [alt]="property?.title" 
-                     class="summary-image flex-shrink-0"
-                     style="width: 80px; height: 60px; object-fit: cover; border-radius: var(--radius-sm);">
+                <img [src]="room.images.main" [alt]="room.name" 
+                     class="summary-image flex-shrink-0">
                 <div class="flex-1">
-                  <h4 class="text-base font-semibold text-primary mb-1 leading-tight">{{ property?.title }}</h4>
-                  <p class="text-secondary text-sm mb-2">{{ property?.location }}</p>
+                  <h4 class="title-base font-semibold text-primary mb-1 leading-tight">{{ room.name }}</h4>
+                  <p class="text-secondary text-sm mb-2">{{ establishment.name }}</p>
                   <div class="d-flex align-center gap-2 text-sm">
-                    <span class="text-warning font-semibold">⭐ {{ property?.rating }}</span>
-                    <span class="text-secondary">({{ property?.reviewsCount }} reseñas)</span>
+                    <span class="text-warning font-semibold">⭐ {{ room.stats.rating }}</span>
+                    <span class="text-secondary">({{ room.stats.reviewCount }} reseñas)</span>
                   </div>
                 </div>
               </div>
@@ -700,6 +708,7 @@
                 <span class="text-primary font-medium">{{ selectedDates.nights }}</span>
               </div>
             </div>
+
             <div class="price-breakdown card-content" *ngIf="priceBreakdown">
               <div class="d-flex justify-between text-sm mb-3">
                 <span class="text-secondary">{{ formatPrice(priceBreakdown.pricePerNight) }} × {{ priceBreakdown.nights }} noches</span>
@@ -733,26 +742,26 @@
                 <span class="text-primary font-medium">{{ formatPrice(priceBreakdown.iva.amount) }}</span>
               </div>
               
-              <div class="d-flex justify-between font-semibold text-base pt-4" 
-                   style="border-top: 1px solid var(--border-color);">
+              <div class="d-flex justify-between font-semibold title-base pt-4 border-top">
                 <span class="text-primary">Total</span>
                 <span class="text-primary">{{ formatPrice(priceBreakdown.total) }}</span>
               </div>
             </div>
 
-            <div class="host-info card-footer" *ngIf="property">
-              <h4 class="text-base font-semibold text-primary mb-4">Tu anfitrión</h4>
+            <div class="host-info card-footer" *ngIf="establishment">
+              <h4 class="title-base font-semibold text-primary mb-4">Tu anfitrión</h4>
               <div class="d-flex align-center gap-3 mb-4">
-                <img [src]="property.hostPhoto" [alt]="property.hostName" 
-                     class="host-avatar"
-                     style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover;">
+                <img [src]="establishment.host.photo || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=48&h=48&fit=crop&crop=face'" 
+                     [alt]="establishment.host.name" 
+                     class="host-avatar">
                 <div class="d-flex flex-column">
-                  <strong class="text-primary mb-1">{{ property.hostName }}</strong>
-                  <span class="text-secondary text-sm">{{ property.responseTime || 'Respuesta rápida' }}</span>
+                  <strong class="text-primary mb-1">{{ establishment.host.name }}</strong>
+                  <span class="text-secondary text-sm">{{ establishment.host.responseTime === 'inmediata' ? 'Respuesta inmediata' : 'Respuesta rápida' }}</span>
                 </div>
               </div>
               
               <button 
+                type="button"
                 class="btn btn-outline btn-full d-flex align-center justify-center gap-2"
                 *ngIf="currentStep === 4"
                 (click)="openWhatsApp()">
@@ -769,12 +778,13 @@
   </main>
 
 </div>
+
 <!-- ================================ -->
 <!-- 🔄 LOADING STATE -->
 <!-- ================================ -->
 
 <div class="loading-container d-flex flex-column align-center justify-center text-center" 
-     *ngIf="isLoading" style="min-height: 400px;">
+     *ngIf="isLoading">
   <div class="loading-spinner mb-4"></div>
-  <p class="text-secondary m-0">Cargando información de la propiedad...</p>
+  <p class="text-secondary m-0">Cargando información de la habitación...</p>
 </div>

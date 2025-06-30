@@ -4,12 +4,15 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { Observable, Subject, of } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { Observable, Subject, combineLatest } from 'rxjs';
+import { takeUntil, map } from 'rxjs/operators';
 
-import { Property, ZoneType, ARMENIA_NORTH_ZONES, PROPERTY_TYPE_LABELS, PropertyType } from '../../core/models/property.interface';
-import { SearchParams, QuickSuggestion, QUICK_SUGGESTIONS } from '../../core/models/search.interface';
-import { PropertyService } from '../../core/services/property.service';
+import { Room, RoomType, ROOM_TYPE_LABELS } from '../../core/models/room.interface';
+import { Establishment } from '../../core/models/establishment.interface';
+import { RoomSearchParams, RoomSuggestion, ROOM_SUGGESTIONS } from '../../core/models/room-search.interface';
+
+import { RoomService } from '../../core/services/room.service';
+import { EstablishmentService } from '../../core/services/establishment.service';
 
 @Component({
   selector: 'app-home',
@@ -22,43 +25,46 @@ import { PropertyService } from '../../core/services/property.service';
   styleUrls: ['./home.component.scss']
 })
 export class HomeComponent implements OnInit, OnDestroy {
-  featuredProperties$: Observable<Property[]>;
+  featuredRooms$: Observable<Room[]>;
+  establishment$: Observable<Establishment>;
   isLoading = true;
   searchError: string | null = null;
 
-  searchData: SearchParams = {
-    destination: '',
+  // Búsqueda simplificada sin zona geográfica
+  searchData: RoomSearchParams = {
     checkIn: '', 
     checkOut: '',  
-    guests: 2
+    guests: 1
   };
+
   private destroy$ = new Subject<void>();
   readonly today = new Date().toISOString().split('T')[0];
   readonly tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
-  readonly quickSuggestions = QUICK_SUGGESTIONS;
-  readonly zonasDelNorte = Object.entries(ARMENIA_NORTH_ZONES).map(([key, value]) => ({
-    key: key as ZoneType,
-    ...value,
-    properties: this.getPropertiesCountByZone(key as ZoneType)
-  }));
-  readonly propertyTypeLabels = PROPERTY_TYPE_LABELS;
+  readonly roomSuggestions = ROOM_SUGGESTIONS;
+  readonly roomTypeLabels = ROOM_TYPE_LABELS;
+
+  // Stats del establecimiento para mostrar
+  establishmentStats$ = this.roomService.getEstablishmentStats();
 
   constructor(
-    private propertyService: PropertyService,
+    private roomService: RoomService,
+    private establishmentService: EstablishmentService,
     private router: Router
   ) {
-    this.featuredProperties$ = this.propertyService.getFeaturedProperties();
+    this.featuredRooms$ = this.roomService.getFeaturedRooms();
+    this.establishment$ = this.establishmentService.getEstablishmentInfo();
   }
 
   ngOnInit(): void {
     this.initializeDefaultDates();
-    this.loadFeaturedProperties();
+    this.loadData();
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
   }
+
   private initializeDefaultDates(): void {
     this.searchData.checkIn = this.getDateString(1); 
     this.searchData.checkOut = this.getDateString(3);
@@ -69,22 +75,29 @@ export class HomeComponent implements OnInit, OnDestroy {
     date.setDate(date.getDate() + daysFromNow);
     return date.toISOString().split('T')[0];
   }
-  private loadFeaturedProperties(): void {
+
+  private loadData(): void {
     setTimeout(() => {
       this.isLoading = false;
     }, 800);
 
-    this.featuredProperties$
-      .pipe(takeUntil(this.destroy$))
+    // Cargar habitaciones y establecimiento
+    combineLatest([
+      this.featuredRooms$,
+      this.establishment$
+    ]).pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (properties) => {
+        next: ([rooms, establishment]) => {
           this.isLoading = false;
-          console.log('✅ Habitaciones del Norte de Armenia cargadas:', properties.length);
+          console.log('✅ Datos cargados:', {
+            rooms: rooms.length,
+            establishment: establishment.name
+          });
         },
         error: (error) => {
           this.isLoading = false;
           this.searchError = 'Error cargando habitaciones. Inténtalo de nuevo.';
-          console.error('❌ Error cargando habitaciones:', error);
+          console.error('❌ Error cargando datos:', error);
         }
       });
   }
@@ -110,13 +123,8 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   private validateSearchData(): boolean {
-    const { destination, checkIn, checkOut, guests } = this.searchData;
+    const { checkIn, checkOut, guests } = this.searchData;
     
-    if (!destination) {
-      this.searchError = 'Por favor selecciona una zona del norte de Armenia';
-      return false;
-    }
-
     if (checkIn && checkOut) {
       const checkInDate = new Date(checkIn);
       const checkOutDate = new Date(checkOut);
@@ -139,24 +147,28 @@ export class HomeComponent implements OnInit, OnDestroy {
       return false;
     }
     
+    if (guests > 6) {
+      this.searchError = 'Para grupos de más de 6 personas, contacte directamente';
+      return false;
+    }
+    
     return true;
   }
 
-  private performSearch(params: SearchParams): void {
+  private performSearch(params: RoomSearchParams): void {
     const queryParams = {
-      destination: params.destination,
       checkIn: params.checkIn,
       checkOut: params.checkOut,
       guests: params.guests.toString()
     };
 
-    console.log('🚀 Navegando a search-results con:', queryParams);
+    console.log('🚀 Navegando a rooms con:', queryParams);
     
-    this.router.navigate(['/search-results'], {
+    this.router.navigate(['/rooms'], {
       queryParams
     }).then(success => {
       if (success) {
-        console.log('✅ Navegación exitosa a search-results');
+        console.log('✅ Navegación exitosa a rooms');
       } else {
         console.error('❌ Error en navegación');
         this.searchError = 'Error en la navegación. Inténtalo de nuevo.';
@@ -164,69 +176,63 @@ export class HomeComponent implements OnInit, OnDestroy {
     });
   }
 
-  searchDestination(destination: ZoneType): void {
-    console.log('🎯 Búsqueda rápida por zona:', destination);
+  // Búsqueda rápida por tipo de habitación
+  searchRoomType(roomType: RoomType): void {
+    console.log('🎯 Búsqueda rápida por tipo:', roomType);
 
     this.searchData = {
-      destination,
       checkIn: this.getDateString(1),
       checkOut: this.getDateString(3),
-      guests: 2
+      guests: roomType === 'familiar' ? 4 : roomType === 'suite' ? 2 : 1,
+      roomType
+    };
+
+    this.performSearch(this.searchData);
+  }
+
+  // Búsqueda por número de huéspedes
+  searchByGuests(guests: number): void {
+    console.log('👥 Búsqueda por huéspedes:', guests);
+
+    this.searchData = {
+      checkIn: this.getDateString(1),
+      checkOut: this.getDateString(3),
+      guests
     };
 
     this.performSearch(this.searchData);
   }
 
   // ================================
-  // 🏠 PROPERTY ACTIONS
+  // 🏠 ROOM ACTIONS
   // ================================
   
-  viewPropertyDetails(propertyId: string): void {
-    console.log('🏠 Ver detalles de habitación:', propertyId);
+  viewRoomDetails(roomId: string): void {
+    console.log('🛏️ Ver detalles de habitación:', roomId);
 
-    if (this.propertyService.incrementPropertyViews) {
-      this.propertyService.incrementPropertyViews(propertyId)
+    if (this.roomService.incrementRoomViews) {
+      this.roomService.incrementRoomViews(roomId)
         .pipe(takeUntil(this.destroy$))
         .subscribe();
     }
 
-    this.router.navigate(['/property', propertyId]);
+    this.router.navigate(['/rooms', roomId]);
   }
 
-  toggleFavorite(propertyId: string, event: Event): void {
-    event.stopPropagation();
-    
-    console.log('❤️ Toggle favorito para habitación:', propertyId);
-    
-    if (this.propertyService.toggleFavorite) {
-      this.propertyService.toggleFavorite(propertyId)
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: (isFavorite) => {
-            console.log(`${isFavorite ? '❤️' : '🤍'} Favorito actualizado`);
-          },
-          error: (error) => console.error('❌ Error actualizando favorito:', error)
-        });
-    }
-  }
+  // ELIMINADO: Funcionalidad de favoritos removida completamente
 
   // ================================
   // 🗺️ NAVIGATION
   // ================================
 
-  viewAllProperties(): void {
-    this.router.navigate(['/search-results'], {
-      queryParams: {
-        area: 'armenia-norte'
-      }
-    });
+  viewAllRooms(): void {
+    this.router.navigate(['/rooms']);
   }
 
-  viewPropertiesByZone(zone: ZoneType): void {
-    this.router.navigate(['/search-results'], {
+  viewRoomsByType(roomType: RoomType): void {
+    this.router.navigate(['/rooms'], {
       queryParams: {
-        destination: zone, 
-        area: 'armenia-norte'
+        type: roomType
       }
     });
   }
@@ -235,45 +241,40 @@ export class HomeComponent implements OnInit, OnDestroy {
   // 🛠️ UTILITY FUNCTIONS
   // ================================
   
-  trackByPropertyId(index: number, property: Property): string {
-    return property.id;
+  trackByRoomId(index: number, room: Room): string {
+    return room.id;
   }
 
-  getPropertyTypeName(property: Property): string {
-    return this.propertyTypeLabels[property.propertyType] || 'Alojamiento';
+  getRoomTypeName(room: Room): string {
+    return this.roomTypeLabels[room.roomType] || 'Habitación';
   }
 
-  getPropertyTypeLabel(propertyType: PropertyType): string {
-    return this.propertyTypeLabels[propertyType] || 'Alojamiento';
+  getRoomTypeLabel(roomType: RoomType): string {
+    return this.roomTypeLabels[roomType] || 'Habitación';
   }
 
-  getPropertyFeatures(property: Property): string[] {
-    if (property?.features && property.features.length > 0) {
-      return property.features.slice(0, 3);
+  getRoomFeatures(room: Room): string[] {
+    if (room?.features && room.features.length > 0) {
+      return room.features.slice(0, 3);
     }
     
-    switch (property.propertyType) {
-      case 'habitacion':
-        return ['Baño privado', 'WiFi gratis', 'Ventana exterior'];
-      case 'apartamento':
-        return ['Cocina equipada', 'Sala de estar', 'WiFi gratis'];
-      case 'studio':
-        return ['Concepto abierto', 'Cocina integrada', 'Balcón'];
-      case 'casa':
-        return ['Múltiples habitaciones', 'Patio privado', 'Parqueadero'];
-      case 'penthouse':
-        return ['Vista panorámica', 'Terraza privada', 'Lujo'];
+    // Features por defecto según tipo de habitación
+    switch (room.roomType) {
+      case 'individual':
+        return ['Cama individual', 'Escritorio', 'Baño privado'];
+      case 'doble':
+        return ['Cama doble', 'Armario amplio', 'Ventana exterior'];
+      case 'triple':
+        return ['3 camas', 'Espacio amplio', 'Baño privado'];
+      case 'cuadruple':
+        return ['4 camas', 'Sala de estar', 'Baño compartido'];
+      case 'suite':
+        return ['Cama king', 'Sala de estar', 'Balcón privado'];
+      case 'familiar':
+        return ['Múltiples camas', 'Espacio familiar', 'Zona de juegos'];
       default:
-        return ['WiFi gratis', 'Limpieza incluida'];
+        return ['WiFi gratis', 'Limpieza incluida', 'Aire acondicionado'];
     }
-  }
-
-  getZoneName(zone: ZoneType): string {
-    return ARMENIA_NORTH_ZONES[zone]?.name || zone;
-  }
-
-  getZoneDescription(zone: ZoneType): string {
-    return ARMENIA_NORTH_ZONES[zone]?.description || '';
   }
 
   formatPrice(price: number): string {
@@ -284,22 +285,11 @@ export class HomeComponent implements OnInit, OnDestroy {
     }).format(price);
   }
 
-  getPropertyMainAmenities(property: Property): string[] {
-    const priorityAmenities = ['wifi', 'ac', 'parking', 'kitchen', 'tv'];
-    return property.amenities
+  getRoomMainAmenities(room: Room): string[] {
+    const priorityAmenities = ['aire-acondicionado', 'tv-smart', 'escritorio', 'bano-privado', 'balcon'];
+    return room.amenities
       .filter(amenity => priorityAmenities.includes(amenity))
       .slice(0, 3);
-  }
-
-  private getPropertiesCountByZone(zone: ZoneType): string {
-    const counts = {
-      'norte-centro': '8',
-      'la-secreta': '6', 
-      'bosques-pinares': '4',
-      'ciudadela-del-cafe': '5',
-      'villa-liliana': '3'
-    };
-    return counts[zone] || '2';
   }
 
   // ================================
@@ -313,54 +303,146 @@ export class HomeComponent implements OnInit, OnDestroy {
       case 'contact_whatsapp':
         this.openWhatsAppContact();
         break;
-      case 'zone_click':
-        this.trackZoneInteraction(data);
+      case 'room_type_click':
+        this.trackRoomTypeInteraction(data);
         break;
-      case 'property_view':
-        this.trackPropertyView(data);
+      case 'room_view':
+        this.trackRoomView(data);
         break;
     }
   }
 
   private openWhatsAppContact(): void {
-    const message = encodeURIComponent('Hola! Me interesa información sobre las habitaciones en el norte de Armenia, Quindío');
-    window.open(`https://wa.me/573001234567?text=${message}`, '_blank');
+    // Usar el WhatsApp del establecimiento
+    this.establishment$.pipe(takeUntil(this.destroy$)).subscribe(establishment => {
+      const message = encodeURIComponent(`Hola! Me interesa información sobre las habitaciones en ${establishment.name}`);
+      const phone = establishment.contactInfo.whatsapp.replace(/\D/g, '');
+      window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
+    });
   }
 
-  private trackZoneInteraction(zone: ZoneType): void {
-    console.log('📍 Zona seleccionada:', zone);
+  private trackRoomTypeInteraction(roomType: RoomType): void {
+    console.log('🛏️ Tipo de habitación seleccionado:', roomType);
   }
 
-  private trackPropertyView(propertyId: string): void {
-    console.log('👁️ Propiedad vista:', propertyId);
+  private trackRoomView(roomId: string): void {
+    console.log('👁️ Habitación vista:', roomId);
   }
 
   // ================================
   // 🎨 UI HELPERS
   // ================================
 
-  getPropertyBadgeClass(property: Property): string {
-    if (property.isVerified && property.isInstantBook) return 'badge-premium';
-    if (property.isVerified) return 'badge-verified';
-    if (property.isInstantBook) return 'badge-instant';
+  getRoomBadgeClass(room: Room): string {
+    if (room.roomType === 'suite') return 'badge-premium';
+    if (room.availability.isAvailable) return 'badge-available';
     return 'badge-standard';
   }
 
-  getPropertyBadgeText(property: Property): string {
-    if (property.isVerified && property.isInstantBook) return 'VERIFICADO + RESERVA INMEDIATA';
-    if (property.isVerified) return 'VERIFICADO';
-    if (property.isInstantBook) return 'RESERVA INMEDIATA';
-    return this.getPropertyTypeName(property);
+  getRoomBadgeText(room: Room): string {
+    if (room.roomType === 'suite') return 'SUITE PREMIUM';
+    if (room.availability.isAvailable) return 'DISPONIBLE';
+    return this.getRoomTypeName(room);
   }
 
-  shouldShowSpecialOffer(property: Property): boolean {
-    return property.pricePerWeek !== undefined && property.pricePerWeek < (property.pricePerNight * 6);
+  shouldShowSpecialOffer(room: Room): boolean {
+    return room.pricing.weeklyDiscount !== undefined && room.pricing.weeklyDiscount > 0;
   }
 
-  getSpecialOfferText(property: Property): string {
-    if (this.shouldShowSpecialOffer(property)) {
-      return 'Descuento semanal disponible';
+  getSpecialOfferText(room: Room): string {
+    if (room.pricing.weeklyDiscount) {
+      return `${room.pricing.weeklyDiscount}% descuento semanal`;
+    }
+    if (room.pricing.monthlyDiscount) {
+      return `${room.pricing.monthlyDiscount}% descuento mensual`;
     }
     return '';
+  }
+
+  // ================================
+  // 📊 ESTABLECIMIENTO INFO HELPERS
+  // ================================
+
+  getEstablishmentName(): Observable<string> {
+    return this.establishment$.pipe(
+      map(establishment => establishment.name)
+    );
+  }
+
+  getEstablishmentDescription(): Observable<string> {
+    return this.establishment$.pipe(
+      map(establishment => establishment.description)
+    );
+  }
+
+  getEstablishmentLocation(): Observable<string> {
+    return this.establishment$.pipe(
+      map(establishment => establishment.areaInfo.neighborhood)
+    );
+  }
+
+  // ================================
+  // 🎯 BUSINESS LOGIC HELPERS
+  // ================================
+
+  getRoomCapacityLabel(room: Room): string {
+    const guests = room.maxGuests;
+    if (guests === 1) return '1 persona';
+    return `${guests} personas`;
+  }
+
+  getRoomPriceRange(): Observable<{min: number, max: number}> {
+    return this.establishmentStats$.pipe(
+      map(stats => stats.priceRange)
+    );
+  }
+
+  isRoomAvailable(room: Room): boolean {
+    return room.availability.isActive && room.availability.isAvailable;
+  }
+
+  getRoomAvailabilityText(room: Room): string {
+    if (!room.availability.isActive) return 'No disponible';
+    if (!room.availability.isAvailable) return 'Ocupada';
+    return 'Disponible';
+  }
+
+  // ================================
+  // 📱 RESPONSIVE HELPERS
+  // ================================
+
+  getGridClass(): string {
+    // Para responsive grid - mantiene tu sistema actual
+    return 'properties-grid'; // Mantienes tu CSS existente
+  }
+
+  shouldShowExtendedFeatures(): boolean {
+    // Para mostrar features extendidos en desktop
+    return window.innerWidth > 768;
+  }
+
+  // ================================
+  // 🎯 MÉTODOS ADICIONALES PARA COMPATIBILIDAD CON HTML
+  // ================================
+
+  // Método simplificado para botón de contacto en lugar de favoritos
+  contactAboutRoom(roomId: string, event: Event): void {
+    event.stopPropagation();
+    
+    console.log('📞 Contacto sobre habitación:', roomId);
+    
+    // Abrir WhatsApp con mensaje específico sobre la habitación
+    this.featuredRooms$.pipe(takeUntil(this.destroy$)).subscribe(rooms => {
+      const room = rooms.find(r => r.id === roomId);
+      if (room) {
+        this.establishment$.pipe(takeUntil(this.destroy$)).subscribe(establishment => {
+          const message = encodeURIComponent(
+            `Hola! Me interesa la ${room.roomType} "${room.roomNumber}" en ${establishment.name}. ¿Está disponible?`
+          );
+          const phone = establishment.contactInfo.whatsapp?.replace(/\D/g, '') || '573001234567';
+          window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
+        });
+      }
+    });
   }
 }

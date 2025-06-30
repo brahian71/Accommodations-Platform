@@ -1,4 +1,5 @@
 // 📁 src/app/pages/booking/booking-confirmation/booking-confirmation.component.ts
+// 🔄 MIGRADO: Property Booking Confirmation → Room Booking Confirmation + Establishment
 
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -6,15 +7,21 @@ import { Subject, combineLatest } from 'rxjs';
 import { takeUntil, switchMap, catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
 
+// ✅ NUEVOS IMPORTS - Room + Establishment
+import { Room, ROOM_TYPE_LABELS } from '../../../core/models/room.interface';
+import { Establishment } from '../../../core/models/establishment.interface';
+import { RoomService } from '../../../core/services/room.service';
+import { EstablishmentService } from '../../../core/services/establishment.service';
+
+// ✅ MANTENER - Booking interfaces
 import { BookingService } from '../../../core/services/booking.service';
-import { PropertyService } from '../../../core/services/property.service';
 import { Booking } from '../../../core/models/booking.interface';
-import { Property } from '../../../core/models/property.interface';
 
 @Component({
   selector: 'app-booking-confirmation',
   template: `
     <!-- 📁 booking-confirmation.component.html -->
+    <!-- 🔄 MIGRADO: Property Confirmation → Room Confirmation + Establishment -->
     
     <div class="confirmation-page" *ngIf="!isLoading">
       
@@ -48,31 +55,33 @@ import { Property } from '../../../core/models/property.interface';
             <!-- Información principal -->
             <div class="confirmation-content d-flex flex-column gap-8">
               
-              <!-- Detalles de la propiedad -->
-              <section class="detail-section" *ngIf="booking && property">
-                <h2>Detalles de tu alojamiento</h2>
-                <div class="property-card">
-                  <img [src]="property.image" [alt]="property.title" class="property-image">
-                  <div class="property-info">
-                    <h3>{{ property.title }}</h3>
-                    <p class="location">📍 {{ property.location }}</p>
-                    <div class="property-features">
-                      <span>{{ property.bedrooms }} hab</span>
-                      <span>{{ property.bathrooms }} baños</span>
-                      <span>{{ property.maxGuests }} huéspedes</span>
+              <!-- Detalles de la habitación y establecimiento -->
+              <section class="detail-section" *ngIf="booking && room && establishment">
+                <h2>Detalles de tu habitación</h2>
+                <div class="room-card">
+                  <img [src]="room.images.main" [alt]="room.name" class="room-image">
+                  <div class="room-info">
+                    <h3>{{ room.name }}</h3>
+                    <p class="room-type">{{ getRoomTypeLabel(room.roomType) }}</p>
+                    <p class="establishment-info">🏨 {{ establishment.name }}</p>
+                    <p class="location">📍 {{ establishment.areaInfo.neighborhood }}</p>
+                    <div class="room-features">
+                      <span>{{ room.roomNumber }}</span>
+                      <span>{{ room.maxGuests }} huéspedes</span>
+                      <span>{{ room.bathroomType === 'privado' ? 'Baño privado' : 'Baño compartido' }}</span>
                     </div>
                   </div>
                 </div>
               </section>
               
               <!-- Fechas y duración -->
-              <section class="detail-section" *ngIf="booking">
+              <section class="detail-section" *ngIf="booking && establishment">
                 <h2>Fechas de tu estancia</h2>
                 <div class="dates-info">
                   <div class="date-item">
                     <div class="date-label">Llegada</div>
                     <div class="date-value" *ngIf="booking.checkInDate">{{ formatDate(booking.checkInDate) }}</div>
-                    <div class="date-time">Check-in: {{ property?.checkInTime || '15:00' }}</div>
+                    <div class="date-time">Check-in: {{ establishment.policies.checkInTime }}</div>
                   </div>
                   <div class="nights-separator">
                     <span class="nights-count" *ngIf="booking.nights">{{ booking.nights }} noches</span>
@@ -80,7 +89,7 @@ import { Property } from '../../../core/models/property.interface';
                   <div class="date-item">
                     <div class="date-label">Salida</div>
                     <div class="date-value" *ngIf="booking.checkOutDate">{{ formatDate(booking.checkOutDate) }}</div>
-                    <div class="date-time">Check-out: {{ property?.checkOutTime || '11:00' }}</div>
+                    <div class="date-time">Check-out: {{ establishment.policies.checkOutTime }}</div>
                   </div>
                 </div>
               </section>
@@ -160,13 +169,15 @@ import { Property } from '../../../core/models/property.interface';
               </div>
               
               <!-- Información del anfitrión -->
-              <div class="host-contact card" *ngIf="booking && property">
+              <div class="host-contact card" *ngIf="booking && establishment">
                 <h3>Contacta a tu anfitrión</h3>
                 <div class="host-info">
-                  <img [src]="property.hostPhoto" [alt]="booking.hostName" class="host-avatar">
+                  <img [src]="establishment.host.photo || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face'" 
+                       [alt]="establishment.host.name" 
+                       class="host-avatar">
                   <div class="host-details">
-                    <strong>{{ booking.hostName }}</strong>
-                    <span>{{ property.responseTime || 'Respuesta rápida' }}</span>
+                    <strong>{{ establishment.host.name }}</strong>
+                    <span>{{ getResponseTimeLabel(establishment.host.responseTime) }}</span>
                   </div>
                 </div>
                 
@@ -215,9 +226,9 @@ import { Property } from '../../../core/models/property.interface';
             
             <button 
               class="btn btn-outline"
-              (click)="viewProperty()"
-              *ngIf="property">
-              👁️ Ver propiedad
+              (click)="viewRoom()"
+              *ngIf="room">
+              👁️ Ver habitación
             </button>
             
             <button 
@@ -260,7 +271,8 @@ import { Property } from '../../../core/models/property.interface';
 export class BookingConfirmationComponent implements OnInit, OnDestroy {
   
   booking: Booking | null = null;
-  property: Property | null = null;
+  room: Room | null = null;              
+  establishment: Establishment | null = null;
   
   isLoading = true;
   error: string | null = null;
@@ -271,7 +283,8 @@ export class BookingConfirmationComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private router: Router,
     private bookingService: BookingService,
-    private propertyService: PropertyService
+    private roomService: RoomService,
+    private establishmentService: EstablishmentService 
   ) {}
 
   ngOnInit(): void {
@@ -301,17 +314,22 @@ export class BookingConfirmationComponent implements OnInit, OnDestroy {
         
         this.booking = booking;
         
-        // Cargar información de la propiedad
-        return this.propertyService.getPropertyById(booking.propertyId);
+        // ✅ NOTA: Usando propertyId temporalmente hasta actualizar interface Booking
+        // En el futuro se puede cambiar a roomId cuando se actualice la interface
+        return combineLatest([
+          this.roomService.getRoomById(booking.propertyId),       // ✅ USAR: propertyId (mantener interface existente)
+          this.establishmentService.getEstablishmentInfo()
+        ]);
       }),
       catchError(error => {
         this.error = error.message || 'Error al cargar la reserva';
         this.isLoading = false;
-        return of(null);
+        return of([null, null]);
       })
-    ).subscribe(property => {
-      if (property) {
-        this.property = property;
+    ).subscribe(([room, establishment]) => {
+      if (room && establishment) {
+        this.room = room;   
+        this.establishment = establishment; 
       }
       this.isLoading = false;
     });
@@ -327,19 +345,18 @@ export class BookingConfirmationComponent implements OnInit, OnDestroy {
     this.router.navigate(['/home']);
   }
 
-  viewProperty(): void {
-    if (this.property) {
-      this.router.navigate(['/property', this.property.id]);
+  viewRoom(): void {
+    if (this.room) {
+      this.router.navigate(['/rooms', this.room.id]);
     }
   }
 
   downloadConfirmation(): void {
     if (!this.booking) return;
     
-    // Crear contenido de confirmación
+
     const confirmationText = this.generateConfirmationText();
     
-    // Crear y descargar archivo
     const blob = new Blob([confirmationText], { type: 'text/plain' });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -354,14 +371,14 @@ export class BookingConfirmationComponent implements OnInit, OnDestroy {
     
     const shareData = {
       title: 'Mi reserva en Norte Armenia',
-      text: `¡Reservé ${this.property?.title} del ${this.formatDate(this.booking.checkInDate)} al ${this.formatDate(this.booking.checkOutDate)}!`,
+      text: `¡Reservé ${this.room?.name} del ${this.formatDate(this.booking.checkInDate)} al ${this.formatDate(this.booking.checkOutDate)}!`, // ✅ CAMBIO: room.name en lugar de property.title
       url: window.location.href
     };
 
     if (navigator.share && navigator.canShare(shareData)) {
       navigator.share(shareData);
     } else {
-      // Fallback: copiar al portapapeles
+
       const shareText = `${shareData.text}\n${shareData.url}`;
       navigator.clipboard.writeText(shareText).then(() => {
         alert('¡Enlace copiado al portapapeles!');
@@ -370,7 +387,7 @@ export class BookingConfirmationComponent implements OnInit, OnDestroy {
   }
 
   private generateConfirmationText(): string {
-    if (!this.booking || !this.property) return '';
+    if (!this.booking || !this.room || !this.establishment) return '';
     
     return `
 🏠 CONFIRMACIÓN DE RESERVA - NORTE ARMENIA
@@ -379,13 +396,19 @@ export class BookingConfirmationComponent implements OnInit, OnDestroy {
 Referencia: ${this.booking.bookingReference}
 Estado: ${this.booking.status.toUpperCase()}
 
-PROPIEDAD:
-${this.property.title}
-${this.property.location}
+ESTABLECIMIENTO:
+${this.establishment.name}
+${this.establishment.areaInfo.neighborhood}
+
+HABITACIÓN:
+${this.room.name}
+${this.room.roomNumber}
+Tipo: ${this.getRoomTypeLabel(this.room.roomType)}
+Capacidad: ${this.room.maxGuests} huéspedes
 
 FECHAS:
-Llegada: ${this.formatDate(this.booking.checkInDate)} (${this.property.checkInTime || '15:00'})
-Salida: ${this.formatDate(this.booking.checkOutDate)} (${this.property.checkOutTime || '11:00'})
+Llegada: ${this.formatDate(this.booking.checkInDate)} (${this.establishment.policies.checkInTime})
+Salida: ${this.formatDate(this.booking.checkOutDate)} (${this.establishment.policies.checkOutTime})
 Noches: ${this.booking.nights}
 
 HUÉSPEDES:
@@ -395,8 +418,8 @@ Teléfono: ${this.booking.guestInfo.phone}
 Total huéspedes: ${this.booking.guests.total}
 
 ANFITRIÓN:
-${this.booking.hostName}
-WhatsApp: ${this.booking.hostWhatsapp}
+${this.establishment.host.name}
+WhatsApp: ${this.establishment.contactInfo.whatsapp}
 
 PRECIO:
 Total pagado: ${this.formatPrice(this.booking.priceBreakdown.total)}
@@ -404,6 +427,23 @@ Total pagado: ${this.formatPrice(this.booking.priceBreakdown.total)}
 ¡Gracias por elegir Norte Armenia!
 Fecha de reserva: ${new Date(this.booking.createdAt).toLocaleDateString('es-CO')}
     `.trim();
+  }
+
+  // ================================
+  // 🛠️ UTILIDADES
+  // ================================
+
+  getRoomTypeLabel(roomType: string): string {
+    return ROOM_TYPE_LABELS[roomType as keyof typeof ROOM_TYPE_LABELS] || roomType;
+  }
+
+  getResponseTimeLabel(responseTime: string): string {
+    const times = {
+      'inmediata': 'Respuesta inmediata',
+      'en horas': 'Responde en pocas horas', 
+      'en 1 día': 'Responde en 1 día'
+    };
+    return times[responseTime as keyof typeof times] || responseTime;
   }
 
   formatDate(date: string): string {
@@ -417,7 +457,7 @@ Fecha de reserva: ${new Date(this.booking.createdAt).toLocaleDateString('es-CO')
       });
     } catch (error) {
       console.warn('Error formatting date:', date);
-      return date; // Fallback al string original
+      return date; 
     }
   }
 

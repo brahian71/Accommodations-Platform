@@ -1,23 +1,33 @@
 // 📁 src/app/pages/property-details/property-details.component.ts
+// 🔄 MIGRADO: Property Details → Room Details - OPTIMIZADO
 
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Observable, Subject, BehaviorSubject, of } from 'rxjs';
+import { Observable, Subject, BehaviorSubject, of, combineLatest } from 'rxjs';
 import { map, takeUntil, switchMap, catchError, tap } from 'rxjs/operators';
 
+// ✅ IMPORTS - Room + Establishment
 import { 
-  Property, 
-  ZoneType, 
-  PropertyType, 
-  AmenityType, 
-  ServiceType,
-  ARMENIA_NORTH_ZONES,
-  PROPERTY_TYPE_LABELS,
-  AMENITY_LABELS,
-  SERVICE_LABELS
-} from '../../core/models/property.interface';
+  Room, 
+  RoomType, 
+  RoomAmenityType, 
+  BathroomType,
+  ROOM_TYPE_LABELS,
+  ROOM_AMENITY_LABELS,
+  BED_TYPE_LABELS
+} from '../../core/models/room.interface';
 
-import { PropertyService } from '../../core/services/property.service';
+import { 
+  Establishment,
+  EstablishmentAmenityType,
+  EstablishmentServiceType,
+  ESTABLISHMENT_AMENITY_LABELS,
+  ESTABLISHMENT_SERVICE_LABELS
+} from '../../core/models/establishment.interface';
+
+// ✅ SERVICIOS
+import { RoomService } from '../../core/services/room.service';
+import { EstablishmentService } from '../../core/services/establishment.service';
 
 interface BookingData {
   checkIn: string;
@@ -27,6 +37,11 @@ interface BookingData {
   subtotal: number;
   taxes: number;
   total: number;
+  discount?: {
+    type: 'weekly' | 'monthly';
+    percentage: number;
+    amount: number;
+  };
 }
 
 @Component({
@@ -36,9 +51,10 @@ interface BookingData {
 })
 export class PropertyDetailsComponent implements OnInit, OnDestroy {
 
-  // 🏠 PROPERTY DATA
-  property$: Observable<Property | undefined> = of(undefined);
-  similarProperties$: Observable<Property[]> = of([]);
+  // 🛏️ ROOM + ESTABLISHMENT DATA
+  room$: Observable<Room | undefined> = of(undefined);
+  establishment$: Observable<Establishment>;
+  similarRooms$: Observable<Room[]> = of([]);
   isLoading = true;
   notFound = false;
 
@@ -60,7 +76,7 @@ export class PropertyDetailsComponent implements OnInit, OnDestroy {
   activeSection = 'overview';
 
   // 🎯 OBSERVABLES
-  private propertyId$ = new BehaviorSubject<string>('');
+  private roomId$ = new BehaviorSubject<string>('');
   private destroy$ = new Subject<void>();
 
   // 📅 COMPUTED PROPERTIES
@@ -70,27 +86,30 @@ export class PropertyDetailsComponent implements OnInit, OnDestroy {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private propertyService: PropertyService
+    private roomService: RoomService,
+    private establishmentService: EstablishmentService
   ) {
     this.initializeBookingData();
+    this.establishment$ = this.establishmentService.getEstablishmentInfo();
   }
 
   ngOnInit(): void {
-    this.loadPropertyFromRoute();
-    this.setupPropertyData();
+    this.loadRoomFromRoute();
+    this.setupRoomData();
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
   }
-  private loadPropertyFromRoute(): void {
+
+  private loadRoomFromRoute(): void {
     this.route.params
       .pipe(takeUntil(this.destroy$))
       .subscribe(params => {
-        const propertyId = params['id'];
-        if (propertyId) {
-          this.propertyId$.next(propertyId);
+        const roomId = params['roomId']; // ✅ CAMBIO: 'id' → 'roomId'
+        if (roomId) {
+          this.roomId$.next(roomId);
         } else {
           this.notFound = true;
           this.isLoading = false;
@@ -107,26 +126,28 @@ export class PropertyDetailsComponent implements OnInit, OnDestroy {
       });
   }
 
-  private setupPropertyData(): void {
-    this.property$ = this.propertyId$.pipe(
+  private setupRoomData(): void {
+    this.room$ = this.roomId$.pipe(
       switchMap(id => {
         if (!id) return of(undefined);
         
         this.isLoading = true;
-        return this.propertyService.getPropertyById(id).pipe(
-          tap(property => {
+        return this.roomService.getRoomById(id).pipe(
+          tap(room => {
             this.isLoading = false;
-            this.notFound = !property;
+            this.notFound = !room;
             
-            if (property) {
-              this.propertyService.incrementPropertyViews(property.id)
-                .pipe(takeUntil(this.destroy$))
-                .subscribe();
-              this.loadSimilarProperties(property.id);
+            if (room) {
+              if (this.roomService.incrementRoomViews) {
+                this.roomService.incrementRoomViews(room.id)
+                  .pipe(takeUntil(this.destroy$))
+                  .subscribe();
+              }
+              this.loadSimilarRooms(room.id);
             }
           }),
           catchError(error => {
-            console.error('❌ Error cargando propiedad:', error);
+            console.error('❌ Error cargando habitación:', error);
             this.isLoading = false;
             this.notFound = true;
             return of(undefined);
@@ -136,8 +157,10 @@ export class PropertyDetailsComponent implements OnInit, OnDestroy {
     );
   }
 
-  private loadSimilarProperties(propertyId: string): void {
-    this.similarProperties$ = this.propertyService.getSimilarProperties(propertyId, 3);
+  private loadSimilarRooms(roomId: string): void {
+    if (this.roomService.getSimilarRooms) {
+      this.similarRooms$ = this.roomService.getSimilarRooms(roomId, 3);
+    }
   }
 
   private initializeBookingData(): void {
@@ -164,20 +187,22 @@ export class PropertyDetailsComponent implements OnInit, OnDestroy {
     document.body.style.overflow = 'auto';
   }
 
-  nextImage(property: Property): void {
-    const images = this.getPropertyImages(property);
+  nextImage(room: Room): void {
+    const images = this.getRoomImages(room);
     this.selectedImageIndex = (this.selectedImageIndex + 1) % images.length;
   }
 
-  previousImage(property: Property): void {
-    const images = this.getPropertyImages(property);
+  previousImage(room: Room): void {
+    const images = this.getRoomImages(room);
     this.selectedImageIndex = this.selectedImageIndex === 0 
       ? images.length - 1 
       : this.selectedImageIndex - 1;
   }
 
-  getPropertyImages(property: Property): string[] {
-    return property.images?.length ? property.images : [property.image];
+  getRoomImages(room: Room): string[] {
+    return room.images?.gallery?.length 
+      ? [room.images.main, ...room.images.gallery] 
+      : [room.images.main];
   }
 
   // ================================
@@ -202,14 +227,37 @@ export class PropertyDetailsComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.property$.pipe(
-      takeUntil(this.destroy$),
-      map(property => {
-        if (!property) return;
+    const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
 
-        const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
-        const subtotal = nights * property.pricePerNight;
-        const taxes = Math.round(subtotal * 0.19); // IVA 19%
+    if (this.roomService.calculateRoomPrice) {
+      combineLatest([
+        this.room$,
+        this.roomService.calculateRoomPrice(this.roomId$.value, nights)
+      ]).pipe(
+        takeUntil(this.destroy$),
+        map(([room, pricing]) => {
+          if (!room) return;
+
+          const taxes = Math.round(pricing.subtotal * 0.19); // IVA 19%
+          const total = pricing.total + taxes;
+
+          this.bookingData = {
+            ...this.bookingData,
+            totalNights: nights,
+            subtotal: pricing.subtotal,
+            taxes,
+            total,
+            discount: pricing.discount
+          };
+        })
+      ).subscribe();
+    } else {
+      // Cálculo simple si no hay servicio avanzado
+      this.room$.pipe(takeUntil(this.destroy$)).subscribe(room => {
+        if (!room) return;
+        
+        const subtotal = room.pricing.basePrice * nights;
+        const taxes = Math.round(subtotal * 0.19);
         const total = subtotal + taxes;
 
         this.bookingData = {
@@ -219,8 +267,8 @@ export class PropertyDetailsComponent implements OnInit, OnDestroy {
           taxes,
           total
         };
-      })
-    ).subscribe();
+      });
+    }
   }
 
   private resetBookingCalculation(): void {
@@ -229,13 +277,15 @@ export class PropertyDetailsComponent implements OnInit, OnDestroy {
       totalNights: 0,
       subtotal: 0,
       taxes: 0,
-      total: 0
+      total: 0,
+      discount: undefined
     };
   }
 
-  proceedToBooking(property: Property): void {
+  proceedToBooking(room: Room): void {
     if (!this.validateBookingData()) return;
-    this.router.navigate(['/booking', property.id], {
+    
+    this.router.navigate(['/booking', room.id], {
       queryParams: {
         checkIn: this.bookingData.checkIn,
         checkOut: this.bookingData.checkOut,
@@ -270,51 +320,75 @@ export class PropertyDetailsComponent implements OnInit, OnDestroy {
   // 🤝 ACCIONES DEL USUARIO
   // ================================
 
-  toggleFavorite(property: Property): void {
-    this.propertyService.toggleFavorite(property.id)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (isFavorite) => {
-          console.log(`${isFavorite ? '❤️' : '🤍'} Favorito actualizado`);
-        },
-        error: (error) => console.error('❌ Error actualizando favorito:', error)
-      });
-  }
+  // ELIMINADO: toggleFavorite() - Reemplazado por contacto específico
 
-  contactHost(property: Property): void {
-    if (property.hostWhatsapp) {
+  // ✅ NUEVO: Contacto específico sobre esta habitación
+  contactAboutRoom(room: Room): void {
+    console.log('📞 Contacto específico sobre habitación:', room.id);
+    
+    this.establishment$.pipe(takeUntil(this.destroy$)).subscribe(establishment => {
       const message = encodeURIComponent(
-        `Hola ${property.hostName}! Me interesa tu ${this.getPropertyTypeLabel(property.propertyType).toLowerCase()} "${property.title}" en ${property.location}. ¿Podemos hablar sobre disponibilidad?`
+        `Hola! Me interesa la ${room.roomType} "${room.name}" (${room.roomNumber}) en ${establishment.name}. ¿Está disponible para ${this.bookingData.checkIn} - ${this.bookingData.checkOut}? Somos ${this.bookingData.guests} huésped${this.bookingData.guests > 1 ? 'es' : ''}.`
       );
-      window.open(`https://wa.me/${property.hostWhatsapp}?text=${message}`, '_blank');
-    }
+      const phone = establishment.contactInfo.whatsapp?.replace(/\D/g, '') || '573001234567';
+      window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
+    });
   }
 
-  callHost(property: Property): void {
-    if (property.hostWhatsapp) {
-      window.open(`tel:${property.hostWhatsapp}`);
-    }
+  contactHost(): void {
+    this.establishment$.pipe(takeUntil(this.destroy$)).subscribe(establishment => {
+      const message = encodeURIComponent(
+        `Hola ${establishment.host.name}! Me interesa información sobre la habitación "${this.roomId$.value}" en ${establishment.name}. ¿Podemos hablar sobre disponibilidad?`
+      );
+      const phone = establishment.contactInfo.whatsapp?.replace(/\D/g, '') || '573001234567';
+      window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
+    });
   }
 
-  shareProperty(property: Property): void {
+  callHost(): void {
+    this.establishment$.pipe(takeUntil(this.destroy$)).subscribe(establishment => {
+      window.open(`tel:${establishment.contactInfo.phone}`);
+    });
+  }
+
+  shareRoom(room: Room): void {
     if (navigator.share) {
       navigator.share({
-        title: property.title,
-        text: `Mira esta ${this.getPropertyTypeLabel(property.propertyType).toLowerCase()} en ${property.location}`,
+        title: room.name,
+        text: `Mira esta ${this.getRoomTypeName(room.roomType)} en nuestro establecimiento`,
         url: window.location.href
+      }).catch(err => {
+        console.log('Error sharing:', err);
+        this.copyLinkToClipboard();
       });
     } else {
-      navigator.clipboard.writeText(window.location.href);
+      this.copyLinkToClipboard();
+    }
+  }
+
+  private copyLinkToClipboard(): void {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(window.location.href).then(() => {
+        alert('Enlace copiado al portapapeles');
+      });
+    } else {
+      // Fallback para navegadores más antiguos
+      const textArea = document.createElement('textarea');
+      textArea.value = window.location.href;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
       alert('Enlace copiado al portapapeles');
     }
   }
 
-  viewSimilarProperty(propertyId: string): void {
-    this.router.navigate(['/property', propertyId]);
+  viewSimilarRoom(roomId: string): void {
+    this.router.navigate(['/rooms', roomId]);
   }
 
   goBackToSearch(): void {
-    this.router.navigate(['/search-results'], {
+    this.router.navigate(['/rooms'], {
       queryParams: {
         checkIn: this.bookingData.checkIn,
         checkOut: this.bookingData.checkOut,
@@ -322,6 +396,7 @@ export class PropertyDetailsComponent implements OnInit, OnDestroy {
       }
     });
   }
+
   // ================================
   // 📍 NAVEGACIÓN DE SECCIONES
   // ================================
@@ -338,41 +413,66 @@ export class PropertyDetailsComponent implements OnInit, OnDestroy {
   }
 
   // ================================
-  // 🛠️ UTILIDADES
+  // 🛠️ UTILIDADES - ROOM
   // ================================
 
-  getZoneName(zoneKey: ZoneType): string {
-    return ARMENIA_NORTH_ZONES[zoneKey]?.name || zoneKey;
+  getRoomTypeName(type: RoomType): string {
+    return ROOM_TYPE_LABELS[type] || type;
   }
-  getZoneDescription(zoneKey: ZoneType): string {
-    return ARMENIA_NORTH_ZONES[zoneKey]?.description || '';
+
+  getRoomAmenityLabel(amenity: RoomAmenityType): string {
+    return ROOM_AMENITY_LABELS[amenity] || amenity;
   }
-  getZoneIcon(zoneKey: ZoneType): string {
-    return ARMENIA_NORTH_ZONES[zoneKey]?.icon || '📍';
+
+  getBedTypeLabel(bed: { type: any; quantity: number }): string {
+    const label = BED_TYPE_LABELS[bed.type as keyof typeof BED_TYPE_LABELS] || bed.type;
+    return bed.quantity > 1 ? `${bed.quantity} ${label}s` : label;
   }
-  getPropertyTypeLabel(type: PropertyType): string {
-    return PROPERTY_TYPE_LABELS[type] || type;
+
+  getBathroomTypeLabel(type: BathroomType): string {
+    return type === 'privado' ? 'Baño Privado' : 'Baño Compartido';
   }
-  getAmenityLabel(amenity: AmenityType): string {
-    return AMENITY_LABELS[amenity] || amenity;
+
+  getMainAmenities(room: Room): RoomAmenityType[] {
+    const priorityAmenities: RoomAmenityType[] = [
+      'aire-acondicionado', 'tv-smart', 'escritorio', 'bano-privado', 'balcon'
+    ];
+    return room.amenities.filter(amenity => priorityAmenities.includes(amenity));
   }
-  getServiceLabel(service: ServiceType): string {
-    return SERVICE_LABELS[service] || service;
+
+  getSecondaryAmenities(room: Room): RoomAmenityType[] {
+    const priorityAmenities: RoomAmenityType[] = [
+      'aire-acondicionado', 'tv-smart', 'escritorio', 'bano-privado', 'balcon'
+    ];
+    return room.amenities.filter(amenity => !priorityAmenities.includes(amenity));
   }
-  getMainAmenities(property: Property): AmenityType[] {
-    const priorityAmenities: AmenityType[] = ['wifi', 'ac', 'parking', 'kitchen', 'tv'];
-    return property.amenities.filter(amenity => priorityAmenities.includes(amenity));
+
+  getRoomCapacityText(room: Room): string {
+    return room.maxGuests === 1 ? '1 persona' : `Hasta ${room.maxGuests} personas`;
   }
-  getSecondaryAmenities(property: Property): AmenityType[] {
-    const priorityAmenities: AmenityType[] = ['wifi', 'ac', 'parking', 'kitchen', 'tv'];
-    return property.amenities.filter(amenity => !priorityAmenities.includes(amenity));
+
+  getRoomWindowView(room: Room): string {
+    const views = {
+      'interior': 'Vista interior',
+      'calle': 'Vista a la calle',
+      'jardin': 'Vista al jardín',
+      'terraza': 'Vista a la terraza'
+    };
+    return room.windowView ? views[room.windowView as keyof typeof views] || room.windowView : 'Sin especificar';
   }
-  getWeeklyDiscount(property: Property): number {
-    return this.propertyService.calculateWeeklyDiscount(property);
+
+  // ================================
+  // 🛠️ UTILIDADES - ESTABLISHMENT
+  // ================================
+
+  getEstablishmentAmenityLabel(amenity: EstablishmentAmenityType): string {
+    return ESTABLISHMENT_AMENITY_LABELS[amenity] || amenity;
   }
-  getMonthlyDiscount(property: Property): number {
-    return this.propertyService.calculateMonthlyDiscount(property);
+
+  getEstablishmentServiceLabel(service: EstablishmentServiceType): string {
+    return ESTABLISHMENT_SERVICE_LABELS[service] || service;
   }
+
   getCancellationPolicyLabel(policy: string): string {
     const policies = {
       'flexible': 'Cancelación flexible - Reembolso completo hasta 24h antes',
@@ -381,6 +481,28 @@ export class PropertyDetailsComponent implements OnInit, OnDestroy {
     };
     return policies[policy as keyof typeof policies] || policy;
   }
+
+  getResponseTimeLabel(responseTime: string): string {
+    const times = {
+      'inmediata': 'Respuesta inmediata',
+      'en horas': 'Responde en pocas horas',
+      'en 1 día': 'Responde en 1 día'
+    };
+    return times[responseTime as keyof typeof times] || responseTime;
+  }
+
+  // ================================
+  // 💰 UTILIDADES DE PRECIO
+  // ================================
+
+  getWeeklyDiscount(room: Room): number {
+    return room.pricing.weeklyDiscount || 0;
+  }
+
+  getMonthlyDiscount(room: Room): number {
+    return room.pricing.monthlyDiscount || 0;
+  }
+
   formatCurrency(amount: number): string {
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',
@@ -388,7 +510,10 @@ export class PropertyDetailsComponent implements OnInit, OnDestroy {
       minimumFractionDigits: 0
     }).format(amount);
   }
+
   formatDate(dateString: string): string {
+    if (!dateString) return '';
+    
     const date = new Date(dateString);
     return new Intl.DateTimeFormat('es-CO', {
       weekday: 'short',
@@ -397,7 +522,29 @@ export class PropertyDetailsComponent implements OnInit, OnDestroy {
     }).format(date);
   }
 
-  trackByPropertyId(index: number, property: Property): string {
-    return property.id;
+  // ================================
+  // 🎯 TRACKING
+  // ================================
+
+  trackByRoomId(index: number, room: Room): string {
+    return room.id;
+  }
+
+  // ================================
+  // 🔧 HELPERS PARA TEMPLATE
+  // ================================
+
+  hasDiscount(room: Room): boolean {
+    return !!(room.pricing.weeklyDiscount || room.pricing.monthlyDiscount);
+  }
+
+  isRoomAvailable(room: Room): boolean {
+    return room.availability.isActive && room.availability.isAvailable;
+  }
+
+  getRoomAvailabilityText(room: Room): string {
+    if (!room.availability.isActive) return 'No disponible';
+    if (!room.availability.isAvailable) return 'Ocupada';
+    return 'Disponible';
   }
 }

@@ -1,108 +1,108 @@
-<!-- 📁 src/app/pages/home/home.component.html -->
+<!-- 📁 src/app/pages/home/home.component.html - CORREGIDO -->
 
-
+<!-- HERO SECTION - ACTUALIZADO PARA UN ESTABLECIMIENTO -->
 <section class="hero-quindio">
   <div class="container">
     <div class="hero-content">
       <h1 class="hero-title">
-        Habitaciones en el <span class="text-accent">Norte de Armenia</span>
+        Bienvenido a <span class="text-accent">{{ (establishment$ | async)?.name || 'Hostal Norte Armenia' }}</span>
       </h1>
       <p class="hero-subtitle">
-        Encuentra tu alojamiento perfecto en la zona más tranquila y conectada de Armenia, Quindío
+        {{ (establishment$ | async)?.tagline || 'Tu hogar en el corazón del Quindío' }} - 
+        Habitaciones cómodas y servicios de calidad en el norte de Armenia
       </p>
 
       <div class="hero-badges">
         <span class="hero-badge">
-          🏠 Habitaciones Cómodas
+          🛏️ {{ (establishmentStats$ | async)?.totalRooms || 5 }} Habitaciones
         </span>
         <span class="hero-badge">
-          📍 Zona Norte
+          📍 Norte de Armenia
         </span>
         <span class="hero-badge">
-          💰 Precios Justos
+          ⭐ {{ (establishmentStats$ | async)?.averageRating || 4.8 }} Calificación
         </span>
       </div>
     </div>
+
+    <!-- SEARCH BAR SIMPLIFICADO -->
     <form #searchForm="ngForm" (ngSubmit)="onSearchSubmit(searchForm)" class="search-bar">
       
       <div class="search-field">
-        <label for="destination">Zona del Norte</label>
-        <select 
-          id="destination"
-          [(ngModel)]="searchData.destination"
-          name="destination"
-          class="search-input"
-          required>
-          <option value="">Selecciona zona</option>
-          <option value="norte-centro">🏢 Norte Centro</option>
-          <option value="la-secreta">🏘️ La Secreta</option>
-          <option value="bosques-pinares">🌲 Bosques de Pinares</option>
-          <option value="ciudadela-del-cafe">☕ Ciudadela del Café</option>
-          <option value="villa-liliana">🏠 Villa Liliana</option>
-        </select>
-      </div>
-
-      <div class="search-field">
-        <label for="checkIn">Llegada</label>
+        <!-- Usar clase global form-label -->
+        <label for="checkIn" class="form-label">Llegada</label>
         <input 
           id="checkIn"
           type="date" 
           [(ngModel)]="searchData.checkIn"
           name="checkIn"
           [min]="today"
-          class="date-input"
-          placeholder="Seleccionar fecha">
+          class="form-input date-input"
+          placeholder="Seleccionar fecha"
+          [attr.aria-describedby]="searchError ? 'search-error' : null">
       </div>
 
       <div class="search-field">
-        <label for="checkOut">Salida</label>
+        <label for="checkOut" class="form-label">Salida</label>
         <input 
           id="checkOut"
           type="date" 
           [(ngModel)]="searchData.checkOut"
           name="checkOut"
           [min]="tomorrow"
-          class="date-input"
-          placeholder="Seleccionar fecha">
+          class="form-input date-input"
+          placeholder="Seleccionar fecha"
+          [attr.aria-describedby]="searchError ? 'search-error' : null">
       </div>
 
       <div class="search-field">
-        <label for="guests">Huéspedes</label>
+        <label for="guests" class="form-label">Huéspedes</label>
+        <!-- Usar clase global form-select -->
         <select 
           id="guests"
           [(ngModel)]="searchData.guests"
           name="guests"
-          class="guests-select">
+          class="form-select guests-select">
           <option value="1">1 Persona</option>
           <option value="2">2 Personas</option>
           <option value="3">3 Personas</option>
           <option value="4">4 Personas</option>
-          <option value="5">5+ Personas</option>
+          <option value="5">5 Personas</option>
+          <option value="6">6 Personas</option>
         </select>
       </div>
       
       <div class="search-field search-button-field">
+        <!-- Combinar clases globales -->
         <button 
           type="submit" 
-          class="search-btn"
-          [disabled]="!searchData.destination"
-          [class.loading]="isLoading">
-          <span class="search-icon">🔍</span>
-          <span class="search-text">{{ isLoading ? 'Buscando...' : 'Buscar' }}</span>
+          class="btn btn-primary btn-lg search-btn"
+          [class.loading]="isLoading"
+          [disabled]="isLoading">
+          <span class="search-icon" [attr.aria-hidden]="true">🔍</span>
+          <span class="search-text">{{ isLoading ? 'Buscando...' : 'Ver Habitaciones' }}</span>
         </button>
       </div>
-      <div *ngIf="searchError" class="search-error" [attr.role]="'alert'">
-        ⚠️ {{ searchError }}
+
+      <!-- Mejor accesibilidad para errores -->
+      <div *ngIf="searchError" 
+           id="search-error" 
+           class="search-error" 
+           role="alert"
+           [attr.aria-live]="'assertive'">
+        <span aria-hidden="true">⚠️</span> {{ searchError }}
       </div>
     </form>
+
+    <!-- QUICK SUGGESTIONS POR TIPO DE HABITACIÓN -->
     <div class="quick-suggestions">
-      <p class="suggestions-label">Zonas populares:</p>
+      <p class="suggestions-label">Tipos de habitación:</p>
       <div class="suggestions-list">
         <button 
-          *ngFor="let suggestion of quickSuggestions"
+          *ngFor="let suggestion of roomSuggestions"
           class="suggestion-btn" 
-          (click)="searchDestination(suggestion.destination)"
-          [attr.aria-label]="'Buscar en ' + suggestion.label"
+          (click)="searchRoomType(suggestion.roomType)"
+          [attr.aria-label]="'Ver ' + suggestion.label"
           type="button">
           <span class="suggestion-icon">{{ suggestion.icon }}</span>
           <span class="suggestion-label">{{ suggestion.label }}</span>
@@ -113,11 +113,14 @@
   </div>
 </section>
 
+<!-- NUESTRAS HABITACIONES -->
 <section class="section">
   <div class="container">
+    <!-- Usar clase global section-header -->
     <div class="section-header">
-      <h2>Habitaciones Disponibles</h2>
-      <p class="subtitle">Alojamientos verificados en el norte de Armenia</p>
+      <h2>Nuestras Habitaciones</h2>
+      <!-- Usar clase global subtitle y text-secondary -->
+      <p class="subtitle text-secondary">Conoce las diferentes opciones disponibles en {{ (establishment$ | async)?.name || 'nuestro hostal' }}</p>
     </div>
 
     <div *ngIf="isLoading" class="loading-container" [attr.aria-live]="'polite'">
@@ -125,99 +128,131 @@
       <p class="loading-text">Cargando habitaciones...</p>
     </div>
     
-    <!-- PROPERTY CARDS -->
+    <!-- ROOM CARDS - Usar clases globales -->
     <div *ngIf="!isLoading" class="properties-grid">
       <article 
-        *ngFor="let property of featuredProperties$ | async; trackBy: trackByPropertyId"
-        class="property-card"
-        (click)="viewPropertyDetails(property.id)"
-        [attr.aria-label]="'Ver detalles de ' + (property.title || 'habitación')"
+        *ngFor="let room of featuredRooms$ | async; trackBy: trackByRoomId"
+        class="card card-interactive property-card"
+        (click)="viewRoomDetails(room.id)"
+        [attr.aria-label]="'Ver detalles de ' + room.name"
         tabindex="0"
-        (keydown.enter)="viewPropertyDetails(property.id)"
-        (keydown.space)="viewPropertyDetails(property.id)">
+        (keydown.enter)="viewRoomDetails(room.id)"
+        (keydown.space)="viewRoomDetails(room.id); $event.preventDefault()">
         
-        <!-- PROPERTY IMAGE -->
+        <!-- ROOM IMAGE -->
         <div class="property-image">
           <img 
-            [src]="property.image || 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&h=300&fit=crop'"
-            [alt]="property.title || 'Habitación en Armenia'"
-            loading="lazy">
+            [src]="room.images.main"
+            [alt]="'Habitación ' + room.name + ' - ' + room.description"
+            loading="lazy"
+            [attr.width]="400"
+            [attr.height]="300">
           
-          <!-- RATING BADGE -->
-          <div class="property-rating" *ngIf="property.rating">
-            ⭐ {{ property.rating }}
+          <!-- RATING BADGE con mejor accesibilidad -->
+          <div class="property-rating" *ngIf="room.stats.rating" 
+               [attr.aria-label]="'Calificación: ' + room.stats.rating + ' de 5 estrellas'">
+            <span aria-hidden="true">⭐</span> 
+            <span>{{ room.stats.rating }}</span>
           </div>
           
-          <!-- FAVORITE BUTTON -->
+          <!-- CONTACT BUTTON (en lugar de favoritos) -->
           <button 
-            class="favorite-btn"
-            (click)="toggleFavorite(property.id, $event)"
-            [attr.aria-label]="'Agregar a favoritos: ' + (property.title || 'habitación')"
+            class="contact-btn"
+            (click)="contactAboutRoom(room.id, $event)"
+            [attr.aria-label]="'Contactar sobre ' + room.name"
             type="button">
-            <span [ngClass]="property.isFavorite ? 'heart-filled' : 'heart-empty'">
-              {{ property.isFavorite ? '❤️' : '🤍' }}
-            </span>
+            <span [attr.aria-hidden]="true">📞</span>
           </button>
 
-          <!-- PROPERTY BADGES -->
+          <!-- ROOM BADGES mejorados -->
           <div class="property-badges">
-            <span class="badge badge-primary">
-              {{ getPropertyTypeName(property) || 'ALOJAMIENTO' }}
+            <!-- Usar clase global badge -->
+            <span class="badge badge-primary" [attr.aria-label]="'Tipo: ' + getRoomTypeName(room)">
+              {{ getRoomTypeName(room) }}
             </span>
-            <span *ngIf="property.isVerified" class="badge badge-verified">
-              ✅ VERIFICADO
+            <span *ngIf="isRoomAvailable(room)" 
+                  class="badge badge-success badge-verified"
+                  [attr.aria-label]="'Estado: ' + getRoomAvailabilityText(room)">
+              <span aria-hidden="true">✅</span> {{ getRoomAvailabilityText(room) }}
             </span>
           </div>
         </div>
         
-        <!-- PROPERTY INFO -->
-        <div class="property-info">
-          <h3 class="property-title">{{ property.title || 'Habitación Cómoda Norte Centro' }}</h3>
-          <p class="property-location">📍 {{ property.location || 'Norte Centro, Armenia' }}</p>
+        <!-- ROOM INFO - Usar clase global card-content -->
+        <div class="card-content property-info">
+          <header>
+            <h3 class="property-title">{{ room.name }}</h3>
+            <!-- Usar clase global text-secondary -->
+            <p class="property-location text-secondary">
+              <span aria-hidden="true">🏨</span> {{ room.roomNumber }} - {{ (establishment$ | async)?.name }}
+            </p>
+          </header>
           
-          <!-- PROPERTY SPECS -->
-          <div class="property-specs">
-            <span class="spec-item">🛏️ {{ property.bedrooms || 1 }} hab.</span>
-            <span class="spec-item">🚿 {{ property.bathrooms || 1 }} baño</span>
-            <span class="spec-item">👥 {{ property.maxGuests || 2 }} huéspedes</span>
-          </div>
+          <!-- ROOM SPECS con lista semántica -->
+          <dl class="property-specs">
+            <div class="spec-item">
+              <dt class="sr-only">Camas:</dt>
+              <dd><span aria-hidden="true">🛏️</span> {{ room.beds.length || 1 }} cama(s)</dd>
+            </div>
+            <div class="spec-item">
+              <dt class="sr-only">Baño:</dt>
+              <dd><span aria-hidden="true">🚿</span> {{ room.bathroomType === 'privado' ? 'Baño privado' : 'Baño compartido' }}</dd>
+            </div>
+            <div class="spec-item">
+              <dt class="sr-only">Capacidad:</dt>
+              <dd><span aria-hidden="true">👥</span> {{ getRoomCapacityLabel(room) }}</dd>
+            </div>
+            <div *ngIf="room.area" class="spec-item">
+              <dt class="sr-only">Área:</dt>
+              <dd><span aria-hidden="true">📐</span> {{ room.area }}m²</dd>
+            </div>
+          </dl>
           
-          <!-- PROPERTY FEATURES -->
-          <div class="property-features">
+          <!-- ROOM FEATURES -->
+          <div class="property-features" *ngIf="getRoomFeatures(room).length > 0">
+            <!-- Usar clase global badge -->
             <span 
-              *ngFor="let feature of getPropertyFeatures(property)"
-              class="feature-tag">
+              *ngFor="let feature of getRoomFeatures(room)"
+              class="badge feature-tag">
               {{ feature }}
             </span>
           </div>
           
-          <!-- PROPERTY DESCRIPTION -->
-          <div class="property-description">
-            {{ property.description || 'Habitación privada en el corazón del norte de Armenia. Perfecta para viajeros de negocios, con fácil acceso al centro comercial y transporte público.' }}
+          <!-- ROOM DESCRIPTION - Usar clase global text-secondary -->
+          <p class="property-description text-secondary">
+            {{ room.description }}
+          </p>
+
+          <!-- SPECIAL OFFERS -->
+          <div *ngIf="shouldShowSpecialOffer(room)" class="property-offer">
+            <span aria-hidden="true">🎉</span> {{ getSpecialOfferText(room) }}
           </div>
         </div>
 
-        <!-- PROPERTY FOOTER -->
-        <div class="property-footer">
+        <!-- ROOM FOOTER - Usar clase global card-footer -->
+        <footer class="card-footer property-footer">
           <div class="property-price">
-            <span class="price-amount">${{ (property.pricePerNight || 45000) | number }}</span>
-            <span class="price-currency">COP</span>
-            <span class="price-period">/ noche</span>
+            <span class="price-amount">{{ formatPrice(room.pricing.basePrice) }}</span>
+            <!-- Usar clase global text-muted -->
+            <span class="price-period text-muted">/ noche</span>
           </div>
+          <!-- Usar clase global btn -->
           <button 
             class="btn btn-primary" 
             type="button"
-            (click)="viewPropertyDetails(property.id); $event.stopPropagation()">
+            (click)="viewRoomDetails(room.id); $event.stopPropagation()"
+            [attr.aria-label]="'Ver detalles de ' + room.name">
             Ver Habitación
           </button>
-        </div>
+        </footer>
       </article>
     </div>
 
     <div class="text-center" *ngIf="!isLoading">
+      <!-- Usar clases globales btn -->
       <button 
         class="btn btn-outline btn-lg"
-        (click)="viewAllProperties()"
+        (click)="viewAllRooms()"
         type="button">
         Ver Todas las Habitaciones
       </button>
@@ -225,89 +260,111 @@
   </div>
 </section>
 
-<section class="section">
+<!-- INFORMACIÓN DEL ESTABLECIMIENTO - Usar clases globales -->
+<section class="section bg-light">
   <div class="container">
-    <div class="section-header">
-      <h2>Zonas del Norte de Armenia</h2>
-      <p class="subtitle">Conoce las diferentes áreas disponibles</p>
-    </div>
+    <!-- Usar clase global section-header -->
+    <header class="section-header">
+      <h2>Sobre {{ (establishment$ | async)?.name || 'Nuestro Hostal' }}</h2>
+      <!-- Usar clase global subtitle y text-secondary -->
+      <p class="subtitle text-secondary">
+        Conoce nuestras instalaciones y servicios
+      </p>
+    </header>
     
-    <div class="grid grid-cols-3 gap-6">
-      <div 
-        *ngFor="let zona of zonasDelNorte"
-        class="card card-interactive"
-        (click)="searchDestination(zona.key)"
-        [attr.aria-label]="'Buscar habitaciones en ' + zona.name"
-        tabindex="0"
-        (keydown.enter)="searchDestination(zona.key)"
-        (keydown.space)="searchDestination(zona.key)">
-        
+    <!-- Usar sistema grid global -->
+    <div class="grid grid-cols-2 gap-8" *ngIf="establishment$ | async as establishment">
+      <!-- INFORMACIÓN GENERAL - Usar clase global card -->
+      <div class="card">
+        <!-- Usar clase global card-content -->
         <div class="card-content">
-          <div class="zone-icon">{{ zona.icon }}</div>
-          <h3 class="card-title">{{ zona.name }}</h3>
-          <p class="card-description">{{ zona.description }}</p>
-          <div class="zone-stats">
-            <span class="zone-badge">{{ zona.properties }} habitaciones</span>
+          <h3 class="card-title">📍 Ubicación</h3>
+          <!-- Usar clase global text-secondary -->
+          <p class="card-description text-secondary">{{ establishment.address }}</p>
+          <div class="establishment-stats">
+            <div class="stat-item">
+              <!-- Usar clase global text-primary -->
+              <span class="stat-number text-primary">{{ establishment.stats.totalRooms }}</span>
+              <!-- Usar clase global text-muted -->
+              <span class="stat-label text-muted">Habitaciones</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-number text-primary">{{ establishment.stats.averageRating }}</span>
+              <span class="stat-label text-muted">Calificación</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-number text-primary">{{ establishment.stats.totalReviews }}</span>
+              <span class="stat-label text-muted">Reseñas</span>
+            </div>
           </div>
         </div>
+      </div>
 
-        <div class="card-footer">
-          <button 
-            class="btn btn-primary" 
-            type="button"
-            (click)="searchDestination(zona.key); $event.stopPropagation()">
-            Ver Habitaciones
-          </button>
+      <!-- SERVICIOS DEL ESTABLECIMIENTO -->
+      <div class="card">
+        <div class="card-content">
+          <h3 class="card-title">🏨 Servicios Incluidos</h3>
+          <ul class="amenities-grid" role="list">
+            <li 
+              *ngFor="let amenity of establishment.amenities.slice(0, 6)"
+              class="amenity-tag">
+              <span aria-hidden="true">✅</span> {{ amenity.replace('-', ' ') | titlecase }}
+            </li>
+          </ul>
         </div>
       </div>
     </div>
   </div>
 </section>
 
+<!-- ¿POR QUÉ ELEGIRNOS? -->
 <section class="section bg-light">
   <div class="container">
     <div class="section-header">
-      <h2>¿Por Qué el Norte de Armenia?</h2>
-      <p class="subtitle">La mejor zona para hospedarse en la ciudad</p>
+      <h2>¿Por Qué Elegir {{ (establishment$ | async)?.name || 'Nuestro Hostal' }}?</h2>
+      <!-- Usar clase global subtitle y text-secondary -->
+      <p class="subtitle text-secondary">La mejor opción para tu estadía en Armenia, Quindío</p>
     </div>
     
     <div class="features-grid">
+      <!-- Usar clases globales card -->
       <div class="card card-hover">
         <div class="card-content">
-          <div class="feature-icon">🚗</div>
-          <h3 class="card-title">Excelente Conexión</h3>
-          <p class="card-description">
-            Fácil acceso al centro, aeropuerto y principales vías. Transporte público disponible.
+          <div class="feature-icon">📍</div>
+          <h3 class="card-title">Ubicación Estratégica</h3>
+          <!-- Usar clase global text-secondary -->
+          <p class="card-description text-secondary">
+            En el norte de Armenia, cerca del centro, aeropuerto y principales atracciones turísticas.
           </p>
         </div>
       </div>
 
       <div class="card card-hover">
         <div class="card-content">
-          <div class="feature-icon">🏪</div>
-          <h3 class="card-title">Zona Comercial</h3>
-          <p class="card-description">
-            Cerca de centros comerciales, restaurantes, supermercados y servicios esenciales.
+          <div class="feature-icon">🛏️</div>
+          <h3 class="card-title">Habitaciones Cómodas</h3>
+          <p class="card-description text-secondary">
+            5 habitaciones diferentes para todos los tipos de viajeros, desde individual hasta familiar.
           </p>
         </div>
       </div>
 
       <div class="card card-hover">
         <div class="card-content">
-          <div class="feature-icon">🔒</div>
-          <h3 class="card-title">Seguridad</h3>
-          <p class="card-description">
-            Zona residencial tranquila y segura, ideal para familias y viajeros de negocios.
+          <div class="feature-icon">💰</div>
+          <h3 class="card-title">Precios Justos</h3>
+          <p class="card-description text-secondary">
+            Tarifas competitivas con descuentos por estancias semanales y mensuales.
           </p>
         </div>
       </div>
 
       <div class="card card-hover">
         <div class="card-content">
-          <div class="feature-icon">✅</div>
-          <h3 class="card-title">Habitaciones Verificadas</h3>
-          <p class="card-description">
-            Todos los alojamientos son inspeccionados por limpieza, comodidad y servicios.
+          <div class="feature-icon">🤝</div>
+          <h3 class="card-title">Atención Personalizada</h3>
+          <p class="card-description text-secondary">
+            Anfitriones locales con años de experiencia en hospitalidad y conocimiento de la región.
           </p>
         </div>
       </div>
@@ -315,20 +372,22 @@
   </div>
 </section>
 
+<!-- CTA SECTION ACTUALIZADA -->
 <section class="section bg-quindio-gradient">
   <div class="container">
     <div class="cta-content">
-      <h2 class="cta-title">Encuentra tu Habitación Ideal</h2>
+      <h2 class="cta-title">Reserva tu Habitación Ideal</h2>
       <p class="cta-subtitle">
-        Habitaciones cómodas, ubicaciones estratégicas, precios justos
+        Habitaciones cómodas, servicios incluidos, ubicación perfecta en el norte de Armenia
       </p>
       
-      <div class="cta-buttons">
+      <!-- Usar clases globales d-flex justify-center -->
+      <div class="cta-buttons d-flex justify-center gap-4 flex-wrap">
         <button 
           class="btn btn-lg cta-btn-primary"
-          (click)="viewAllProperties()"
+          (click)="viewAllRooms()"
           type="button">
-          Ver Habitaciones
+          Ver Habitaciones Disponibles
         </button>
         <button 
           class="btn btn-lg cta-btn-secondary"
@@ -337,6 +396,16 @@
           Contactar por WhatsApp
         </button>
       </div>
+
+      <!-- CONTACTO RÁPIDO -->
+      <address class="quick-contact" *ngIf="establishment$ | async as establishment">
+        <!-- Usar clase global text-center -->
+        <p class="contact-text text-center">
+          <span>📱 <a [href]="'tel:' + establishment.contactInfo.phone" class="text-white">{{ establishment.contactInfo.phone }}</a></span>
+          <span>📧 <a [href]="'mailto:' + establishment.contactInfo.email" class="text-white">{{ establishment.contactInfo.email }}</a></span>
+          <span>📍 {{ establishment.areaInfo.neighborhood }}</span>
+        </p>
+      </address>
     </div>
   </div>
 </section>

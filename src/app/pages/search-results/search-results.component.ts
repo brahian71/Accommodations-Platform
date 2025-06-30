@@ -4,32 +4,25 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Observable, Subject, BehaviorSubject, combineLatest, of } from 'rxjs';
-import { map, takeUntil, debounceTime, distinctUntilChanged, switchMap, startWith, tap } from 'rxjs/operators';
-import { 
-  Property, 
-  ZoneType, 
-  PropertyType, 
-  AmenityType, 
-  ServiceType,
-  ARMENIA_NORTH_ZONES,
-  PROPERTY_TYPE_LABELS,
-  AMENITY_LABELS,
-  SERVICE_LABELS
-} from '../../core/models/property.interface';
+import { Observable, Subject, combineLatest } from 'rxjs';
+import { map, takeUntil, debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 
+import { Room, RoomType, RoomAmenityType, ROOM_TYPE_LABELS, ROOM_AMENITY_LABELS } from '../../core/models/room.interface';
+import { Establishment } from '../../core/models/establishment.interface';
 import { 
-  SearchParams, 
-  Filters, 
-  SortOption,
-  SearchResultsConfig,
-  SORT_OPTIONS,
-  DEFAULT_FILTERS,
-  DEFAULT_SEARCH_RESULTS_CONFIG,
-  DEFAULT_SEARCH_PARAMS
-} from '../../core/models/search.interface';
+  RoomSearchParams, 
+  RoomFilters, 
+  RoomSearchConfig,
+  ROOM_SORT_OPTIONS,
+  DEFAULT_ROOM_FILTERS,
+  DEFAULT_ROOM_SEARCH_CONFIG,
+  DEFAULT_ROOM_SEARCH_PARAMS,
+  ROOM_PRICE_RANGES
+} from '../../core/models/room-search.interface';
 
-import { PropertyService } from '../../core/services/property.service';
+import { RoomService } from '../../core/services/room.service';
+import { EstablishmentService } from '../../core/services/establishment.service';
+import { RoomSearchService } from '../../core/services/room-search.service';
 
 @Component({
   selector: 'app-search-results',
@@ -43,9 +36,11 @@ import { PropertyService } from '../../core/services/property.service';
 })
 export class SearchResultsComponent implements OnInit, OnDestroy {
 
-  allProperties: Property[] = [];
-  filteredProperties: Property[] = [];
-  paginatedProperties: Property[] = [];
+  allRooms: Room[] = [];
+  filteredRooms: Room[] = [];
+  paginatedRooms: Room[] = [];
+  
+  establishment$: Observable<Establishment>;
   
   // 📊 STATE
   isLoading = false;
@@ -53,17 +48,16 @@ export class SearchResultsComponent implements OnInit, OnDestroy {
   totalResults = 0;
   totalPages = 0;
 
-  // 🔍 SEARCH DATA
-  searchData: SearchParams = {
-    destination: '',
+  // 🔍 SEARCH DATA (SIN ZONA GEOGRÁFICA)
+  searchData: RoomSearchParams = {
     checkIn: '',
     checkOut: '',
-    guests: 2
+    guests: 1
   };
 
   // 📱 CURRENT CONFIG
-  currentFilters: Filters = { ...DEFAULT_FILTERS };
-  currentConfig: SearchResultsConfig = { ...DEFAULT_SEARCH_RESULTS_CONFIG };
+  currentFilters: RoomFilters = { ...DEFAULT_ROOM_FILTERS };
+  currentConfig: RoomSearchConfig = { ...DEFAULT_ROOM_SEARCH_CONFIG };
 
   // 🧹 CLEANUP
   private destroy$ = new Subject<void>();
@@ -72,24 +66,23 @@ export class SearchResultsComponent implements OnInit, OnDestroy {
   readonly today = new Date().toISOString().split('T')[0];
   readonly tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
 
-  // 🗺️ CONFIGURACIONES ESTÁTICAS
-  readonly northZones = Object.entries(ARMENIA_NORTH_ZONES).map(([key, value]) => ({
-    key: key as ZoneType,
-    name: value.name,
-    description: value.description,
-    icon: value.icon
-  }));
-
-  readonly sortOptions = SORT_OPTIONS;
-  readonly itemsPerPageOptions = [5, 10, 20, 50];
+  // 🗂️ CONFIGURACIONES ESTÁTICAS
+  readonly sortOptions = ROOM_SORT_OPTIONS;
+  readonly itemsPerPageOptions = [8, 16, 24, 32];
+  readonly priceRanges = ROOM_PRICE_RANGES;
+  readonly roomTypeLabels = ROOM_TYPE_LABELS;
 
   currentMinRating = 0;
 
   constructor(
-    private propertyService: PropertyService,
+    private roomService: RoomService,
+    private establishmentService: EstablishmentService,
+    private roomSearchService: RoomSearchService,
     private route: ActivatedRoute,
     private router: Router
-  ) {}
+  ) {
+    this.establishment$ = this.establishmentService.getEstablishmentInfo();
+  }
 
   ngOnInit(): void {
     this.loadInitialData();
@@ -103,18 +96,18 @@ export class SearchResultsComponent implements OnInit, OnDestroy {
 
   private loadInitialData(): void {
     this.isLoading = true;
-    this.propertyService.getProperties()
+    this.roomService.getRooms()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (properties) => {
-          this.allProperties = properties;
+        next: (rooms) => {
+          this.allRooms = rooms;
           this.applyFiltersAndUpdate();
           this.isLoading = false;
         },
         error: (error) => {
           this.isLoading = false;
           this.searchError = 'Error cargando habitaciones. Inténtalo de nuevo.';
-          console.error('❌ Error cargando propiedades:', error);
+          console.error('❌ Error cargando habitaciones:', error);
         }
       });
   }
@@ -123,179 +116,202 @@ export class SearchResultsComponent implements OnInit, OnDestroy {
     this.route.queryParams
       .pipe(takeUntil(this.destroy$))
       .subscribe(params => {
-        const searchParams: SearchParams = {
-          destination: params['zone'] || params['destination'] || '',
+        const searchParams: RoomSearchParams = {
           checkIn: params['checkIn'] || '',
           checkOut: params['checkOut'] || '',
-          guests: +params['guests'] || 2
+          guests: +params['guests'] || 1,
+          roomType: params['type'] as RoomType || undefined
         };
 
         this.searchData = { ...searchParams };
         this.applyFiltersAndUpdate();
       });
   }
-  private applyFiltersAndUpdate(): void {
-    let filtered = [...this.allProperties];
 
-    if (this.searchData.destination) {
-      filtered = filtered.filter(p => p.zone === this.searchData.destination);
-    }
+  public applyFiltersAndUpdate(): void {
+    let filtered = [...this.allRooms];
 
+    // Filtrar por parámetros de búsqueda
     if (this.searchData.guests) {
-      filtered = filtered.filter(p => p.maxGuests >= this.searchData.guests);
+      filtered = filtered.filter(room => room.maxGuests >= this.searchData.guests);
     }
 
-    const activeZones = Object.entries(this.currentFilters.zones)
+    if (this.searchData.roomType) {
+      filtered = filtered.filter(room => room.roomType === this.searchData.roomType);
+    }
+
+    // Filtrar por tipos de habitación
+    const activeRoomTypes = Object.entries(this.currentFilters.roomTypes)
       .filter(([_, active]) => active)
-      .map(([zone, _]) => zone as ZoneType);
+      .map(([type, _]) => type as RoomType);
     
-    if (activeZones.length > 0) {
-      filtered = filtered.filter(p => activeZones.includes(p.zone));
+    if (activeRoomTypes.length > 0) {
+      filtered = filtered.filter(room => activeRoomTypes.includes(room.roomType));
     }
 
-    const activeTypes = Object.entries(this.currentFilters.propertyTypes)
-      .filter(([_, active]) => active)
-      .map(([type, _]) => type as PropertyType);
-    
-    if (activeTypes.length > 0) {
-      filtered = filtered.filter(p => activeTypes.includes(p.propertyType));
-    }
-
+    // Filtrar por amenidades de habitación
     const activeAmenities = Object.entries(this.currentFilters.amenities)
       .filter(([_, active]) => active)
-      .map(([amenity, _]) => amenity as AmenityType);
+      .map(([amenity, _]) => amenity as RoomAmenityType);
     
     if (activeAmenities.length > 0) {
-      filtered = filtered.filter(p => 
-        activeAmenities.every(amenity => p.amenities.includes(amenity))
+      filtered = filtered.filter(room => 
+        activeAmenities.every(amenity => room.amenities.includes(amenity))
       );
     }
 
-    const activeServices = Object.entries(this.currentFilters.services)
-      .filter(([_, active]) => active)
-      .map(([service, _]) => service as ServiceType);
+    // Filtrar por características especiales
+    if (this.currentFilters.features.hasWorkspace) {
+      filtered = filtered.filter(room => 
+        room.amenities.includes('escritorio') && room.amenities.includes('silla-trabajo')
+      );
+    }
+
+    if (this.currentFilters.features.hasBalcony) {
+      filtered = filtered.filter(room => room.amenities.includes('balcon'));
+    }
+
+    if (this.currentFilters.features.hasPrivateBathroom) {
+      filtered = filtered.filter(room => room.bathroomType === 'privado');
+    }
+
+    if (this.currentFilters.features.hasAirConditioning) {
+      filtered = filtered.filter(room => room.amenities.includes('aire-acondicionado'));
+    }
+
+    if (this.currentFilters.features.hasSmartTV) {
+      filtered = filtered.filter(room => room.amenities.includes('tv-smart'));
+    }
+
+    if (this.currentFilters.features.hasSafe) {
+      filtered = filtered.filter(room => room.amenities.includes('caja-fuerte'));
+    }
+
+    // Filtrar por capacidad
+    const activeCapacities = Object.entries(this.currentFilters.capacity)
+      .filter(([_, active]) => active);
     
-    if (activeServices.length > 0) {
-      filtered = filtered.filter(p => 
-        activeServices.every(service => p.services.includes(service))
+    if (activeCapacities.length > 0) {
+      filtered = filtered.filter(room => {
+        return activeCapacities.some(([capacity, _]) => {
+          switch (capacity) {
+            case 'guests1': return room.maxGuests >= 1;
+            case 'guests2': return room.maxGuests >= 2;
+            case 'guests3': return room.maxGuests >= 3;
+            case 'guests4Plus': return room.maxGuests >= 4;
+            default: return true;
+          }
+        });
+      });
+    }
+
+    // Filtrar por rango de precios
+    if (this.currentFilters.minPrice || this.currentFilters.maxPrice) {
+      filtered = filtered.filter(room => 
+        room.pricing.basePrice >= (this.currentFilters.minPrice || 0) &&
+        room.pricing.basePrice <= (this.currentFilters.maxPrice || Infinity)
       );
     }
 
-    if (this.currentFilters.priceMin || this.currentFilters.priceMax) {
-      filtered = filtered.filter(p => 
-        p.pricePerNight >= (this.currentFilters.priceMin || 0) &&
-        p.pricePerNight <= (this.currentFilters.priceMax || Infinity)
-      );
+    // Filtrar por rangos de precio predefinidos
+    const activePriceRanges = Object.entries(this.currentFilters.priceRange)
+      .filter(([_, active]) => active)
+      .map(([range, _]) => range);
+
+    if (activePriceRanges.length > 0) {
+      filtered = filtered.filter(room => {
+        return activePriceRanges.some(range => {
+          switch (range) {
+            case 'budget': return room.pricing.basePrice <= 60000;
+            case 'mid': return room.pricing.basePrice > 60000 && room.pricing.basePrice <= 90000;
+            case 'premium': return room.pricing.basePrice > 90000;
+            default: return true;
+          }
+        });
+      });
     }
 
+    // Filtrar por calificación
     if (this.currentFilters.minRating) {
-      filtered = filtered.filter(p => p.rating >= this.currentFilters.minRating);
+      filtered = filtered.filter(room => room.stats.rating >= this.currentFilters.minRating);
     }
 
-    if (this.currentFilters.verified) {
-      filtered = filtered.filter(p => p.isVerified);
+    // Solo habitaciones disponibles
+    if (this.currentFilters.availableOnly) {
+      filtered = filtered.filter(room => 
+        room.availability.isActive && room.availability.isAvailable
+      );
     }
 
-    if (this.currentFilters.instantBook) {
-      filtered = filtered.filter(p => p.isInstantBook);
-    }
+    // Ordenar habitaciones
+    filtered = this.sortRooms(filtered, this.currentConfig.sortBy);
 
-    filtered = this.sortProperties(filtered, this.currentConfig.sortBy);
-
-    this.filteredProperties = filtered;
+    this.filteredRooms = filtered;
     this.totalResults = filtered.length;
     this.totalPages = Math.ceil(this.totalResults / this.currentConfig.itemsPerPage);
     this.updatePagination();
   }
 
-  private sortProperties(properties: Property[], sortBy: string): Property[] {
-    const sorted = [...properties];
-    
-    switch (sortBy) {
-      case 'price-asc':
-        return sorted.sort((a, b) => a.pricePerNight - b.pricePerNight);
-      case 'price-desc':
-        return sorted.sort((a, b) => b.pricePerNight - a.pricePerNight);
-      case 'rating':
-        return sorted.sort((a, b) => b.rating - a.rating);
-      case 'reviews':
-        return sorted.sort((a, b) => b.reviewsCount - a.reviewsCount);
-      case 'distance':
-        return sorted.sort((a, b) => {
-          const aDistance = a.zone === 'norte-centro' ? 1 : a.zone === 'villa-liliana' ? 2 : 3;
-          const bDistance = b.zone === 'norte-centro' ? 1 : b.zone === 'villa-liliana' ? 2 : 3;
-          return aDistance - bDistance;
-        });
-      case 'newest':
-        return sorted.sort((a, b) => 
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
-      case 'relevance':
-      default:
-        return sorted.sort((a, b) => {
-          if (a.isVerified !== b.isVerified) {
-            return a.isVerified ? -1 : 1;
-          }
-          return b.rating - a.rating;
-        });
-    }
+  private sortRooms(rooms: Room[], sortBy: string): Room[] {
+    return this.roomService.sortRooms(rooms, sortBy);
   }
 
   private updatePagination(): void {
     const startIndex = (this.currentConfig.currentPage - 1) * this.currentConfig.itemsPerPage;
     const endIndex = startIndex + this.currentConfig.itemsPerPage;
-    this.paginatedProperties = this.filteredProperties.slice(startIndex, endIndex);
+    this.paginatedRooms = this.filteredRooms.slice(startIndex, endIndex);
   }
 
-  toggleZone(zone: ZoneType, active: boolean): void {
-    this.currentFilters.zones[zone] = active;
+  // ================================
+  // 🎛️ FILTROS POR TIPO DE HABITACIÓN
+  // ================================
+
+  toggleRoomType(type: RoomType, active: boolean): void {
+    this.currentFilters.roomTypes[type] = active;
     this.currentConfig.currentPage = 1;
     this.applyFiltersAndUpdate();
   }
 
-  togglePropertyType(type: PropertyType, active: boolean): void {
-    this.currentFilters.propertyTypes[type] = active;
-    this.currentConfig.currentPage = 1;
-    this.applyFiltersAndUpdate();
-  }
-
-  toggleAmenity(amenity: AmenityType, active: boolean): void {
-    this.currentFilters.amenities[amenity] = active;
-    this.currentConfig.currentPage = 1;
-    this.applyFiltersAndUpdate();
-  }
-
-  toggleService(service: ServiceType, active: boolean): void {
-    this.currentFilters.services[service] = active;
-    this.currentConfig.currentPage = 1;
-    this.applyFiltersAndUpdate();
-  }
-
-  toggleSpecialFilter(filterType: string, active: boolean): void {
-    switch (filterType) {
-      case 'verified':
-        this.currentFilters.verified = active;
-        break;
-      case 'instantBook':
-        this.currentFilters.instantBook = active;
-        break;
-      case 'businessFriendly':
-        if (active) {
-          this.currentFilters.amenities.wifi = true;
-          this.currentFilters.amenities.ac = true;
-          this.currentFilters.zones['norte-centro'] = true;
-          this.currentFilters.zones['villa-liliana'] = true;
-        }
-        break;
+  toggleAmenity(amenity: string, active: boolean): void {
+    const amenityKey = amenity as keyof typeof this.currentFilters.amenities;
+    if (amenityKey in this.currentFilters.amenities) {
+      (this.currentFilters.amenities as any)[amenityKey] = active;
     }
-    
     this.currentConfig.currentPage = 1;
     this.applyFiltersAndUpdate();
   }
 
-  onPriceFilterClick(priceRange: { priceMin: number; priceMax: number }): void {
-    this.currentFilters.priceMin = priceRange.priceMin;
-    this.currentFilters.priceMax = priceRange.priceMax;
+  toggleFeature(feature: keyof RoomFilters['features'], active: boolean): void {
+    this.currentFilters.features[feature] = active;
+    this.currentConfig.currentPage = 1;
+    this.applyFiltersAndUpdate();
+  }
+
+  toggleCapacity(capacity: keyof RoomFilters['capacity'], active: boolean): void {
+    this.currentFilters.capacity[capacity] = active;
+    this.currentConfig.currentPage = 1;
+    this.applyFiltersAndUpdate();
+  }
+
+  public isPriceRangeActive(rangeId: string): boolean {
+    switch (rangeId) {
+      case 'budget': return this.currentFilters.priceRange.budget;
+      case 'mid': return this.currentFilters.priceRange.mid;
+      case 'premium': return this.currentFilters.priceRange.premium;
+      default: return false;
+    }
+  }
+
+  onPriceRangeClick(priceRange: { id: string; min: number; max: number }): void {
+    // Reset otros rangos
+    Object.keys(this.currentFilters.priceRange).forEach(key => {
+      this.currentFilters.priceRange[key as keyof typeof this.currentFilters.priceRange] = false;
+    });
+    
+    // Activar el seleccionado
+    this.currentFilters.priceRange[priceRange.id as keyof typeof this.currentFilters.priceRange] = true;
+    this.currentFilters.minPrice = priceRange.min;
+    this.currentFilters.maxPrice = priceRange.max;
     this.currentConfig.currentPage = 1;
     this.applyFiltersAndUpdate();
   }
@@ -309,7 +325,7 @@ export class SearchResultsComponent implements OnInit, OnDestroy {
 
   clearFilters(): void {
     this.currentMinRating = 0;
-    this.currentFilters = { ...DEFAULT_FILTERS };
+    this.currentFilters = { ...DEFAULT_ROOM_FILTERS };
     this.currentConfig.currentPage = 1;
     this.applyFiltersAndUpdate();
   }
@@ -328,13 +344,14 @@ export class SearchResultsComponent implements OnInit, OnDestroy {
     this.currentConfig.currentPage = 1;
     this.applyFiltersAndUpdate();
     
+    // Actualizar URL sin zona geográfica
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: {
-        zone: this.searchData.destination,
         checkIn: this.searchData.checkIn,
         checkOut: this.searchData.checkOut,
-        guests: this.searchData.guests
+        guests: this.searchData.guests,
+        type: this.searchData.roomType
       },
       queryParamsHandling: 'merge'
     });
@@ -352,17 +369,17 @@ export class SearchResultsComponent implements OnInit, OnDestroy {
       this.searchError = 'Debe haber al menos 1 huésped';
       return false;
     }
+
+    if (guests > 6) {
+      this.searchError = 'Para grupos de más de 6 personas, contacte directamente';
+      return false;
+    }
     
     return true;
   }
 
   resetSearch(): void {
-    this.searchData = {
-      destination: '',
-      checkIn: '',
-      checkOut: '',
-      guests: 2
-    };
+    this.searchData = { ...DEFAULT_ROOM_SEARCH_PARAMS };
     this.clearFilters();
   }
 
@@ -376,7 +393,7 @@ export class SearchResultsComponent implements OnInit, OnDestroy {
     this.applyFiltersAndUpdate();
   }
 
-  setViewMode(viewMode: 'list' | 'map'): void {
+  setViewMode(viewMode: 'grid' | 'list'): void {
     this.currentConfig.viewMode = viewMode;
   }
 
@@ -385,6 +402,7 @@ export class SearchResultsComponent implements OnInit, OnDestroy {
     this.currentConfig.currentPage = 1;
     this.applyFiltersAndUpdate();
   }
+
   getPageNumbers(): number[] {
     return Array.from({ length: this.totalPages }, (_, i) => i + 1);
   }
@@ -397,44 +415,43 @@ export class SearchResultsComponent implements OnInit, OnDestroy {
   }
 
   // ================================
-  // 🏠 ACCIONES DE PROPIEDADES
+  // 🏠 ACCIONES DE HABITACIONES
   // ================================
 
-  viewProperty(propertyId: string): void {
-    this.propertyService.incrementPropertyViews(propertyId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe();
+  viewRoom(roomId: string): void {
+    if (this.roomService.incrementRoomViews) {
+      this.roomService.incrementRoomViews(roomId)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe();
+    }
 
-    this.router.navigate(['/property', propertyId]);
+    this.router.navigate(['/rooms', roomId]);
   }
 
-  toggleFavorite(propertyId: string): void {
-    this.propertyService.toggleFavorite(propertyId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (isFavorite) => {
-          this.updatePropertyInLists(propertyId, { isFavorite });
-          console.log(`${isFavorite ? '❤️' : '🤍'} Favorito actualizado`);
-        },
-        error: (error) => console.error('❌ Error actualizando favorito:', error)
+  // ELIMINADO: toggleFavorite() - Reemplazado por contacto
+
+  // ✅ NUEVO: Contacto específico sobre habitación
+  contactAboutRoom(roomId: string, event: Event): void {
+    event.stopPropagation();
+    
+    console.log('📞 Contacto sobre habitación:', roomId);
+    
+    // Buscar la habitación específica
+    const room = this.allRooms.find(r => r.id === roomId);
+    if (room) {
+      this.establishment$.pipe(takeUntil(this.destroy$)).subscribe(establishment => {
+        const message = encodeURIComponent(
+          `Hola! Me interesa la ${room.roomType} "${room.roomNumber}" en ${establishment.name}. ¿Está disponible para ${this.searchData.checkIn} - ${this.searchData.checkOut}?`
+        );
+        const phone = establishment.contactInfo.whatsapp?.replace(/\D/g, '') || '573001234567';
+        window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
       });
+    }
   }
 
-  private updatePropertyInLists(propertyId: string, updates: Partial<Property>): void {
-    this.allProperties = this.allProperties.map(p => 
-      p.id === propertyId ? { ...p, ...updates } : p
-    );
-    this.filteredProperties = this.filteredProperties.map(p => 
-      p.id === propertyId ? { ...p, ...updates } : p
-    );
-    this.paginatedProperties = this.paginatedProperties.map(p => 
-      p.id === propertyId ? { ...p, ...updates } : p
-    );
-  }
-
-  quickBook(propertyId: string): void {
-    console.log('⚡ Reserva rápida para:', propertyId);
-    this.router.navigate(['/booking', propertyId], {
+  quickBook(roomId: string): void {
+    console.log('⚡ Reserva rápida para habitación:', roomId);
+    this.router.navigate(['/booking', roomId], {
       queryParams: {
         checkIn: this.searchData.checkIn,
         checkOut: this.searchData.checkOut,
@@ -443,82 +460,112 @@ export class SearchResultsComponent implements OnInit, OnDestroy {
     });
   }
 
-  contactHost(property: Property): void {
-    if (property.hostWhatsapp) {
+  contactHost(): void {
+    // Contactar al establecimiento directamente
+    this.establishment$.pipe(takeUntil(this.destroy$)).subscribe(establishment => {
       const message = encodeURIComponent(
-        `Hola ${property.hostName}! Me interesa tu habitación "${property.title}" en ${property.location}. ¿Está disponible?`
+        `Hola! Me interesa información sobre las habitaciones en ${establishment.name}.`
       );
-      window.open(`https://wa.me/${property.hostWhatsapp}?text=${message}`, '_blank');
-    }
-  }
-
-  selectProperty(propertyId: string): void {
-    console.log('🗺️ Propiedad seleccionada en mapa:', propertyId);
+      const phone = establishment.contactInfo.whatsapp.replace(/\D/g, '');
+      window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
+    });
   }
 
   // ================================
   // 🛠️ UTILIDADES
   // ================================
 
-  trackByPropertyId(index: number, property: Property): string {
-    return property.id;
+  trackByRoomId(index: number, room: Room): string {
+    return room.id;
   }
 
-  getZoneName(zoneKey: string): string {
-    return ARMENIA_NORTH_ZONES[zoneKey as ZoneType]?.name || zoneKey;
+  getRoomTypeName(room: Room): string {
+    return this.roomTypeLabels[room.roomType] || 'Habitación';
   }
 
-  getPropertyTypeLabel(type: PropertyType): string {
-    return PROPERTY_TYPE_LABELS[type] || type;
+  getRoomTypeLabel(roomType: RoomType): string {
+    return this.roomTypeLabels[roomType] || 'Habitación';
   }
 
-  getAmenityLabel(amenity: AmenityType): string {
-    return AMENITY_LABELS[amenity] || amenity;
+  getAmenityLabel(amenity: RoomAmenityType): string {
+    return ROOM_AMENITY_LABELS[amenity] || amenity;
   }
 
-  getServiceLabel(service: ServiceType): string {
-    return SERVICE_LABELS[service] || service;
-  }
-
-  getMainAmenities(property: Property): AmenityType[] {
-    const priorityAmenities: AmenityType[] = ['wifi', 'ac', 'parking', 'kitchen', 'security'];
-    return property.amenities
+  getMainAmenities(room: Room): RoomAmenityType[] {
+    const priorityAmenities: RoomAmenityType[] = ['aire-acondicionado', 'tv-smart', 'escritorio', 'bano-privado', 'balcon'];
+    return room.amenities
       .filter(amenity => priorityAmenities.includes(amenity))
       .slice(0, 3);
   }
 
-  getWeeklyDiscount(property: Property): number {
-    return this.propertyService.calculateWeeklyDiscount(property);
+  getRoomCapacityLabel(room: Room): string {
+    const guests = room.maxGuests;
+    if (guests === 1) return '1 persona';
+    return `${guests} personas`;
   }
 
   hasActiveFiltersSync(): boolean {
-    return Object.values(this.currentFilters.zones).some(active => active) ||
-           Object.values(this.currentFilters.propertyTypes).some(active => active) ||
+    return Object.values(this.currentFilters.roomTypes).some(active => active) ||
            Object.values(this.currentFilters.amenities).some(active => active) ||
-           Object.values(this.currentFilters.services).some(active => active) ||
+           Object.values(this.currentFilters.features).some(active => active) ||
+           Object.values(this.currentFilters.capacity).some(active => active) ||
+           Object.values(this.currentFilters.priceRange).some(active => active) ||
            this.currentFilters.minRating > 0 ||
-           this.currentFilters.priceMin > 0 ||
-           this.currentFilters.priceMax < 200000 ||
-           this.currentFilters.verified ||
-           this.currentFilters.instantBook;
+           this.currentFilters.minPrice > 0 ||
+           this.currentFilters.maxPrice < 200000;
   }
 
   getActiveFiltersCount(): number {
     let count = 0;
-    count += Object.values(this.currentFilters.zones).filter(active => active).length;
-    count += Object.values(this.currentFilters.propertyTypes).filter(active => active).length;
+    count += Object.values(this.currentFilters.roomTypes).filter(active => active).length;
     count += Object.values(this.currentFilters.amenities).filter(active => active).length;
-    count += Object.values(this.currentFilters.services).filter(active => active).length;
+    count += Object.values(this.currentFilters.features).filter(active => active).length;
+    count += Object.values(this.currentFilters.capacity).filter(active => active).length;
+    count += Object.values(this.currentFilters.priceRange).filter(active => active).length;
     
     if (this.currentFilters.minRating > 0) count++;
-    if (this.currentFilters.priceMin > 0 || this.currentFilters.priceMax < 200000) count++;
-    if (this.currentFilters.verified) count++;
-    if (this.currentFilters.instantBook) count++;
+    if (this.currentFilters.minPrice > 0 || this.currentFilters.maxPrice < 200000) count++;
     
     return count;
   }
 
-  getZonePropertyCount(zone: ZoneType): number {
-    return this.allProperties.filter(p => p.zone === zone).length;
+  getEstablishmentName(): Observable<string> {
+    return this.establishment$.pipe(
+      map(establishment => establishment.name)
+    );
+  }
+
+  formatPrice(price: number): string {
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0
+    }).format(price);
+  }
+
+  shouldShowWeeklyPrice(room: Room): boolean {
+    return room.pricing.weeklyDiscount !== undefined && room.pricing.weeklyDiscount > 0;
+  }
+
+  getWeeklyDiscount(room: Room): number {
+    return room.pricing.weeklyDiscount || 0;
+  }
+
+  shouldShowMonthlyPrice(room: Room): boolean {
+    return room.pricing.monthlyDiscount !== undefined && room.pricing.monthlyDiscount > 0;
+  }
+
+  getMonthlyDiscount(room: Room): number {
+    return room.pricing.monthlyDiscount || 0;
+  }
+
+  isRoomAvailable(room: Room): boolean {
+    return room.availability.isActive && room.availability.isAvailable;
+  }
+
+  getRoomAvailabilityText(room: Room): string {
+    if (!room.availability.isActive) return 'No disponible';
+    if (!room.availability.isAvailable) return 'Ocupada';
+    return 'Disponible';
   }
 }

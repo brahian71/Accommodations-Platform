@@ -6,9 +6,12 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Subject, combineLatest, Observable, of } from 'rxjs';
 import { takeUntil, switchMap, map, tap, catchError, debounceTime } from 'rxjs/operators';
 
-import { PropertyService } from '../../core/services/property.service';
+import { Room, RoomType } from '../../core/models/room.interface';
+import { Establishment } from '../../core/models/establishment.interface';
+import { RoomService } from '../../core/services/room.service';
+import { EstablishmentService } from '../../core/services/establishment.service';
+
 import { BookingService } from '../../core/services/booking.service';
-import { Property } from '../../core/models/property.interface';
 import { 
   Booking, BookingRequest, PriceBreakdown, BookingProgress, 
   PartialBookingRequest, WhatsAppMessage 
@@ -25,10 +28,11 @@ import {
 export class BookingComponent implements OnInit, OnDestroy {
   
   // ================================
-  // 🗂️ PROPIEDADES PRINCIPALES
+  // 🗂️ PROPIEDADES PRINCIPALES - MIGRADAS
   // ================================
   
-  property: Property | null = null;
+  room: Room | null = null;                      
+  establishment: Establishment | null = null; 
   currentBooking: PartialBookingRequest | null = null;
   bookingProgress: BookingProgress | null = null;
   priceBreakdown: PriceBreakdown | null = null;
@@ -72,14 +76,15 @@ export class BookingComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private router: Router,
     private fb: FormBuilder,
-    private propertyService: PropertyService,
+    private roomService: RoomService,           
+    private establishmentService: EstablishmentService,
     private bookingService: BookingService
   ) {
     this.initializeForms();
   }
 
   ngOnInit(): void {
-    this.loadPropertyAndInitializeBooking();
+    this.loadRoomAndInitializeBooking(); 
     this.setupFormSubscriptions();
     this.setupBookingSubscriptions();
   }
@@ -90,36 +95,48 @@ export class BookingComponent implements OnInit, OnDestroy {
     this.bookingService.clearCurrentBooking();
   }
 
-  private loadPropertyAndInitializeBooking(): void {
-    const propertyId = this.route.snapshot.paramMap.get('id');
+  private loadRoomAndInitializeBooking(): void {  
+
+    const roomId = this.route.snapshot.paramMap.get('roomId') || this.route.snapshot.paramMap.get('id');
     
-    if (!propertyId) {
-      this.error = 'ID de propiedad no válido';
+    if (!roomId) {
+      this.error = 'ID de habitación no válido. Verifica la URL de navegación.';  
       this.isLoading = false;
+      console.error('❌ roomId no encontrado en ruta. Parámetros disponibles:', this.route.snapshot.paramMap.keys);
       return;
     }
 
+    console.log('🔍 Cargando habitación con ID:', roomId);
+
     combineLatest([
-      this.propertyService.getPropertyById(propertyId),
-      this.bookingService.initializeBooking(propertyId)
+      this.roomService.getRoomById(roomId),
+      this.establishmentService.getEstablishmentInfo(),
+      this.bookingService.initializeBooking(roomId) 
     ]).pipe(
       takeUntil(this.destroy$),
       catchError(error => {
-        this.error = 'Error al cargar la propiedad: ' + error.message;
+        console.error('❌ Error cargando datos de booking:', error);
+        this.error = 'Error al cargar la habitación: ' + error.message; 
         this.isLoading = false;
-        return of([null, null]);
+        return of([null, null, null]);
       })
-    ).subscribe(([property, booking]) => {
-      if (property && booking) {
-        this.property = property;
+    ).subscribe(([room, establishment, booking]) => {
+      if (room && establishment && booking) {
+        this.room = room;                    
+        this.establishment = establishment;
         this.currentBooking = booking;
         this.initializeCalendar();
         this.restoreBookingState();
         this.updateStepValidations();
         this.isLoading = false;
         
-        console.log('🏠 Propiedad cargada:', property.title);
-        console.log('📅 Booking inicializado:', booking);
+        console.log('✅ Habitación cargada:', room.name);     
+        console.log('✅ Establecimiento cargado:', establishment.name);
+        console.log('✅ Booking inicializado:', booking);
+      } else {
+        this.error = `Habitación con ID "${roomId}" no encontrada. Verifica que la habitación existe.`;
+        this.isLoading = false;
+        console.error('❌ Datos no cargados correctamente:', { room, establishment, booking });
       }
     });
   }
@@ -152,6 +169,7 @@ export class BookingComponent implements OnInit, OnDestroy {
       emergencyContactRelationship: ['']
     });
   }
+
   private restoreBookingState(): void {
     if (!this.currentBooking) return;
     if (this.currentBooking.checkInDate && this.currentBooking.checkOutDate) {
@@ -199,11 +217,12 @@ export class BookingComponent implements OnInit, OnDestroy {
       }
       this.updateStepValidations();
     });
+
     this.guestsForm.valueChanges.pipe(
       takeUntil(this.destroy$)
     ).subscribe(guests => {
       const totalGuests = guests.adults + guests.children + guests.infants;
-      if (this.property && totalGuests > this.property.maxGuests) {
+      if (this.room && totalGuests > this.room.maxGuests) { 
         this.guestsForm.setErrors({ maxGuestsExceeded: true });
       } else {
         this.guestsForm.setErrors(null);
@@ -217,6 +236,7 @@ export class BookingComponent implements OnInit, OnDestroy {
       });
       this.updateStepValidations();
     });
+
     this.detailsForm.valueChanges.pipe(
       debounceTime(500),
       takeUntil(this.destroy$)
@@ -292,9 +312,9 @@ export class BookingComponent implements OnInit, OnDestroy {
   }
 
   private loadCalendarMonth(year: number, month: number): void {
-    if (!this.property) return;
+    if (!this.room) return; 
 
-    this.bookingService.getCalendarMonth(this.property.id, year, month).pipe(
+    this.bookingService.getCalendarMonth(this.room.id, year, month).pipe( 
       takeUntil(this.destroy$)
     ).subscribe(calendarMonth => {
       this.currentMonth = calendarMonth;
@@ -332,6 +352,7 @@ export class BookingComponent implements OnInit, OnDestroy {
 
     this.handleIntelligentDateSelection(date);
   }
+
   private handleIntelligentDateSelection(date: string): void {
     const hasCheckIn = !!this.selectedDates.checkIn;
     const hasCheckOut = !!this.selectedDates.checkOut;
@@ -352,6 +373,7 @@ export class BookingComponent implements OnInit, OnDestroy {
       this.setCheckInDate(date);
     }
   }
+
   private setCheckInDate(date: string): void {
     this.selectedDates.checkIn = date;
     this.selectedDates.checkOut = null;
@@ -366,6 +388,7 @@ export class BookingComponent implements OnInit, OnDestroy {
     
     console.log('✅ Check-in seleccionado:', date);
   }
+
   private attemptCheckOutSelection(date: string): void {
     const checkInDate = this.selectedDates.checkIn!;
     const rangeValidation = this.validateCompleteRange(checkInDate, date);
@@ -378,6 +401,7 @@ export class BookingComponent implements OnInit, OnDestroy {
     }
     this.setCheckOutDate(date);
   }
+
   private setCheckOutDate(date: string): void {
     this.selectedDates.checkOut = date;
     this.selectedDates.nights = this.calculateNights(this.selectedDates.checkIn!, date);
@@ -389,6 +413,7 @@ export class BookingComponent implements OnInit, OnDestroy {
     
     console.log('✅ Check-out seleccionado:', date, `(${this.selectedDates.nights} noches)`);
   }
+
   private resetDateSelection(): void {
     this.selectedDates = {
       checkIn: null,
@@ -412,8 +437,9 @@ export class BookingComponent implements OnInit, OnDestroy {
     this.calendarMode = 'check-in';
     this.priceBreakdown = null;
   }
+
   private validateSelectedDates(): void {
-    if (!this.property || !this.selectedDates.checkIn || !this.selectedDates.checkOut) {
+    if (!this.room || !this.selectedDates.checkIn || !this.selectedDates.checkOut) { 
       return;
     }
     const rangeValidation = this.validateCompleteRange(
@@ -433,7 +459,7 @@ export class BookingComponent implements OnInit, OnDestroy {
       return;
     }
     this.bookingService.validateDateSelection(
-      this.property.id, 
+      this.room.id,  
       this.selectedDates.checkIn, 
       this.selectedDates.checkOut
     ).pipe(
@@ -453,124 +479,126 @@ export class BookingComponent implements OnInit, OnDestroy {
   }
 
   private validateCompleteRange(checkIn: string, checkOut: string): { isValid: boolean; errors: string[] } {
-  const errors: string[] = [];
-  const startDate = new Date(checkIn);
-  const endDate = new Date(checkOut);
-  const currentDate = new Date(startDate);
+    const errors: string[] = [];
+    const startDate = new Date(checkIn);
+    const endDate = new Date(checkOut);
+    const currentDate = new Date(startDate);
 
-  while (currentDate < endDate) {
-    const dateString = currentDate.toISOString().split('T')[0];
-    const dayData = this.availableDaysInMonth.find(d => d.date === dateString);
-    
-    if (!dayData || !this.isDayAvailable(dayData)) {
-      const dayName = this.formatDate(dateString);
+    while (currentDate < endDate) {
+      const dateString = currentDate.toISOString().split('T')[0];
+      const dayData = this.availableDaysInMonth.find(d => d.date === dateString);
       
-      if (dayData?.isBooked) {
-        errors.push(`${dayName} está ocupado por otra reserva`);
-      } else if (dayData?.isBlocked) {
-        errors.push(`${dayName} no está disponible`);
-      } else if (dayData?.isPastDate) {
-        errors.push(`${dayName} es una fecha pasada`);
-      } else {
-        errors.push(`${dayName} no está disponible`);
-      }
-
-      if (errors.length >= 3) {
-        if (this.countUnavailableDaysInRange(checkIn, checkOut) > 3) {
-          errors.push('...y más días no disponibles');
+      if (!dayData || !this.isDayAvailable(dayData)) {
+        const dayName = this.formatDate(dateString);
+        
+        if (dayData?.isBooked) {
+          errors.push(`${dayName} está ocupado por otra reserva`);
+        } else if (dayData?.isBlocked) {
+          errors.push(`${dayName} no está disponible`);
+        } else if (dayData?.isPastDate) {
+          errors.push(`${dayName} es una fecha pasada`);
+        } else {
+          errors.push(`${dayName} no está disponible`);
         }
-        break;
+
+        if (errors.length >= 3) {
+          if (this.countUnavailableDaysInRange(checkIn, checkOut) > 3) {
+            errors.push('...y más días no disponibles');
+          }
+          break;
+        }
+      }
+      
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
+  }
+
+  private countUnavailableDaysInRange(checkIn: string, checkOut: string): number {
+    let count = 0;
+    const startDate = new Date(checkIn);
+    const endDate = new Date(checkOut);
+    const currentDate = new Date(startDate);
+    
+    while (currentDate < endDate) {
+      const dateString = currentDate.toISOString().split('T')[0];
+      const dayData = this.availableDaysInMonth.find(d => d.date === dateString);
+      
+      if (!dayData || !this.isDayAvailable(dayData)) {
+        count++;
+      }
+      
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+    
+    return count;
+  }
+
+  private getUnavailabilityMessage(day: any): string {
+    if (!day) {
+      return 'Esta fecha no está disponible';
+    }
+    
+    if (day.isPastDate) {
+      return 'No puedes seleccionar fechas pasadas';
+    }
+    
+    if (day.isBooked) {
+      return `El ${this.formatDate(day.date)} está ocupado por otra reserva`;
+    }
+    
+    if (day.isBlocked) {
+      return `El ${this.formatDate(day.date)} no está disponible para reservas`;
+    }
+    
+    return 'Esta fecha no está disponible para reserva';
+  }
+
+  private suggestAlternativeCheckOut(checkIn: string, attemptedCheckOut: string): void {
+    const suggestion = this.findNextAvailableCheckOut(checkIn, attemptedCheckOut);
+    
+    if (suggestion) {
+      const suggestionDate = this.formatDate(suggestion);
+      setTimeout(() => {
+        if (this.error) {
+          this.error = `Fecha no disponible. ¿Qué tal hasta el ${suggestionDate}?`;
+        }
+      }, 2000);
+    }
+  }
+
+  private findNextAvailableCheckOut(checkIn: string, fromDate: string): string | null {
+    const startSearch = new Date(fromDate);
+    const maxDays = 14; 
+    
+    for (let i = 1; i <= maxDays; i++) {
+      const testDate = new Date(startSearch);
+      testDate.setDate(testDate.getDate() + i);
+      const testDateString = testDate.toISOString().split('T')[0];
+      const rangeValidation = this.validateCompleteRange(checkIn, testDateString);
+      if (rangeValidation.isValid) {
+        return testDateString;
       }
     }
     
-    currentDate.setDate(currentDate.getDate() + 1);
+    return null;
   }
-
-  return {
-    isValid: errors.length === 0,
-    errors
-  };
-}
-private countUnavailableDaysInRange(checkIn: string, checkOut: string): number {
-  let count = 0;
-  const startDate = new Date(checkIn);
-  const endDate = new Date(checkOut);
-  const currentDate = new Date(startDate);
-  
-  while (currentDate < endDate) {
-    const dateString = currentDate.toISOString().split('T')[0];
-    const dayData = this.availableDaysInMonth.find(d => d.date === dateString);
-    
-    if (!dayData || !this.isDayAvailable(dayData)) {
-      count++;
-    }
-    
-    currentDate.setDate(currentDate.getDate() + 1);
-  }
-  
-  return count;
-}
-private getUnavailabilityMessage(day: any): string {
-  if (!day) {
-    return 'Esta fecha no está disponible';
-  }
-  
-  if (day.isPastDate) {
-    return 'No puedes seleccionar fechas pasadas';
-  }
-  
-  if (day.isBooked) {
-    return `El ${this.formatDate(day.date)} está ocupado por otra reserva`;
-  }
-  
-  if (day.isBlocked) {
-    return `El ${this.formatDate(day.date)} no está disponible para reservas`;
-  }
-  
-  return 'Esta fecha no está disponible para reserva';
-}
-
-private suggestAlternativeCheckOut(checkIn: string, attemptedCheckOut: string): void {
-  const suggestion = this.findNextAvailableCheckOut(checkIn, attemptedCheckOut);
-  
-  if (suggestion) {
-    const suggestionDate = this.formatDate(suggestion);
-    setTimeout(() => {
-      if (this.error) {
-        this.error = `Fecha no disponible. ¿Qué tal hasta el ${suggestionDate}?`;
-      }
-    }, 2000);
-  }
-}
-
-private findNextAvailableCheckOut(checkIn: string, fromDate: string): string | null {
-  const startSearch = new Date(fromDate);
-  const maxDays = 14; 
-  
-  for (let i = 1; i <= maxDays; i++) {
-    const testDate = new Date(startSearch);
-    testDate.setDate(testDate.getDate() + i);
-    const testDateString = testDate.toISOString().split('T')[0];
-    const rangeValidation = this.validateCompleteRange(checkIn, testDateString);
-    if (rangeValidation.isValid) {
-      return testDateString;
-    }
-  }
-  
-  return null;
-}
 
   // ================================
   // 💰 CÁLCULO DE PRECIOS
   // ================================
 
   private calculatePrice(): void {
-    if (!this.property || !this.selectedDates.checkIn || !this.selectedDates.checkOut) {
+    if (!this.room || !this.selectedDates.checkIn || !this.selectedDates.checkOut) { 
       return;
     }
 
     this.bookingService.calculatePrice(
-      this.property.id,
+      this.room.id, 
       this.selectedDates.checkIn,
       this.selectedDates.checkOut
     ).pipe(
@@ -668,6 +696,7 @@ private findNextAvailableCheckOut(checkIn: string, fromDate: string): string | n
       this.scrollToTop();
     }
   }
+
   private validateStepAccess(targetStep: number): boolean {
     switch (targetStep) {
       case 1:
@@ -698,31 +727,44 @@ private findNextAvailableCheckOut(checkIn: string, fromDate: string): string | n
     this.isSubmitting = true;
     this.error = null;
 
+    console.log('🚀 Enviando reserva...');
+
     this.bookingService.submitBooking().pipe(
       takeUntil(this.destroy$),
       catchError(error => {
+        console.error('❌ Error en submitBooking:', error);
         this.error = 'Error al crear la reserva: ' + error.message;
         this.isSubmitting = false;
         return of(null);
       })
     ).subscribe(booking => {
-      console.log('🔍 Booking creado:', booking);
+      console.log('📋 Booking recibido:', booking);
       this.isSubmitting = false;
       
       if (booking) {
-        console.log('✅ Reserva creada exitosamente:', booking);
-        this.router.navigate(['/booking/confirmation', booking.id], { replaceUrl: true });
+        console.log('✅ Reserva creada exitosamente:', booking.bookingReference);
+        // ✅ ARREGLO 2: Navegación corregida con nuevo routing
+        this.router.navigate(['/booking/confirmation', booking.id], { 
+          replaceUrl: true,
+          queryParams: { ref: booking.bookingReference }
+        });
       }
     });
   }
 
   openWhatsApp(): void {
-    if (!this.currentBooking || !this.property) return;
+    if (!this.currentBooking || !this.room || !this.establishment) {
+      console.warn('⚠️ Datos incompletos para WhatsApp');
+      return;
+    }
+    
+    // ✅ COMPATIBILIDAD: Manteniendo interface Booking existente
     const tempBooking: Partial<Booking> = {
       bookingReference: 'TEMP-' + Date.now(),
-      propertyTitle: this.property.title,
-      hostName: this.property.hostName,
-      hostWhatsapp: this.property.hostWhatsapp || '',
+      propertyTitle: this.room.name,                
+      propertyId: this.room.id,                     
+      hostName: this.establishment.host.name,       
+      hostWhatsapp: this.establishment.contactInfo.whatsapp, 
       guestInfo: this.currentBooking.guestInfo!,
       checkInDate: this.currentBooking.checkInDate!,
       checkOutDate: this.currentBooking.checkOutDate!,
@@ -734,7 +776,9 @@ private findNextAvailableCheckOut(checkIn: string, fromDate: string): string | n
 
     try {
       this.bookingService.openWhatsApp(tempBooking as Booking);
+      console.log('✅ WhatsApp abierto correctamente');
     } catch (error) {
+      console.error('❌ Error al abrir WhatsApp:', error);
       this.error = 'Error al abrir WhatsApp. Por favor intenta nuevamente.';
       setTimeout(() => this.error = null, 3000);
     }
@@ -805,7 +849,7 @@ private findNextAvailableCheckOut(checkIn: string, fromDate: string): string | n
   }
 
   get maxGuests(): number {
-    return this.property?.maxGuests || 10;
+    return this.room?.maxGuests || 10; 
   }
 
   get isValidToSubmit(): boolean {
@@ -827,7 +871,7 @@ private findNextAvailableCheckOut(checkIn: string, fromDate: string): string | n
       case 2:
         if (!this.stepValidations.guests) {
           if (this.guestsForm.errors?.maxGuestsExceeded) {
-            errors.push(`Esta propiedad acepta máximo ${this.maxGuests} huéspedes`);
+            errors.push(`Esta habitación acepta máximo ${this.maxGuests} huéspedes`); 
           }
         }
         break;
@@ -875,6 +919,7 @@ private findNextAvailableCheckOut(checkIn: string, fromDate: string): string | n
 
     this.loadCalendarMonth(newYear, newMonth);
   }
+
   isDayAvailable(day: DayAvailability): boolean {
     return day.isAvailable && !day.isBlocked && !day.isBooked && !day.isPastDate;
   }
@@ -899,6 +944,7 @@ private findNextAvailableCheckOut(checkIn: string, fromDate: string): string | n
     this.dateValidation = null;
     this.updateStepValidations();
   }
+
   get calendarModeText(): string {
     const modes = {
       'check-in': 'Selecciona fecha de llegada',
@@ -906,9 +952,11 @@ private findNextAvailableCheckOut(checkIn: string, fromDate: string): string | n
     };
     return modes[this.calendarMode] || '';
   }
+
   get isCalendarInValidState(): boolean {
     return !!(this.selectedDates.checkIn && this.selectedDates.checkOut && this.selectedDates.isValid);
   }
+
   get rangeInfo(): string {
     if (!this.selectedDates.checkIn) {
       return 'Selecciona fecha de llegada';
@@ -920,6 +968,7 @@ private findNextAvailableCheckOut(checkIn: string, fromDate: string): string | n
     
     return `${this.selectedDates.nights} noche${this.selectedDates.nights !== 1 ? 's' : ''}`;
   }
+
   get isCurrentStepValid(): boolean {
     return this.stepValidations[this.currentStepName as keyof typeof this.stepValidations] || false;
   }

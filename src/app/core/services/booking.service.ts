@@ -4,8 +4,11 @@ import { Injectable } from '@angular/core';
 import { Observable, BehaviorSubject, of, throwError, combineLatest } from 'rxjs';
 import { map, delay, switchMap, tap } from 'rxjs/operators';
 
-import { PropertyService } from './property.service';
-import { Property } from '../models/property.interface';
+import { RoomService } from './room.service';
+import { EstablishmentService } from './establishment.service';
+import { Room } from '../models/room.interface';
+import { Establishment } from '../models/establishment.interface';
+
 import { 
   Booking, BookingRequest, BookingStatus, PriceBreakdown, PriceCalculatorConfig,
   BookingValidationRules, BookingProgress, WhatsAppMessage, BookingStats,
@@ -37,7 +40,11 @@ export class BookingService {
   private validationRules: BookingValidationRules = BOOKING_CONSTANTS.DEFAULT_VALIDATION_RULES;
   private calendarConfig: CalendarConfig = CALENDAR_CONSTANTS.DEFAULT_CONFIG;
 
-  constructor(private propertyService: PropertyService) {
+  constructor(
+    private roomService: RoomService,
+    private establishmentService: EstablishmentService 
+  ) {
+    console.log('📅 BookingService initialized with Room + Establishment services');
     this.loadBookingsFromStorage();
   }
 
@@ -45,10 +52,10 @@ export class BookingService {
   // 📅 DISPONIBILIDAD Y CALENDARIO
   // ================================
 
-  getPropertyAvailability(propertyId: string, startDate: DateString, endDate: DateString): Observable<DayAvailability[]> {
-    return this.propertyService.getPropertyById(propertyId).pipe(
-      map(property => {
-        if (!property) return [];
+  getRoomAvailability(roomId: string, startDate: DateString, endDate: DateString): Observable<DayAvailability[]> {
+    return this.roomService.getRoomById(roomId).pipe(
+      map(room => { 
+        if (!room) return [];
         
         const availability: DayAvailability[] = [];
         const start = new Date(startDate);
@@ -56,7 +63,7 @@ export class BookingService {
         
         for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
           const dateString = this.formatDate(date);
-          const dayAvailability = this.generateDayAvailability(property, dateString);
+          const dayAvailability = this.generateDayAvailability(room, dateString); 
           availability.push(dayAvailability);
         }
         
@@ -66,13 +73,14 @@ export class BookingService {
     );
   }
 
-  getCalendarMonth(propertyId: string, year: number, month: number): Observable<CalendarMonth> {
+
+  getCalendarMonth(roomId: string, year: number, month: number): Observable<CalendarMonth> {
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
     const startDate = this.formatDate(firstDay);
     const endDate = this.formatDate(lastDay);
     
-    return this.getPropertyAvailability(propertyId, startDate, endDate).pipe(
+    return this.getRoomAvailability(roomId, startDate, endDate).pipe(
       map(days => ({
         year,
         month: month as any,
@@ -91,7 +99,8 @@ export class BookingService {
       }))
     );
   }
-  validateDateSelection(propertyId: string, checkIn: DateString, checkOut: DateString): Observable<DateValidationResult> {
+
+  validateDateSelection(roomId: string, checkIn: DateString, checkOut: DateString): Observable<DateValidationResult> {
     const errors: DateValidationResult['errors'] = [];
     const warnings: DateValidationResult['warnings'] = [];
     const checkInDate = new Date(checkIn);
@@ -112,53 +121,32 @@ export class BookingService {
         field: 'checkOut'
       });
     }
-    const hoursUntilCheckIn = (checkInDate.getTime() - today.getTime()) / (1000 * 60 * 60);
-    if (hoursUntilCheckIn < this.validationRules.minAdvanceBookingHours) {
-      errors.push({
-        code: 'MIN_ADVANCE',
-        message: `Debes reservar con al menos ${this.validationRules.minAdvanceBookingHours} horas de anticipación`,
-        field: 'checkIn'
-      });
-    }
 
-    const daysUntilCheckIn = Math.ceil(hoursUntilCheckIn / 24);
-    if (daysUntilCheckIn > this.validationRules.maxAdvanceBookingDays) {
-      errors.push({
-        code: 'MAX_ADVANCE',
-        message: `No puedes reservar con más de ${this.validationRules.maxAdvanceBookingDays} días de anticipación`,
-        field: 'checkIn'
-      });
-    }
-
-    if (nights > this.validationRules.maxStayDays) {
-      errors.push({
-        code: 'MAX_STAY',
-        message: `La estancia máxima permitida es de ${this.validationRules.maxStayDays} días`,
-        field: 'range'
-      });
-    }
-    
-    return this.propertyService.getPropertyById(propertyId).pipe(
-      map(property => {
-        if (property && property.minimumStay && nights < property.minimumStay) {
+    return combineLatest([
+      this.roomService.getRoomById(roomId),
+      this.establishmentService.getEstablishmentInfo() 
+    ]).pipe(
+      map(([room, establishment]) => {
+        if (room && room.availability.minimumStay && nights < room.availability.minimumStay) {
           errors.push({
             code: 'MIN_STAY',
-            message: `Esta propiedad requiere una estancia mínima de ${property.minimumStay} noches`,
+            message: `Esta habitación requiere una estancia mínima de ${room.availability.minimumStay} noches`,
             field: 'range'
           });
         }
         
-        if (nights >= 7 && property?.pricePerWeek) {
+        // Descuentos automáticos
+        if (nights >= 7 && room?.pricing.weeklyDiscount) {
           warnings.push({
             code: 'WEEKLY_DISCOUNT',
-            message: 'Descuento semanal aplicado automáticamente'
+            message: `Descuento semanal del ${room.pricing.weeklyDiscount}% aplicado automáticamente`
           });
         }
         
-        if (nights >= 28 && property?.pricePerMonth) {
+        if (nights >= 28 && room?.pricing.monthlyDiscount) {
           warnings.push({
             code: 'MONTHLY_DISCOUNT',
-            message: 'Descuento mensual aplicado automáticamente'
+            message: `Descuento mensual del ${room.pricing.monthlyDiscount}% aplicado automáticamente`
           });
         }
         
@@ -176,15 +164,15 @@ export class BookingService {
   // 💰 CÁLCULO DE PRECIOS
   // ================================
 
-  calculatePrice(propertyId: string, checkIn: DateString, checkOut: DateString): Observable<PriceBreakdown> {
-    return this.propertyService.getPropertyById(propertyId).pipe(
-      map(property => {
-        if (!property) {
-          throw new Error('Propiedad no encontrada');
+  calculatePrice(roomId: string, checkIn: DateString, checkOut: DateString): Observable<PriceBreakdown> {
+    return this.roomService.getRoomById(roomId).pipe(
+      map(room => {
+        if (!room) {
+          throw new Error('Habitación no encontrada');
         }
         
         const nights = this.calculateNights(checkIn, checkOut);
-        const pricePerNight = property.pricePerNight;
+        const pricePerNight = room.pricing.basePrice;
         let subtotal = pricePerNight * nights;
         
         const breakdown: PriceBreakdown = {
@@ -196,33 +184,24 @@ export class BookingService {
           totalCOP: 0
         };
 
-        if (this.priceConfig.applyWeeklyDiscount && nights >= 7 && property.pricePerWeek) {
-          const weeklyTotal = Math.floor(nights / 7) * property.pricePerWeek;
-          const remainingDays = nights % 7;
-          const remainingTotal = remainingDays * pricePerNight;
-          const newSubtotal = weeklyTotal + remainingTotal;
-          
+        if (this.priceConfig.applyWeeklyDiscount && nights >= 7 && room.pricing.weeklyDiscount) {
+          const discountAmount = Math.round(subtotal * (room.pricing.weeklyDiscount / 100));
           breakdown.weeklyDiscount = {
-            percentage: Math.round(((subtotal - newSubtotal) / subtotal) * 100),
-            amount: subtotal - newSubtotal
+            percentage: room.pricing.weeklyDiscount,
+            amount: discountAmount
           };
-          
-          subtotal = newSubtotal;
+          subtotal -= discountAmount;
           breakdown.subtotal = subtotal;
         }
 
-        if (this.priceConfig.applyMonthlyDiscount && nights >= 28 && property.pricePerMonth) {
-          const monthlyTotal = Math.floor(nights / 30) * property.pricePerMonth;
-          const remainingDays = nights % 30;
-          const remainingTotal = remainingDays * pricePerNight;
-          const newSubtotal = monthlyTotal + remainingTotal;
-          
+        if (this.priceConfig.applyMonthlyDiscount && nights >= 28 && room.pricing.monthlyDiscount) {
+          const originalSubtotal = pricePerNight * nights;
+          const discountAmount = Math.round(originalSubtotal * (room.pricing.monthlyDiscount / 100));
           breakdown.monthlyDiscount = {
-            percentage: Math.round(((subtotal - newSubtotal) / subtotal) * 100),
-            amount: subtotal - newSubtotal
+            percentage: room.pricing.monthlyDiscount,
+            amount: discountAmount
           };
-          
-          subtotal = newSubtotal;
+          subtotal = originalSubtotal - discountAmount;
           breakdown.subtotal = subtotal;
         }
 
@@ -254,15 +233,20 @@ export class BookingService {
   // 📋 GESTIÓN DE RESERVAS
   // ================================
 
-  initializeBooking(propertyId: string): Observable<PartialBookingRequest> {
-    return this.propertyService.getPropertyById(propertyId).pipe(
-      map(property => {
-        if (!property) {
-          throw new Error('Propiedad no encontrada');
+  initializeBooking(roomId: string): Observable<PartialBookingRequest> {
+    console.log('🚀 BookingService.initializeBooking called with roomId:', roomId);
+    
+    return combineLatest([
+      this.roomService.getRoomById(roomId),
+      this.establishmentService.getEstablishmentInfo()
+    ]).pipe(
+      map(([room, establishment]) => {
+        if (!room) {
+          throw new Error('Habitación no encontrada');
         }
         
         const initialBooking: PartialBookingRequest = {
-          propertyId,
+          propertyId: roomId,
           guests: {
             adults: 1,
             children: 0,
@@ -271,8 +255,8 @@ export class BookingService {
           },
           purposeOfStay: 'vacation',
           isFirstTimeInArmenia: true,
-          hostWhatsapp: property.hostWhatsapp || '',
-          hostName: property.hostName
+          hostWhatsapp: establishment.contactInfo.whatsapp,
+          hostName: establishment.host.name 
         };
         
         this.currentBookingSubject.next(initialBooking);
@@ -332,12 +316,13 @@ export class BookingService {
 
   private createBooking(bookingRequest: BookingRequest): Observable<Booking> {
     return combineLatest([
-      this.propertyService.getPropertyById(bookingRequest.propertyId),
+      this.roomService.getRoomById(bookingRequest.propertyId),   
+      this.establishmentService.getEstablishmentInfo(), 
       this.calculatePrice(bookingRequest.propertyId, bookingRequest.checkInDate, bookingRequest.checkOutDate)
     ]).pipe(
-      map(([property, priceBreakdown]) => {
-        if (!property) {
-          throw new Error('Propiedad no encontrada');
+      map(([room, establishment, priceBreakdown]) => {
+        if (!room) {
+          throw new Error('Habitación no encontrada');
         }
         
         const booking: Booking = {
@@ -346,11 +331,11 @@ export class BookingService {
           status: 'pending',
           paymentStatus: 'pending',
           
-          propertyId: property.id,
-          propertyTitle: property.title,
-          propertyImage: property.image,
-          propertyAddress: property.address || property.location,
-          propertyZone: property.zone,
+          propertyId: room.id,
+          propertyTitle: `${room.name} - ${establishment.name}`,    
+          propertyImage: room.images.main,                      
+          propertyAddress: establishment.address,     
+          propertyZone: establishment.areaInfo.neighborhood, 
           
           checkInDate: bookingRequest.checkInDate,
           checkOutDate: bookingRequest.checkOutDate,
@@ -360,9 +345,9 @@ export class BookingService {
           guestInfo: bookingRequest.guestInfo,
           
           priceBreakdown,
-          
-          hostName: property.hostName,
-          hostWhatsapp: property.hostWhatsapp || '',
+
+          hostName: establishment.host.name,
+          hostWhatsapp: establishment.contactInfo.whatsapp,
           
           whatsappMessageSent: false,
           
@@ -372,15 +357,13 @@ export class BookingService {
           
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
-          
-          cancellationPolicy: property.cancellationPolicy || 'moderada',
-          minimumStay: property.minimumStay || 1
+
+          cancellationPolicy: establishment.policies.cancellationPolicy,
+          minimumStay: room.availability.minimumStay || 1   
         };
-        
-        // Guardar la reserva
+
         this.addBooking(booking);
         
-        // Enviar mensaje de WhatsApp
         this.sendWhatsAppMessage(booking).subscribe();
         
         return booking;
@@ -407,6 +390,7 @@ export class BookingService {
       isSent: false,
       whatsappUrl
     };
+
     setTimeout(() => {
       message.isSent = true;
       message.sentAt = new Date().toISOString();
@@ -417,6 +401,7 @@ export class BookingService {
   }
 
   openWhatsApp(booking: Booking): void {
+    console.log('📱 Opening WhatsApp for booking:', booking.bookingReference);
     const template = BOOKING_CONSTANTS.WHATSAPP_TEMPLATES['new-booking'];
     const messageText = this.populateWhatsAppTemplate(template, booking);
     const whatsappUrl = this.generateWhatsAppUrl(booking.hostWhatsapp, messageText);
@@ -426,118 +411,16 @@ export class BookingService {
   }
 
   // ================================
-  // 📊 CONSULTAS Y BÚSQUEDAS
+  // 🔧 MÉTODOS PRIVADOS MIGRADOS
   // ================================
 
-  getBookings(): Observable<Booking[]> {
-    return this.bookings$;
-  }
-
-  getBookingById(id: string): Observable<Booking | undefined> {
-    return this.bookings$.pipe(
-      map(bookings => bookings.find(b => b.id === id))
-    );
-  }
-
-  getBookingByReference(reference: string): Observable<Booking | undefined> {
-    return this.bookings$.pipe(
-      map(bookings => bookings.find(b => b.bookingReference === reference))
-    );
-  }
-
-  searchBookings(params: BookingSearchParams): Observable<Booking[]> {
-    return this.bookings$.pipe(
-      map(bookings => {
-        let filtered = [...bookings];
-        
-        if (params.propertyId) {
-          filtered = filtered.filter(b => b.propertyId === params.propertyId);
-        }
-        
-        if (params.guestEmail) {
-          filtered = filtered.filter(b => 
-            b.guestInfo.email.toLowerCase().includes(params.guestEmail!.toLowerCase())
-          );
-        }
-        
-        if (params.bookingReference) {
-          filtered = filtered.filter(b => 
-            b.bookingReference.toLowerCase().includes(params.bookingReference!.toLowerCase())
-          );
-        }
-        
-        if (params.status) {
-          filtered = filtered.filter(b => b.status === params.status);
-        }
-        
-        if (params.dateFrom) {
-          filtered = filtered.filter(b => b.checkInDate >= params.dateFrom!);
-        }
-        
-        if (params.dateTo) {
-          filtered = filtered.filter(b => b.checkOutDate <= params.dateTo!);
-        }
-        
-        return filtered.sort((a, b) => 
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
-      })
-    );
-  }
-
-  getBookingStats(): Observable<BookingStats> {
-    return this.bookings$.pipe(
-      map(bookings => {
-        const total = bookings.length;
-        const pending = bookings.filter(b => b.status === 'pending').length;
-        const confirmed = bookings.filter(b => b.status === 'confirmed').length;
-        const cancelled = bookings.filter(b => b.status === 'cancelled').length;
-        
-        const totalRevenue = bookings
-          .filter(b => b.status === 'confirmed' || b.status === 'completed')
-          .reduce((sum, b) => sum + b.priceBreakdown.total, 0);
-        
-        const avgBookingValue = total > 0 ? totalRevenue / total : 0;
-        const avgStayDuration = total > 0 ? 
-          bookings.reduce((sum, b) => sum + b.nights, 0) / total : 0;
-        
-        // Calcular zona más popular
-        const zoneCount = bookings.reduce((acc, b) => {
-          acc[b.propertyZone] = (acc[b.propertyZone] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>);
-        
-        const mostPopularZone = Object.entries(zoneCount)
-          .sort(([,a], [,b]) => b - a)[0]?.[0] || '';
-        
-        return {
-          totalBookings: total,
-          pendingBookings: pending,
-          confirmedBookings: confirmed,
-          cancelledBookings: cancelled,
-          totalRevenue,
-          averageBookingValue: Math.round(avgBookingValue),
-          averageStayDuration: Math.round(avgStayDuration * 10) / 10,
-          occupancyRate: 0, // Calculado por propiedad
-          mostPopularZone,
-          mostPopularPropertyType: ''
-        };
-      })
-    );
-  }
-
-  // ================================
-  // 🔧 MÉTODOS PRIVADOS Y UTILIDADES
-  // ================================
-
-  private generateDayAvailability(property: Property, date: DateString): DayAvailability {
+  private generateDayAvailability(room: Room, date: DateString): DayAvailability {
     const dateObj = new Date(date);
     const today = new Date();
     const dayOfWeek = dateObj.getDay() as any;
     
-    // Mock: algunas fechas bloqueadas aleatoriamente
-    const isBlocked = Math.random() < 0.1; // 10% de días bloqueados
-    const isBooked = Math.random() < 0.15;  // 15% de días con reserva
+    const isBlocked = Math.random() < 0.1;
+    const isBooked = Math.random() < 0.15;
     
     return {
       date,
@@ -548,11 +431,18 @@ export class BookingService {
       isBooked,
       isPastDate: dateObj < today,
       isToday: this.isSameDay(dateObj, today),
-      minimumStay: property.minimumStay,
+      minimumStay: room.availability.minimumStay,
       hasSpecialPrice: false,
       checkInAllowed: true,
       checkOutAllowed: true
     };
+  }
+
+  private generateBookingReference(): string {
+    const today = new Date();
+    const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '');
+    const randomNum = Math.floor(Math.random() * 999) + 1;
+    return `HNA-${dateStr}-${randomNum.toString().padStart(3, '0')}`;
   }
 
   private calculateNights(checkIn: DateString, checkOut: DateString): number {
@@ -589,13 +479,6 @@ export class BookingService {
 
   private generateBookingId(): string {
     return 'booking_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-  }
-
-  private generateBookingReference(): string {
-    const today = new Date();
-    const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '');
-    const randomNum = Math.floor(Math.random() * 999) + 1;
-    return `ARM-${dateStr}-${randomNum.toString().padStart(3, '0')}`;
   }
 
   private populateWhatsAppTemplate(template: string, booking: Booking): string {
@@ -688,7 +571,7 @@ export class BookingService {
 
   private loadBookingsFromStorage(): void {
     try {
-      const saved = localStorage.getItem('armenia_norte_bookings');
+      const saved = localStorage.getItem('hostal_norte_bookings');
       if (saved) {
         const bookings = JSON.parse(saved);
         this.bookingsSubject.next(bookings);
@@ -700,19 +583,29 @@ export class BookingService {
 
   private saveBookingsToStorage(bookings: Booking[]): void {
     try {
-      localStorage.setItem('armenia_norte_bookings', JSON.stringify(bookings));
+      localStorage.setItem('hostal_norte_bookings', JSON.stringify(bookings));
     } catch (error) {
       console.warn('Error saving bookings to storage:', error);
     }
   }
 
   // ================================
-  // 🧹 LIMPIEZA Y RESET
+  // 🧹 MÉTODOS PÚBLICOS ADICIONALES
   // ================================
 
   clearCurrentBooking(): void {
     this.currentBookingSubject.next(null);
     this.bookingProgressSubject.next(null);
+  }
+
+  getBookings(): Observable<Booking[]> {
+    return this.bookings$;
+  }
+
+  getBookingById(id: string): Observable<Booking | undefined> {
+    return this.bookings$.pipe(
+      map(bookings => bookings.find(b => b.id === id))
+    );
   }
 
   resetBookingProgress(): void {

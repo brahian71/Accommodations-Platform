@@ -1,4 +1,8 @@
 // 📁 src/app/pages/search-results/search-results.component.scss
+// ================================
+// SEARCH RESULTS - OPTIMIZADO
+// Aprovecha variables globales y reduce bundle size
+// ================================
 
 app-search-results {
   display: block;
@@ -12,10 +16,29 @@ app-search-results {
   min-height: 100vh;
 }
 
+/* ================================
+   HEADER DE BÚSQUEDA
+   ================================ */
 .search-header {
   background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
   padding: var(--spacing-2xl) 0;
   box-shadow: var(--shadow-md);
+  color: var(--background-white);
+  
+  .page-title {
+    font-size: var(--font-size-3xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--background-white);
+    margin-bottom: var(--spacing-sm);
+    text-align: center;
+  }
+  
+  .page-subtitle {
+    font-size: var(--font-size-lg);
+    color: rgba(255, 255, 255, 0.9);
+    text-align: center;
+    margin-bottom: var(--spacing-2xl);
+  }
 }
 
 .search-bar-compact {
@@ -25,7 +48,7 @@ app-search-results {
   padding: var(--spacing-lg);
   box-shadow: var(--shadow-lg);
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr 1.2fr;
+  grid-template-columns: repeat(5, 1fr);
   gap: var(--spacing-lg);
   align-items: end;
   max-width: 1200px;
@@ -35,39 +58,35 @@ app-search-results {
 .search-field {
   display: flex;
   flex-direction: column;
-  
-  label {
-    font-size: var(--font-size-xs);
-    font-weight: var(--font-weight-semibold);
-    color: var(--text-primary);
-    margin-bottom: var(--spacing-sm);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-}
-
-.search-input,
-.date-input,
-.guests-select {
-  font-size: var(--font-size-sm);
 }
 
 .search-btn {
-  font-size: var(--font-size-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   gap: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  
+  .search-icon {
+    font-size: var(--font-size-lg);
+  }
 }
 
 .search-error {
   grid-column: 1 / -1;
-  background: #FEE2E2;
-  color: #DC2626;
+  background: rgba(220, 53, 69, 0.1);
+  color: #dc3545;
   padding: var(--spacing-md);
   border-radius: var(--radius-sm);
   font-size: var(--font-size-sm);
   margin-top: var(--spacing-sm);
-  border: 1px solid #FECACA;
+  border: 1px solid #fecaca;
+  border-left: 4px solid #dc3545;
 }
 
+/* ================================
+   LAYOUT DE BÚSQUEDA
+   ================================ */
 .search-content {
   padding: var(--spacing-2xl) 0;
 }
@@ -79,6 +98,9 @@ app-search-results {
   align-items: start;
 }
 
+/* ================================
+   SIDEBAR DE FILTROS OPTIMIZADO
+   ================================ */
 .filters-sidebar {
   position: sticky;
   top: var(--spacing-2xl);
@@ -86,11 +108,6 @@ app-search-results {
 }
 
 .filters-panel-armenia-norte {
-  background: var(--background-white);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
-  border: 1px solid var(--border-color);
-  transition: var(--transition-normal);
   padding: var(--spacing-xl);
 }
 
@@ -111,26 +128,6 @@ app-search-results {
 }
 
 .clear-filters-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-sm) var(--spacing-lg);
-  border: none;
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-semibold);
-  cursor: pointer;
-  transition: var(--transition-normal);
-  background-color: transparent;
-  color: var(--text-secondary);
-  border: 1px solid var(--border-color);
-  
-  &:hover:not(:disabled) {
-    background-color: var(--background-light);
-    color: var(--text-primary);
-  }
-  
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
@@ -167,7 +164,7 @@ app-search-results {
   border-radius: var(--radius-sm);
   
   &:hover { 
-    background: rgba(var(--primary-color), 0.05); 
+    background: rgba(39, 174, 96, 0.05); 
   }
   
   input[type="checkbox"] {
@@ -190,9 +187,12 @@ app-search-results {
   }
 }
 
+/* ================================
+   FILTROS ESPECÍFICOS
+   ================================ */
 .price-suggestions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, 1fr);
   gap: var(--spacing-sm);
 }
 
@@ -212,6 +212,12 @@ app-search-results {
     background: rgba(39, 174, 96, 0.2);
     border-color: var(--primary-color);
     transform: translateY(-1px);
+  }
+  
+  &.active {
+    background: var(--primary-color);
+    color: var(--background-white);
+    border-color: var(--primary-color);
   }
 }
 
@@ -244,17 +250,14 @@ app-search-results {
   }
 }
 
+/* ================================
+   RESULTADOS HEADER OPTIMIZADO
+   ================================ */
 .search-main {
   min-height: 80vh;
 }
 
 .results-header {
-  background: var(--background-white);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
-  border: 1px solid var(--border-color);
-  transition: var(--transition-normal);
-  padding: var(--spacing-xl);
   margin-bottom: var(--spacing-2xl);
   display: flex;
   justify-content: space-between;
@@ -271,7 +274,6 @@ app-search-results {
 }
 
 .search-location {
-  color: var(--primary-color);
   font-weight: var(--font-weight-semibold);
   font-size: var(--font-size-sm);
   margin-bottom: var(--spacing-sm);
@@ -283,13 +285,11 @@ app-search-results {
   gap: var(--spacing-lg);
   
   .result-count {
-    color: var(--text-secondary);
     font-size: var(--font-size-sm);
     font-weight: var(--font-weight-medium);
   }
   
   .active-filters {
-    color: var(--primary-color);
     font-size: var(--font-size-sm);
     font-weight: var(--font-weight-semibold);
   }
@@ -304,24 +304,9 @@ app-search-results {
 
 .sort-select,
 .items-per-page-select {
-  width: 100%;
-  padding: var(--spacing-sm) var(--spacing-md);
-  border: 2px solid var(--border-color);
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-sm);
-  background-color: var(--background-white);
-  color: var(--text-primary);
-  transition: var(--transition-normal);
-  font-family: inherit;
-  font-weight: var(--font-weight-medium);
   width: auto;
   cursor: pointer;
-  
-  &:focus {
-    outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.1);
-  }
+  font-weight: var(--font-weight-medium);
 }
 
 .view-toggle {
@@ -354,6 +339,10 @@ app-search-results {
     color: var(--primary-color);
   }
 }
+
+/* ================================
+   HABITACIONES - VISTA LISTA
+   ================================ */
 .properties-list {
   display: flex;
   flex-direction: column;
@@ -361,21 +350,11 @@ app-search-results {
 }
 
 .property-card-horizontal {
-  background: var(--background-white);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
-  border: 1px solid var(--border-color);
-  transition: var(--transition-normal);
   cursor: pointer;
   overflow: hidden;
   display: grid;
   grid-template-columns: 300px 1fr auto;
   min-height: 200px;
-  
-  &:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-xl);
-  }
 }
 
 .property-image {
@@ -395,7 +374,10 @@ app-search-results {
   }
 }
 
-.favorite-btn {
+/* ================================
+   BOTONES DE CONTACTO OPTIMIZADOS
+   ================================ */
+.contact-btn {
   position: absolute;
   top: var(--spacing-md);
   right: var(--spacing-md);
@@ -410,11 +392,17 @@ app-search-results {
   cursor: pointer;
   transition: var(--transition-normal);
   font-size: var(--font-size-lg);
-  z-index: 10;
+  z-index: var(--z-dropdown);
   
   &:hover {
     background: var(--background-white);
     transform: scale(1.1);
+    box-shadow: var(--shadow-sm);
+  }
+  
+  &:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
   }
 }
 
@@ -422,36 +410,24 @@ app-search-results {
   position: absolute;
   bottom: var(--spacing-md);
   left: var(--spacing-md);
-  z-index: 10;
+  z-index: var(--z-dropdown);
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
   
-  .badge {
-    display: inline-flex;
-    align-items: center;
-    padding: var(--spacing-xs) var(--spacing-md);
-    border-radius: 50px;
-    font-size: var(--font-size-xs);
-    font-weight: var(--font-weight-semibold);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    
-    &.verified-badge { 
-      background-color: var(--primary-color);
-      color: white;
-    }
-    &.instant-badge { 
-      background-color: var(--secondary-color);
-      color: var(--text-primary);
-    }
-    &.type-badge { 
-      background: rgba(0, 0, 0, 0.8); 
-      color: white; 
-    }
+  .verified-badge { 
+    background-color: var(--primary-color);
+    color: white;
+  }
+  .type-badge { 
+    background: rgba(0, 0, 0, 0.8); 
+    color: white; 
   }
 }
 
+/* ================================
+   CONTENIDO DE HABITACIONES
+   ================================ */
 .property-content {
   padding: var(--spacing-xl);
   display: flex;
@@ -484,7 +460,6 @@ app-search-results {
 }
 
 .property-location {
-  color: var(--text-secondary);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
 }
@@ -498,12 +473,10 @@ app-search-results {
 }
 
 .property-description {
-  color: var(--text-secondary);
   line-height: 1.6;
   margin-bottom: var(--spacing-lg);
   font-size: var(--font-size-sm);
   display: -webkit-box;
-
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -533,19 +506,10 @@ app-search-results {
 }
 
 .feature-tag {
-  display: inline-flex;
-  align-items: center;
-  padding: var(--spacing-xs) var(--spacing-sm);
-  border-radius: 50px;
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-semibold);
   background-color: rgba(39, 174, 96, 0.1);
   color: var(--primary-dark);
-  
-  &.more {
-    background-color: var(--background-light);
-    color: var(--text-secondary);
-  }
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
 }
 
 .amenity-tag {
@@ -557,53 +521,24 @@ app-search-results {
   font-weight: var(--font-weight-medium);
 }
 
-.available-services {
+.room-details {
   margin-bottom: var(--spacing-md);
   
-  strong {
-    color: var(--text-primary);
+  .establishment-info,
+  .contact-info {
     font-size: var(--font-size-sm);
-    margin-right: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+    
+    strong {
+      color: var(--text-primary);
+      margin-right: var(--spacing-sm);
+    }
   }
 }
 
-.service-tag {
-  background: rgba(52, 152, 219, 0.1);
-  color: #2980B9;
-  padding: var(--spacing-xs) var(--spacing-sm);
-  border-radius: 50px;
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-medium);
-  margin-right: var(--spacing-sm);
-  
-  &.more {
-    background-color: var(--background-light);
-    color: var(--text-secondary);
-    padding: var(--spacing-xs) var(--spacing-sm);
-    border-radius: 50px;
-    font-size: var(--font-size-xs);
-    font-weight: var(--font-weight-semibold);
-    margin-right: var(--spacing-sm);
-  }
-}
-
-.host-info {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-lg);
-  font-size: var(--font-size-sm);
-  color: var(--text-secondary);
-  
-  .host-name {
-    font-weight: var(--font-weight-semibold);
-    color: var(--text-primary);
-  }
-  
-  .response-time {
-    color: var(--primary-color);
-    font-weight: var(--font-weight-medium);
-  }
-}
+/* ================================
+   ACCIONES Y PRICING
+   ================================ */
 .property-actions {
   padding: var(--spacing-xl);
   border-left: 1px solid var(--border-color);
@@ -630,17 +565,10 @@ app-search-results {
       font-weight: var(--font-weight-bold);
       color: var(--text-primary);
     }
-    
-    .currency {
-      font-size: var(--font-size-sm);
-      color: var(--text-secondary);
-      font-weight: var(--font-weight-medium);
-    }
   }
   
   .period {
     font-size: var(--font-size-sm);
-    color: var(--text-secondary);
     font-weight: var(--font-weight-medium);
   }
 }
@@ -652,17 +580,12 @@ app-search-results {
   margin-bottom: var(--spacing-sm);
   text-align: center;
   
-  .weekly-price {
+  .weekly-discount,
+  .monthly-discount {
     font-size: var(--font-size-sm);
     color: var(--primary-dark);
     font-weight: var(--font-weight-semibold);
     display: block;
-  }
-  
-  .discount-badge {
-    font-size: var(--font-size-xs);
-    color: var(--primary-color);
-    font-weight: var(--font-weight-bold);
   }
 }
 
@@ -673,6 +596,69 @@ app-search-results {
   width: 100%;
 }
 
+/* ================================
+   VISTA CUADRÍCULA
+   ================================ */
+.properties-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: var(--spacing-2xl);
+}
+
+.property-card {
+  cursor: pointer;
+  
+  .property-image {
+    aspect-ratio: 4/3;
+    
+    .property-rating {
+      position: absolute;
+      top: var(--spacing-md);
+      right: var(--spacing-md);
+      background: rgba(0, 0, 0, 0.8);
+      color: var(--background-white);
+      padding: var(--spacing-xs) var(--spacing-md);
+      border-radius: 50px;
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-semibold);
+      backdrop-filter: blur(8px);
+      z-index: var(--z-dropdown);
+    }
+    
+    .contact-btn {
+      top: var(--spacing-md);
+      left: var(--spacing-md);
+      right: auto;
+    }
+  }
+  
+  .property-info {
+    padding: var(--spacing-xl);
+  }
+  
+  .property-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .property-price {
+    .price-amount {
+      font-size: var(--font-size-2xl);
+      font-weight: var(--font-weight-bold);
+      color: var(--text-primary);
+    }
+    
+    .price-period {
+      font-size: var(--font-size-sm);
+      display: block;
+    }
+  }
+}
+
+/* ================================
+   PAGINACIÓN OPTIMIZADA
+   ================================ */
 .pagination {
   margin-top: var(--spacing-2xl);
   display: flex;
@@ -715,53 +701,12 @@ app-search-results {
   }
 }
 
-.map-view {
-  background: var(--background-white);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
-  border: 1px solid var(--border-color);
-  transition: var(--transition-normal);
-  overflow: hidden;
-}
-
-.map-container {
-  height: 600px;
-  position: relative;
-}
-
-.map-placeholder {
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(135deg, var(--border-color) 0%, var(--background-light) 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-}
-
-.map-content {
-  text-align: center;
-  
-  h3 {
-    font-size: var(--font-size-2xl);
-    color: var(--text-primary);
-    margin-bottom: var(--spacing-sm);
-  }
-  
-  p {
-    color: var(--text-secondary);
-    margin-bottom: var(--spacing-2xl);
-  }
-}
-
+/* ================================
+   ESTADOS ESPECIALES
+   ================================ */
 .loading-container {
   text-align: center;
   padding: var(--spacing-4xl) 0;
-  background: var(--background-white);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
-  border: 1px solid var(--border-color);
-  transition: var(--transition-normal);
   margin: var(--spacing-2xl) 0;
 }
 
@@ -778,11 +723,6 @@ app-search-results {
 .no-results {
   text-align: center;
   padding: var(--spacing-4xl) var(--spacing-2xl);
-  background: var(--background-white);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
-  border: 1px solid var(--border-color);
-  transition: var(--transition-normal);
   margin: var(--spacing-2xl) 0;
 }
 
@@ -797,9 +737,18 @@ app-search-results {
   }
   
   p {
-    color: var(--text-secondary);
-    margin-bottom: var(--spacing-2xl);
     line-height: 1.6;
+    margin-bottom: var(--spacing-2xl);
+  }
+  
+  ul {
+    text-align: left;
+    margin-bottom: var(--spacing-2xl);
+    
+    li {
+      margin-bottom: var(--spacing-sm);
+      color: var(--text-secondary);
+    }
   }
 }
 
@@ -809,10 +758,18 @@ app-search-results {
   gap: var(--spacing-lg);
   flex-wrap: wrap;
 }
-.property-card-horizontal:hover .property-title {
+
+/* ================================
+   HOVER EFFECTS
+   ================================ */
+.property-card-horizontal:hover .property-title,
+.property-card:hover .property-title {
   color: var(--primary-color);
 }
 
+/* ================================
+   RESPONSIVE OPTIMIZADO
+   ================================ */
 @media (max-width: 1200px) {
   .search-layout {
     grid-template-columns: 250px 1fr;
@@ -840,7 +797,7 @@ app-search-results {
   }
   
   .search-bar-compact {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, 1fr);
     
     .search-btn { 
       grid-column: 1 / -1; 
@@ -869,6 +826,11 @@ app-search-results {
       }
     }
   }
+  
+  .properties-grid {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--spacing-xl);
+  }
 }
 
 @media (max-width: 768px) {
@@ -887,15 +849,79 @@ app-search-results {
       width: 100%; 
     }
   }
+  
+  .properties-grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-lg);
+  }
+  
+  .view-controls {
+    flex-direction: column;
+    align-items: stretch;
+    
+    .view-toggle {
+      order: -1;
+    }
+  }
+  
+  .results-header {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+  }
 }
 
 @media (max-width: 480px) {
   .search-header { 
     padding: var(--spacing-lg) 0; 
   }
+  
+  .filter-group {
+    margin-bottom: var(--spacing-xl);
+  }
+  
+  .price-suggestions {
+    grid-template-columns: 1fr;
+  }
+  
+  .property-specs {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
 }
 
+/* ================================
+   ANIMACIONES
+   ================================ */
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+
+/* ================================
+   ACCESIBILIDAD
+   ================================ */
+@media (prefers-reduced-motion: reduce) {
+  .property-image img,
+  .contact-btn,
+  .property-card,
+  .property-card-horizontal {
+    transition: none;
+  }
+  
+  .loading-spinner {
+    animation: none;
+  }
+}
+
+@media (prefers-contrast: high) {
+  .filter-checkbox,
+  .price-tag,
+  .rating-btn {
+    border-width: 2px;
+  }
+  
+  .property-rating {
+    background: rgba(0, 0, 0, 0.9);
+  }
 }

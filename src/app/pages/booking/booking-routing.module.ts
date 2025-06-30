@@ -8,25 +8,21 @@ import { BookingConfirmationComponent } from './booking-confirmation/booking-con
 
 const routes: Routes = [
   {
-    path: '',
-    children: [
-      {
-        path: ':id',
-        component: BookingComponent,
-        data: { 
-          title: 'Reservar Alojamiento',
-          description: 'Completa tu reserva en el Norte de Armenia' 
-        }
-      },
-      {
-        path: 'confirmation/:bookingId',
-        component: BookingConfirmationComponent,
-        data: { 
-          title: 'Reserva Confirmada',
-          description: 'Tu reserva ha sido procesada exitosamente' 
-        }
-      }
-    ]
+    path: ':roomId',
+    component: BookingComponent,
+    data: {
+      title: 'Reservar Habitación',
+      description: 'Completa tu reserva en el Hostal Norte Armenia'
+    }
+  },
+
+  {
+    path: 'confirmation/:bookingId',
+    component: BookingConfirmationComponent,
+    data: {
+      title: 'Reserva Confirmada', 
+      description: 'Tu reserva ha sido procesada exitosamente'
+    }
   }
 ];
 
