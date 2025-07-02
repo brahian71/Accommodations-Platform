@@ -496,11 +496,11 @@ export class PropertyDetailsComponent implements OnInit, OnDestroy {
   // ================================
 
   getWeeklyDiscount(room: Room): number {
-    return room.pricing.weeklyDiscount || 0;
+    return 0;
   }
 
   getMonthlyDiscount(room: Room): number {
-    return room.pricing.monthlyDiscount || 0;
+    return 0;
   }
 
   formatCurrency(amount: number): string {
@@ -535,7 +535,7 @@ export class PropertyDetailsComponent implements OnInit, OnDestroy {
   // ================================
 
   hasDiscount(room: Room): boolean {
-    return !!(room.pricing.weeklyDiscount || room.pricing.monthlyDiscount);
+    return false;
   }
 
   isRoomAvailable(room: Room): boolean {

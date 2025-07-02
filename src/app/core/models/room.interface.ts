@@ -37,8 +37,6 @@ export interface Room {
   pricing: {
     basePrice: number;
     currency: 'COP';
-    weeklyDiscount?: number;   // Porcentaje
-    monthlyDiscount?: number;  // Porcentaje
     seasonalPricing?: {
       high: number;    // Temporada alta
       low: number;     // Temporada baja

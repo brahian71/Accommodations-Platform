@@ -346,16 +346,10 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   shouldShowSpecialOffer(room: Room): boolean {
-    return room.pricing.weeklyDiscount !== undefined && room.pricing.weeklyDiscount > 0;
+    return false;
   }
 
   getSpecialOfferText(room: Room): string {
-    if (room.pricing.weeklyDiscount) {
-      return `${room.pricing.weeklyDiscount}% descuento semanal`;
-    }
-    if (room.pricing.monthlyDiscount) {
-      return `${room.pricing.monthlyDiscount}% descuento mensual`;
-    }
     return '';
   }
 

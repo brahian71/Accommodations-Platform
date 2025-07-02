@@ -152,16 +152,6 @@
                     del {{ formatDate(selectedDates.checkIn) }} al {{ formatDate(selectedDates.checkOut) }}
                   </span>
                 </div>
-
-                <div class="d-flex align-center gap-2 text-success text-sm" 
-                     *ngIf="selectedDates.applicableDiscounts.length > 0">
-                  <i class="icon-tag"></i>
-                  <div class="d-flex flex-column gap-1">
-                    <span *ngFor="let discount of selectedDates.applicableDiscounts">
-                      {{ discount }}
-                    </span>
-                  </div>
-                </div>
               </div>
               
               <!-- ================================ -->
@@ -715,18 +705,6 @@
                 <span class="text-primary font-medium">{{ formatPrice(priceBreakdown.subtotal) }}</span>
               </div>
               
-              <div class="d-flex justify-between text-sm mb-3 text-success" 
-                   *ngIf="priceBreakdown.weeklyDiscount">
-                <span>Descuento semanal ({{ priceBreakdown.weeklyDiscount.percentage }}%)</span>
-                <span class="font-semibold">-{{ formatPrice(priceBreakdown.weeklyDiscount.amount) }}</span>
-              </div>
-              
-              <div class="d-flex justify-between text-sm mb-3 text-success" 
-                   *ngIf="priceBreakdown.monthlyDiscount">
-                <span>Descuento mensual ({{ priceBreakdown.monthlyDiscount.percentage }}%)</span>
-                <span class="font-semibold">-{{ formatPrice(priceBreakdown.monthlyDiscount.amount) }}</span>
-              </div>
-              
               <div class="d-flex justify-between text-sm mb-3" *ngIf="priceBreakdown.cleaningFee">
                 <span class="text-secondary">Tarifa de limpieza</span>
                 <span class="text-primary font-medium">{{ formatPrice(priceBreakdown.cleaningFee) }}</span>
@@ -747,7 +725,6 @@
                 <span class="text-primary">{{ formatPrice(priceBreakdown.total) }}</span>
               </div>
             </div>
-
             <div class="host-info card-footer" *ngIf="establishment">
               <h4 class="title-base font-semibold text-primary mb-4">Tu anfitrión</h4>
               <div class="d-flex align-center gap-3 mb-4">

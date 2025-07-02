@@ -391,28 +391,6 @@ export class RoomService {
         let subtotal = basePrice * nights;
         let discount: any = undefined;
         
-        // Aplicar descuento semanal (7+ noches)
-        if (nights >= 7 && room.pricing.weeklyDiscount) {
-          const discountAmount = Math.round(subtotal * (room.pricing.weeklyDiscount / 100));
-          discount = {
-            type: 'weekly' as const,
-            percentage: room.pricing.weeklyDiscount,
-            amount: discountAmount
-          };
-          subtotal -= discountAmount;
-        }
-        
-        // Aplicar descuento mensual (28+ noches) - sobreescribe el semanal
-        if (nights >= 28 && room.pricing.monthlyDiscount) {
-          const originalSubtotal = basePrice * nights;
-          const discountAmount = Math.round(originalSubtotal * (room.pricing.monthlyDiscount / 100));
-          discount = {
-            type: 'monthly' as const,
-            percentage: room.pricing.monthlyDiscount,
-            amount: discountAmount
-          };
-          subtotal = originalSubtotal - discountAmount;
-        }
         
         return {
           basePrice,

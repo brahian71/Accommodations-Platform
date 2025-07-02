@@ -134,19 +134,6 @@ export class RoomBookingService {
           });
         }
         
-        if (nights >= 7 && room?.pricing.weeklyDiscount) {
-          warnings.push({
-            code: 'WEEKLY_DISCOUNT',
-            message: `Descuento semanal del ${room.pricing.weeklyDiscount}% aplicado automáticamente`
-          });
-        }
-        
-        if (nights >= 28 && room?.pricing.monthlyDiscount) {
-          warnings.push({
-            code: 'MONTHLY_DISCOUNT',
-            message: `Descuento mensual del ${room.pricing.monthlyDiscount}% aplicado automáticamente`
-          });
-        }
         
         return {
           isValid: errors.length === 0,
@@ -181,30 +168,7 @@ export class RoomBookingService {
           total: 0,
           totalCOP: 0
         };
-
-        // Aplicar descuentos de la habitación
-        if (this.priceConfig.applyWeeklyDiscount && nights >= 7 && room.pricing.weeklyDiscount) {
-          const discountAmount = Math.round(subtotal * (room.pricing.weeklyDiscount / 100));
-          breakdown.weeklyDiscount = {
-            percentage: room.pricing.weeklyDiscount,
-            amount: discountAmount
-          };
-          subtotal -= discountAmount;
-          breakdown.subtotal = subtotal;
-        }
-
-        if (this.priceConfig.applyMonthlyDiscount && nights >= 28 && room.pricing.monthlyDiscount) {
-          const originalSubtotal = pricePerNight * nights;
-          const discountAmount = Math.round(originalSubtotal * (room.pricing.monthlyDiscount / 100));
-          breakdown.monthlyDiscount = {
-            percentage: room.pricing.monthlyDiscount,
-            amount: discountAmount
-          };
-          subtotal = originalSubtotal - discountAmount;
-          breakdown.subtotal = subtotal;
-        }
-
-        // Aplicar tarifas del establecimiento
+        
         if (this.priceConfig.cleaningFeePercentage > 0) {
           breakdown.cleaningFee = Math.round(subtotal * (this.priceConfig.cleaningFeePercentage / 100));
         }

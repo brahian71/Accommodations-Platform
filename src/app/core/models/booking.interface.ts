@@ -54,31 +54,17 @@ export interface PriceBreakdown {
   pricePerNight: number;
   nights: number;
   subtotal: number;
-  
-  weeklyDiscount?: {
-    percentage: number;
-    amount: number;
-  };
-  monthlyDiscount?: {
-    percentage: number;
-    amount: number;
-  };
-
   cleaningFee?: number;
   serviceFee?: number;
-
   iva: {
     percentage: number;
     amount: number;
   };
-  
   total: number;
   totalCOP: number;
 }
 
 export interface PriceCalculatorConfig {
-  applyWeeklyDiscount: boolean;    // Si >= 7 noches
-  applyMonthlyDiscount: boolean;   // Si >= 28 noches
   cleaningFeePercentage: number;   // % del subtotal
   serviceFeePercentage: number;    // % del subtotal
   ivaPercentage: number;           // 19% en Colombia
@@ -237,13 +223,11 @@ export interface BookingStats {
 
 export const BOOKING_CONSTANTS = {
   DEFAULT_PRICE_CONFIG: {
-    applyWeeklyDiscount: true,
-    applyMonthlyDiscount: true,
     cleaningFeePercentage: 10,
     serviceFeePercentage: 5,
     ivaPercentage: 19
   } as PriceCalculatorConfig,
-  
+
   DEFAULT_VALIDATION_RULES: {
     maxAdvanceBookingDays: 365,
     minAdvanceBookingHours: 2,

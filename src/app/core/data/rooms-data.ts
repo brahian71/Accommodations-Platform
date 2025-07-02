@@ -46,8 +46,6 @@ export const ROOMS_DATA: Room[] = [
     pricing: {
       basePrice: 45000,
       currency: 'COP',
-      weeklyDiscount: 10,
-      monthlyDiscount: 20
     },
     
     images: {
@@ -120,8 +118,6 @@ export const ROOMS_DATA: Room[] = [
     pricing: {
       basePrice: 75000,
       currency: 'COP',
-      weeklyDiscount: 12,
-      monthlyDiscount: 25
     },
     
     images: {
@@ -198,8 +194,6 @@ export const ROOMS_DATA: Room[] = [
     pricing: {
       basePrice: 85000,
       currency: 'COP',
-      weeklyDiscount: 15,
-      monthlyDiscount: 28
     },
     
     images: {
@@ -274,8 +268,6 @@ export const ROOMS_DATA: Room[] = [
     pricing: {
       basePrice: 55000,
       currency: 'COP',
-      weeklyDiscount: 8,
-      monthlyDiscount: 18
     },
     
     images: {
@@ -353,8 +345,6 @@ export const ROOMS_DATA: Room[] = [
     pricing: {
       basePrice: 120000,
       currency: 'COP',
-      weeklyDiscount: 18,
-      monthlyDiscount: 30
     },
     
     images: {

@@ -427,17 +427,6 @@
                 </div>
               </div>
 
-              <div class="discounts" *ngIf="hasDiscount(room)">
-                <div class="discount-item" *ngIf="room.pricing.weeklyDiscount">
-                  <span class="discount-label text-secondary">Semanal</span>
-                  <span class="badge badge-success">{{ getWeeklyDiscount(room) }}% desc.</span>
-                </div>
-                <div class="discount-item" *ngIf="room.pricing.monthlyDiscount">
-                  <span class="discount-label text-secondary">Mensual</span>
-                  <span class="badge badge-success">{{ getMonthlyDiscount(room) }}% desc.</span>
-                </div>
-              </div>
-
               <div class="booking-form">
                 <div class="date-inputs">
                   <div class="date-input-group">

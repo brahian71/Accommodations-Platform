@@ -544,19 +544,19 @@ export class SearchResultsComponent implements OnInit, OnDestroy {
   }
 
   shouldShowWeeklyPrice(room: Room): boolean {
-    return room.pricing.weeklyDiscount !== undefined && room.pricing.weeklyDiscount > 0;
+    return false;
   }
 
   getWeeklyDiscount(room: Room): number {
-    return room.pricing.weeklyDiscount || 0;
+    return 0;
   }
 
   shouldShowMonthlyPrice(room: Room): boolean {
-    return room.pricing.monthlyDiscount !== undefined && room.pricing.monthlyDiscount > 0;
+    return false;
   }
 
   getMonthlyDiscount(room: Room): number {
-    return room.pricing.monthlyDiscount || 0;
+    return 0;
   }
 
   isRoomAvailable(room: Room): boolean {

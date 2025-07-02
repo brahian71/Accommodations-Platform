@@ -608,12 +608,7 @@ export class BookingComponent implements OnInit, OnDestroy {
       this.selectedDates.nights = priceBreakdown.nights;
       this.selectedDates.estimatedTotal = priceBreakdown.total;
       this.selectedDates.applicableDiscounts = [];
-      if (priceBreakdown.weeklyDiscount) {
-        this.selectedDates.applicableDiscounts.push(`Descuento semanal: ${priceBreakdown.weeklyDiscount.percentage}%`);
-      }
-      if (priceBreakdown.monthlyDiscount) {
-        this.selectedDates.applicableDiscounts.push(`Descuento mensual: ${priceBreakdown.monthlyDiscount.percentage}%`);
-      }
+      
     });
   }
 
@@ -890,7 +885,7 @@ export class BookingComponent implements OnInit, OnDestroy {
   }
 
   get hasDiscounts(): boolean {
-    return !!(this.priceBreakdown?.weeklyDiscount || this.priceBreakdown?.monthlyDiscount);
+    return false;
   }
 
   // ================================

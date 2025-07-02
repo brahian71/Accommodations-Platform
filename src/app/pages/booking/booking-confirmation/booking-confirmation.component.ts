@@ -136,16 +136,6 @@ import { Booking } from '../../../core/models/booking.interface';
                     <span>{{ formatPrice(booking.priceBreakdown.subtotal || 0) }}</span>
                   </div>
                   
-                  <div class="price-row discount" *ngIf="booking.priceBreakdown.weeklyDiscount">
-                    <span>Descuento semanal</span>
-                    <span>-{{ formatPrice(booking.priceBreakdown.weeklyDiscount.amount || 0) }}</span>
-                  </div>
-                  
-                  <div class="price-row discount" *ngIf="booking.priceBreakdown.monthlyDiscount">
-                    <span>Descuento mensual</span>
-                    <span>-{{ formatPrice(booking.priceBreakdown.monthlyDiscount.amount || 0) }}</span>
-                  </div>
-                  
                   <div class="price-row" *ngIf="booking.priceBreakdown.cleaningFee">
                     <span>Tarifa de limpieza</span>
                     <span>{{ formatPrice(booking.priceBreakdown.cleaningFee || 0) }}</span>
