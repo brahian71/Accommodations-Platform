@@ -44,7 +44,7 @@ export const ROOMS_DATA: Room[] = [
     ],
     
     pricing: {
-      basePrice: 45000,
+      basePrice: 15000,
       currency: 'COP',
     },
     
@@ -116,7 +116,7 @@ export const ROOMS_DATA: Room[] = [
     ],
     
     pricing: {
-      basePrice: 75000,
+      basePrice: 25000,
       currency: 'COP',
     },
     
@@ -192,7 +192,7 @@ export const ROOMS_DATA: Room[] = [
     ],
     
     pricing: {
-      basePrice: 85000,
+      basePrice: 35000,
       currency: 'COP',
     },
     
@@ -266,7 +266,7 @@ export const ROOMS_DATA: Room[] = [
     ],
     
     pricing: {
-      basePrice: 55000,
+      basePrice: 14000,
       currency: 'COP',
     },
     
@@ -343,7 +343,7 @@ export const ROOMS_DATA: Room[] = [
     ],
     
     pricing: {
-      basePrice: 120000,
+      basePrice: 20000,
       currency: 'COP',
     },
     

@@ -5,7 +5,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Observable, Subject, combineLatest } from 'rxjs';
-import { takeUntil, map } from 'rxjs/operators';
+import { takeUntil, map, tap } from 'rxjs/operators';
 
 import { Room, RoomType, ROOM_TYPE_LABELS } from '../../core/models/room.interface';
 import { Establishment } from '../../core/models/establishment.interface';
@@ -51,8 +51,25 @@ export class HomeComponent implements OnInit, OnDestroy {
     private establishmentService: EstablishmentService,
     private router: Router
   ) {
-    this.featuredRooms$ = this.roomService.getFeaturedRooms();
-    this.establishment$ = this.establishmentService.getEstablishmentInfo();
+    console.log('🏠 HomeComponent: Constructor iniciado');
+    
+    // ✅ CORREGIDO: Suscripción directa para debugging con tipos explícitos
+    this.featuredRooms$ = this.roomService.getFeaturedRooms().pipe(
+      tap((rooms: Room[]) => {
+        console.log('🏠 HomeComponent: Featured rooms recibidas:', rooms.length);
+        if (rooms.length > 0) {
+          console.log('🏠 HomeComponent: Primeras habitaciones:', rooms.map((r: Room) => ({id: r.id, name: r.name, type: r.roomType})));
+        }
+      })
+    );
+    
+    this.establishment$ = this.establishmentService.getEstablishmentInfo().pipe(
+      tap((establishment: Establishment) => {
+        console.log('🏠 HomeComponent: Establishment recibido:', establishment.name);
+      })
+    );
+    
+    console.log('🏠 HomeComponent: Constructor completado');
   }
 
   ngOnInit(): void {

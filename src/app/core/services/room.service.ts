@@ -1,39 +1,130 @@
 // ================================
 // 📁 src/app/core/services/room.service.ts
+// 🔄 CORREGIDO: 100% DataProvider - Sin dependencias mock
 // ================================
 
 import { Injectable } from '@angular/core';
-import { Observable, BehaviorSubject, of } from 'rxjs';
-import { map, delay } from 'rxjs/operators';
+import { Observable, BehaviorSubject, of, EMPTY } from 'rxjs';
+import { map, delay, switchMap, tap, catchError } from 'rxjs/operators';
 
 import { Room, RoomType, RoomFilters, RoomSearchParams, RoomStats, BathroomType, RoomAmenityType } from '../models/room.interface';
-import { ROOMS_DATA, FEATURED_ROOMS, ESTABLISHMENT_STATS, getRoomById, getRoomsByType, getRoomsByCapacity, getRoomsByPriceRange, getAvailableRooms } from '../data/rooms-data';
+
+// ✅ ÚNICO IMPORT: Solo DataProvider
+import { DataProviderService } from './data-provider.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class RoomService {
   
-  private roomsSubject = new BehaviorSubject<Room[]>(ROOMS_DATA);
+  // ✅ CORREGIDO: Inicializar vacío hasta cargar datos reales
+  private roomsSubject = new BehaviorSubject<Room[]>([]);
   private favoritesSubject = new BehaviorSubject<string[]>([]);
+  private isLoadingSubject = new BehaviorSubject<boolean>(false);
   
   public rooms$ = this.roomsSubject.asObservable();
   public favorites$ = this.favoritesSubject.asObservable();
+  public isLoading$ = this.isLoadingSubject.asObservable();
 
-  constructor() {
+  constructor(private dataProvider: DataProviderService) {
+    console.log('🛏️ RoomService initialized - Using 100% DataProvider');
     this.loadFavoritesFromStorage();
+    this.loadRoomsFromDataProvider();
+
+    // ✅ DEBUG: Suscribirse para ver cuando se actualizan las habitaciones
+    this.rooms$.subscribe(rooms => {
+      console.log('🔄 RoomService - rooms$ actualizado:', rooms.length, 'habitaciones');
+    });
+  }
+
+  // ✅ CORREGIDO: Cargar habitaciones solo desde DataProvider
+  private loadRoomsFromDataProvider(): void {
+    this.isLoadingSubject.next(true);
+    console.log('📡 RoomService: Solicitando habitaciones a DataProvider...');
+    
+    this.dataProvider.getRooms().subscribe({
+      next: (rooms) => {
+        console.log('✅ RoomService: Habitaciones cargadas desde DataProvider:', rooms.length);
+        console.log('🏠 RoomService: Actualizando BehaviorSubject con habitaciones:', rooms);
+        console.log('📋 RoomService: IDs de habitaciones:', rooms.map(r => r.id));
+        this.roomsSubject.next(rooms);
+        this.isLoadingSubject.next(false);
+        console.log('🎯 RoomService: BehaviorSubject actualizado. Estado final:', this.roomsSubject.value.length, 'habitaciones');
+      },
+      error: (error) => {
+        console.error('❌ RoomService: Error cargando habitaciones:', error);
+        this.isLoadingSubject.next(false);
+        // ✅ CORREGIDO: NO usar fallback mock - mantener array vacío
+        console.log('🔄 RoomService: Manteniendo array vacío por error');
+        this.roomsSubject.next([]);
+      }
+    });
+  }
+
+  // ✅ NUEVO: Refrescar datos desde API
+  refreshRooms(): Observable<Room[]> {
+    console.log('🔄 RoomService: Refrescando habitaciones...');
+    this.loadRoomsFromDataProvider();
+    return this.rooms$;
+  }
+
+  // ✅ NUEVO: Método para debugging
+  debugCurrentState(): void {
+    console.log('🔍 RoomService Debug Estado Actual:');
+    console.log('📊 Habitaciones en BehaviorSubject:', this.roomsSubject.value.length);
+    console.log('🏠 Habitaciones:', this.roomsSubject.value.map(r => ({ id: r.id, name: r.name, price: r.pricing.basePrice })));
+    console.log('⏳ Loading state:', this.isLoadingSubject.value);
   }
 
   // ================================
   // 🛏️ CONSULTAS BÁSICAS DE HABITACIONES
   // ================================
 
+  // ✅ CORREGIDO: Usar BehaviorSubject en lugar de llamar DataProvider directamente
   getRooms(): Observable<Room[]> {
-    return this.rooms$.pipe(delay(200));
+    return this.rooms$; // Usar el BehaviorSubject actualizado
   }
 
   getFeaturedRooms(): Observable<Room[]> {
-    return of(FEATURED_ROOMS).pipe(delay(150));
+    return this.rooms$.pipe(
+      map(rooms => {
+        console.log('🏠 getFeaturedRooms: Processing', rooms.length, 'habitaciones');
+        
+        if (rooms.length === 0) {
+          console.log('⚠️ getFeaturedRooms: No hay habitaciones disponibles');
+          return [];
+        }
+        
+        // Log de cada habitación para debugging
+        rooms.forEach(room => {
+          console.log(`🛏️ Room ${room.id}: ${room.name}, type: ${room.roomType}, active: ${room.availability.isActive}, available: ${room.availability.isAvailable}`);
+        });
+        
+        // Filtrar habitaciones activas y disponibles
+        const availableRooms = rooms.filter(room => {
+          const isValid = room.availability.isActive && room.availability.isAvailable;
+          if (!isValid) {
+            console.log(`❌ Room ${room.id} filtered out - active: ${room.availability.isActive}, available: ${room.availability.isAvailable}`);
+          }
+          return isValid;
+        });
+        
+        console.log('✅ getFeaturedRooms: Habitaciones disponibles:', availableRooms.length);
+        
+        // Si no hay habitaciones disponibles, devolver todas para mostrar algo
+        const roomsToProcess = availableRooms.length > 0 ? availableRooms : rooms;
+        
+        // Tomar las habitaciones con mejor rating como destacadas
+        const featured = roomsToProcess
+          .sort((a, b) => b.stats.rating - a.stats.rating)
+          .slice(0, 4);
+          
+        console.log('🌟 getFeaturedRooms: Habitaciones destacadas:', featured.length, featured.map(r => r.name));
+        
+        return featured;
+      }),
+      delay(150)
+    );
   }
 
   getRoomById(id: string): Observable<Room | undefined> {
@@ -101,38 +192,42 @@ export class RoomService {
 
   searchRooms(searchParams: RoomSearchParams): Observable<Room[]> {
     return this.rooms$.pipe(
-        map(rooms => {
+      map(rooms => {
+        if (rooms.length === 0) return [];
+        
         let filtered = [...rooms];
 
         // Filtrar por número de huéspedes
         if (searchParams.guests > 0) {
-            filtered = filtered.filter(room => room.maxGuests >= searchParams.guests);
+          filtered = filtered.filter(room => room.maxGuests >= searchParams.guests);
         }
 
         // Filtrar por tipo de habitación
         if (searchParams.roomType) {
-            filtered = filtered.filter(room => room.roomType === searchParams.roomType);
+          filtered = filtered.filter(room => room.roomType === searchParams.roomType);
         }
 
-        // ✅ ARREGLO: Verificar que maxPrice existe antes de usarlo
+        // Filtrar por precio máximo
         if (searchParams.maxPrice && searchParams.maxPrice > 0) {
-            filtered = filtered.filter(room => room.pricing.basePrice <= searchParams.maxPrice!);
+          filtered = filtered.filter(room => room.pricing.basePrice <= searchParams.maxPrice!);
         }
 
         // Solo habitaciones disponibles
         filtered = filtered.filter(room => 
-            room.availability.isActive && room.availability.isAvailable
+          room.availability.isActive && room.availability.isAvailable
         );
 
         return filtered;
-        }),
-        delay(300)
+      }),
+      delay(300)
     );
-    }
+  }
 
   searchWithFilters(filters: RoomFilters): Observable<Room[]> {
     return this.rooms$.pipe(
       map(rooms => {
+        if (rooms.length === 0) return [];
+        
         let filtered = [...rooms];
 
         // Filtrar por tipos de habitación
@@ -195,7 +290,7 @@ export class RoomService {
 
   searchByText(searchTerm: string): Observable<Room[]> {
     if (!searchTerm.trim()) {
-      return this.getRooms();
+      return this.rooms$;
     }
 
     const term = searchTerm.toLowerCase();
@@ -307,6 +402,20 @@ export class RoomService {
   getRoomStats(): Observable<RoomStats> {
     return this.rooms$.pipe(
       map(rooms => {
+        if (rooms.length === 0) {
+          return {
+            totalRooms: 0,
+            availableRooms: 0,
+            occupiedRooms: 0,
+            averagePrice: 0,
+            averageRating: 0,
+            totalReviews: 0,
+            occupancyRate: 0,
+            mostPopularRoomType: 'doble' as RoomType,
+            averageStayDuration: 0
+          };
+        }
+
         const available = rooms.filter(r => r.availability.isAvailable);
         const occupied = rooms.filter(r => !r.availability.isAvailable);
         
@@ -325,7 +434,6 @@ export class RoomService {
         const mostPopularType = Object.entries(typeCount)
           .sort(([,a], [,b]) => b - a)[0]?.[0] as RoomType || 'doble';
 
-        // Calcular duración promedio de estancia (mock)
         const avgStayDuration = 2.8; // Mock data
 
         return {
@@ -351,24 +459,28 @@ export class RoomService {
 
   getSimilarRooms(roomId: string, limit: number = 3): Observable<Room[]> {
     return this.getRoomById(roomId).pipe(
-      map(room => {
-        if (!room) return [];
+      switchMap(room => {
+        if (!room) return of([]);
 
-        return ROOMS_DATA
-          .filter(r => r.id !== roomId)
-          .sort((a, b) => {
-            // Priorizar por mismo tipo de habitación
-            const aScore = (a.roomType === room.roomType ? 3 : 0) + 
-                          (Math.abs(a.maxGuests - room.maxGuests) <= 1 ? 2 : 0) +
-                          (Math.abs(a.pricing.basePrice - room.pricing.basePrice) <= 20000 ? 1 : 0);
-            
-            const bScore = (b.roomType === room.roomType ? 3 : 0) + 
-                          (Math.abs(b.maxGuests - room.maxGuests) <= 1 ? 2 : 0) +
-                          (Math.abs(b.pricing.basePrice - room.pricing.basePrice) <= 20000 ? 1 : 0);
-            
-            return bScore - aScore;
-          })
-          .slice(0, limit);
+        return this.rooms$.pipe(
+          map(allRooms => 
+            allRooms
+              .filter(r => r.id !== roomId)
+              .sort((a, b) => {
+                // Priorizar por mismo tipo de habitación
+                const aScore = (a.roomType === room.roomType ? 3 : 0) + 
+                              (Math.abs(a.maxGuests - room.maxGuests) <= 1 ? 2 : 0) +
+                              (Math.abs(a.pricing.basePrice - room.pricing.basePrice) <= 20000 ? 1 : 0);
+                
+                const bScore = (b.roomType === room.roomType ? 3 : 0) + 
+                              (Math.abs(b.maxGuests - room.maxGuests) <= 1 ? 2 : 0) +
+                              (Math.abs(b.pricing.basePrice - room.pricing.basePrice) <= 20000 ? 1 : 0);
+                
+                return bScore - aScore;
+              })
+              .slice(0, limit)
+          )
+        );
       })
     );
   }
@@ -390,7 +502,6 @@ export class RoomService {
         const basePrice = room.pricing.basePrice;
         let subtotal = basePrice * nights;
         let discount: any = undefined;
-        
         
         return {
           basePrice,
@@ -448,7 +559,16 @@ export class RoomService {
     return of(Math.random() > 0.1).pipe(delay(300));
   }
 
-  getEstablishmentStats(): Observable<typeof ESTABLISHMENT_STATS> {
-    return of(ESTABLISHMENT_STATS).pipe(delay(150));
+  // ✅ CORREGIDO: Usar DataProvider en lugar de datos mock
+  getEstablishmentStats(): Observable<any> {
+    return this.getRoomStats().pipe(
+      map(roomStats => ({
+        totalRooms: roomStats.totalRooms,
+        averagePrice: roomStats.averagePrice,
+        averageRating: roomStats.averageRating,
+        totalReviews: roomStats.totalReviews,
+        occupancyRate: roomStats.occupancyRate
+      }))
+    );
   }
 }

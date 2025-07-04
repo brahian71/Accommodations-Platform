@@ -1,5 +1,4 @@
 // 📁 src/app/app-routing.module.ts
-// ✅ CORREGIDO: Routing consistente y sin conflictos
 
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
