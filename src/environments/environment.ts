@@ -1,9 +1,33 @@
+// ================================
+// 📁 src/environments/environment.ts
+// 🔧 CONFIGURACIÓN PARA USAR API REAL DE AVAILABILITY
+// ================================
+
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:3000/api',
-  useRealAPI: true, // true = usar API real, false = usar mock data
   
-  mapbox: {
-    accessToken: 'your-mapbox-token'
+  // ✅ API Configuration - USAR BACKEND REAL
+  apiUrl: 'http://localhost:3001',
+  useRealAPI: true, // ✅ IMPORTANTE: true para usar endpoints reales
+  
+  // Backend endpoints
+  endpoints: {
+    rooms: '/api/rooms',
+    availability: '/api/availability',
+    bookings: '/api/bookings',
+    establishment: '/api/establishment'
+  },
+  
+  // Configuración adicional
+  app: {
+    name: 'Hostal Norte Armenia',
+    version: '1.0.0'
+  },
+  
+  // Features flags
+  features: {
+    realTimeAvailability: true,
+    whatsappIntegration: true,
+    adminPanel: false // Próximamente
   }
 };

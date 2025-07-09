@@ -1,3 +1,4 @@
+
 // 📁 src/app/core/services/data-provider.service.ts
 
 import { Injectable } from '@angular/core';
@@ -8,8 +9,6 @@ import { map, catchError } from 'rxjs/operators';
 import { Room } from '../models/room.interface';
 import { Establishment } from '../models/establishment.interface';
 import { Booking, BookingRequest } from '../models/booking.interface';
-
-// ✅ CORREGIDO: Importar datos directamente (sin servicios para evitar dependencia circular)
 import { ROOMS_DATA } from '../data/rooms-data';
 import { ESTABLISHMENT_INFO } from '../data/establishment-data';
 
@@ -23,7 +22,6 @@ export class DataProviderService {
   private readonly apiUrl = environment.apiUrl;
   private readonly useRealAPI = environment.useRealAPI;
 
-  // ✅ CORREGIDO: Constructor simplificado sin dependencias circulares
   constructor(private http: HttpClient) {
     console.log(`🔄 DataProvider initialized - Mode: ${this.useRealAPI ? 'REAL API' : 'MOCK DATA'}`);
     console.log(`🌐 API URL: ${this.apiUrl}`);
@@ -36,7 +34,8 @@ export class DataProviderService {
   getRooms(): Observable<Room[]> {
     if (this.useRealAPI) {
       console.log('🌐 Fetching rooms from API...');
-      return this.http.get<any>(`${this.apiUrl}/rooms`).pipe(
+      // ✅ CORREGIDO: Añadir /api/ a la URL
+      return this.http.get<any>(`${this.apiUrl}/api/rooms`).pipe(
         map(response => {
           console.log('✅ Rooms from API:', response);
           return this.transformApiRoomsToFrontend(response.data);
@@ -44,31 +43,36 @@ export class DataProviderService {
         catchError(error => {
           console.error('❌ Error fetching rooms from API:', error);
           console.log('🔄 Fallback to mock data');
-          return of(ROOMS_DATA); // ✅ CORREGIDO: Usar datos directos
+          return of(ROOMS_DATA);
         })
       );
     } else {
       console.log('📁 Using mock rooms data');
-      return of(ROOMS_DATA); // ✅ CORREGIDO: Usar datos directos
+      return of(ROOMS_DATA);
     }
   }
 
   getRoomById(id: string): Observable<Room | null> {
     if (this.useRealAPI) {
       console.log(`🌐 Fetching room ${id} from API...`);
-      return this.http.get<any>(`${this.apiUrl}/rooms/${id}`).pipe(
-        map(response => this.transformApiRoomToFrontend(response.data)),
+      
+      const backendId = this.mapFrontendIdToBackend(id);
+      console.log(`🔄 ID mapping: ${id} → ${backendId}`);
+      
+      return this.http.get<any>(`${this.apiUrl}/api/rooms/${backendId}`).pipe(
+        map(response => {
+          console.log(`✅ Room ${id} fetched from API:`, response.data.name);
+          return this.transformApiRoomToFrontend(response.data);
+        }),
         catchError(error => {
-          console.error('❌ Error fetching room from API:', error);
+          console.error(`❌ Error fetching room ${id} from API:`, error);
           console.log('🔄 Fallback to mock data');
-          // ✅ CORREGIDO: Buscar en datos mock directamente
           const room = ROOMS_DATA.find(r => r.id === id) || null;
           return of(room);
         })
       );
     } else {
       console.log(`📁 Using mock data for room ${id}`);
-      // ✅ CORREGIDO: Buscar en datos mock directamente
       const room = ROOMS_DATA.find(r => r.id === id) || null;
       return of(room);
     }
@@ -81,17 +85,20 @@ export class DataProviderService {
   getEstablishmentInfo(): Observable<Establishment> {
     if (this.useRealAPI) {
       console.log('🌐 Fetching establishment from API...');
-      return this.http.get<any>(`${this.apiUrl}/establishment`).pipe(
-        map(response => this.transformApiEstablishmentToFrontend(response.data)),
+      return this.http.get<any>(`${this.apiUrl}/api/establishment`).pipe(
+        map(response => {
+          console.log('✅ Establishment from API:', response.data.name);
+          return this.transformApiEstablishmentToFrontend(response.data);
+        }),
         catchError(error => {
           console.error('❌ Error fetching establishment from API:', error);
           console.log('🔄 Fallback to mock data');
-          return of(ESTABLISHMENT_INFO); // ✅ CORREGIDO: Usar datos directos
+          return of(ESTABLISHMENT_INFO);
         })
       );
     } else {
       console.log('📁 Using mock establishment data');
-      return of(ESTABLISHMENT_INFO); // ✅ CORREGIDO: Usar datos directos
+      return of(ESTABLISHMENT_INFO);
     }
   }
 
@@ -102,19 +109,17 @@ export class DataProviderService {
   createBooking(bookingRequest: BookingRequest): Observable<Booking> {
     if (this.useRealAPI) {
       console.log('🌐 Creating booking via API...');
-      return this.http.post<any>(`${this.apiUrl}/bookings`, bookingRequest).pipe(
+      return this.http.post<any>(`${this.apiUrl}/api/bookings`, bookingRequest).pipe(
         map(response => response.data),
         catchError(error => {
           console.error('❌ Error creating booking via API:', error);
           console.log('🔄 Fallback to mock booking creation');
-          // ✅ MEJORADO: Crear booking mock básico
           const mockBooking = this.createMockBooking(bookingRequest);
           return of(mockBooking);
         })
       );
     } else {
       console.log('📁 Creating mock booking');
-      // ✅ MEJORADO: Crear booking mock básico
       const mockBooking = this.createMockBooking(bookingRequest);
       return of(mockBooking);
     }
@@ -130,10 +135,11 @@ export class DataProviderService {
   }
 
   private transformApiRoomToFrontend(apiRoom: any): Room {
-    // Transform PostgreSQL room data to frontend Room interface
     console.log('🔄 Transforming room:', apiRoom.name, 'with room_type:', apiRoom.room_type);
+
+    const frontendId = this.mapBackendIdToFrontend(apiRoom.id);
+    console.log(`🔄 Backend ID ${apiRoom.id} → Frontend ID ${frontendId}`);
     
-    // ✅ CORREGIDO: Mapear room_type correctamente
     const getRoomTypeFromName = (name: string, roomNumber: string): string => {
       const nameLower = name.toLowerCase();
       const numberLower = roomNumber.toLowerCase();
@@ -145,19 +151,17 @@ export class DataProviderService {
       if (nameLower.includes('suite')) return 'suite';
       if (nameLower.includes('familiar') || nameLower.includes('family')) return 'familiar';
       
-      // Fallback por room number
       if (numberLower.includes('hab')) return 'doble';
       if (numberLower.includes('suite')) return 'suite';
       if (numberLower.includes('fam')) return 'familiar';
       
-      return 'doble'; // Default fallback
+      return 'doble';
     };
 
     const roomType = apiRoom.room_type || getRoomTypeFromName(apiRoom.name, apiRoom.room_number);
-    console.log('🎯 Room type determined:', roomType, 'for room:', apiRoom.name);
 
     return {
-      id: apiRoom.id.toString(),
+      id: frontendId,
       roomNumber: apiRoom.room_number,
       name: apiRoom.name,
       description: apiRoom.description || '',
@@ -202,9 +206,7 @@ export class DataProviderService {
     };
   }
 
-  // ✅ CORREGIDO: Método transformApiEstablishmentToFrontend completo y compatible
   private transformApiEstablishmentToFrontend(apiEstablishment: any): Establishment {
-    // Transform PostgreSQL establishment data to frontend Establishment interface
     return {
       id: apiEstablishment.id?.toString() || 'hostal-norte-armenia',
       name: apiEstablishment.name || 'Hostal Norte Armenia',
@@ -322,7 +324,28 @@ export class DataProviderService {
     };
   }
 
-  // ✅ NUEVO: Helper para crear booking mock
+  // ================================
+  // 🆔 MAPEO DE IDs FRONTEND ↔ BACKEND
+  // ================================
+
+  private mapFrontendIdToBackend(frontendId: string): string {
+    // Convertir "room-2" → "2"
+    if (frontendId.startsWith('room-')) {
+      return frontendId.replace('room-', '');
+    }
+    // Si ya es numérico, devolver tal como está
+    return frontendId;
+  }
+
+  private mapBackendIdToFrontend(backendId: number | string): string {
+    // Convertir 2 → "room-2"
+    return `room-${backendId}`;
+  }
+
+  // ================================
+  // 🔧 HELPER METHODS
+  // ================================
+
   private createMockBooking(bookingRequest: BookingRequest): Booking {
     const bookingId = 'booking_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     const bookingReference = `HNA-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.floor(Math.random() * 999) + 1}`;

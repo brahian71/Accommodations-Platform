@@ -1,6 +1,5 @@
 // ================================
 // 📁 src/app/core/services/room.service.ts
-// 🔄 CORREGIDO: 100% DataProvider - Sin dependencias mock
 // ================================
 
 import { Injectable } from '@angular/core';
@@ -9,7 +8,6 @@ import { map, delay, switchMap, tap, catchError } from 'rxjs/operators';
 
 import { Room, RoomType, RoomFilters, RoomSearchParams, RoomStats, BathroomType, RoomAmenityType } from '../models/room.interface';
 
-// ✅ ÚNICO IMPORT: Solo DataProvider
 import { DataProviderService } from './data-provider.service';
 
 @Injectable({
@@ -17,7 +15,6 @@ import { DataProviderService } from './data-provider.service';
 })
 export class RoomService {
   
-  // ✅ CORREGIDO: Inicializar vacío hasta cargar datos reales
   private roomsSubject = new BehaviorSubject<Room[]>([]);
   private favoritesSubject = new BehaviorSubject<string[]>([]);
   private isLoadingSubject = new BehaviorSubject<boolean>(false);
@@ -31,13 +28,11 @@ export class RoomService {
     this.loadFavoritesFromStorage();
     this.loadRoomsFromDataProvider();
 
-    // ✅ DEBUG: Suscribirse para ver cuando se actualizan las habitaciones
     this.rooms$.subscribe(rooms => {
       console.log('🔄 RoomService - rooms$ actualizado:', rooms.length, 'habitaciones');
     });
   }
 
-  // ✅ CORREGIDO: Cargar habitaciones solo desde DataProvider
   private loadRoomsFromDataProvider(): void {
     this.isLoadingSubject.next(true);
     console.log('📡 RoomService: Solicitando habitaciones a DataProvider...');
@@ -54,21 +49,18 @@ export class RoomService {
       error: (error) => {
         console.error('❌ RoomService: Error cargando habitaciones:', error);
         this.isLoadingSubject.next(false);
-        // ✅ CORREGIDO: NO usar fallback mock - mantener array vacío
         console.log('🔄 RoomService: Manteniendo array vacío por error');
         this.roomsSubject.next([]);
       }
     });
   }
 
-  // ✅ NUEVO: Refrescar datos desde API
   refreshRooms(): Observable<Room[]> {
     console.log('🔄 RoomService: Refrescando habitaciones...');
     this.loadRoomsFromDataProvider();
     return this.rooms$;
   }
 
-  // ✅ NUEVO: Método para debugging
   debugCurrentState(): void {
     console.log('🔍 RoomService Debug Estado Actual:');
     console.log('📊 Habitaciones en BehaviorSubject:', this.roomsSubject.value.length);
@@ -80,9 +72,8 @@ export class RoomService {
   // 🛏️ CONSULTAS BÁSICAS DE HABITACIONES
   // ================================
 
-  // ✅ CORREGIDO: Usar BehaviorSubject en lugar de llamar DataProvider directamente
   getRooms(): Observable<Room[]> {
-    return this.rooms$; // Usar el BehaviorSubject actualizado
+    return this.rooms$; 
   }
 
   getFeaturedRooms(): Observable<Room[]> {
@@ -94,13 +85,9 @@ export class RoomService {
           console.log('⚠️ getFeaturedRooms: No hay habitaciones disponibles');
           return [];
         }
-        
-        // Log de cada habitación para debugging
         rooms.forEach(room => {
           console.log(`🛏️ Room ${room.id}: ${room.name}, type: ${room.roomType}, active: ${room.availability.isActive}, available: ${room.availability.isAvailable}`);
         });
-        
-        // Filtrar habitaciones activas y disponibles
         const availableRooms = rooms.filter(room => {
           const isValid = room.availability.isActive && room.availability.isAvailable;
           if (!isValid) {
@@ -111,10 +98,8 @@ export class RoomService {
         
         console.log('✅ getFeaturedRooms: Habitaciones disponibles:', availableRooms.length);
         
-        // Si no hay habitaciones disponibles, devolver todas para mostrar algo
         const roomsToProcess = availableRooms.length > 0 ? availableRooms : rooms;
-        
-        // Tomar las habitaciones con mejor rating como destacadas
+
         const featured = roomsToProcess
           .sort((a, b) => b.stats.rating - a.stats.rating)
           .slice(0, 4);
@@ -495,23 +480,93 @@ export class RoomService {
     discount?: { type: 'weekly' | 'monthly'; percentage: number; amount: number };
     total: number;
   }> {
+    console.log(`💰 Calculating price for room ${roomId}, ${nights} nights`);
+    
     return this.getRoomById(roomId).pipe(
       map(room => {
-        if (!room) throw new Error('Habitación no encontrada');
+        if (!room) {
+          console.error(`❌ Room ${roomId} not found for price calculation. Available rooms:`, this.roomsSubject.value.map(r => r.id));
+          
+          // ✅ FALLBACK: Usar precio por defecto en lugar de error
+          const defaultPrice = 75000; // Precio base por defecto
+          console.log(`🔄 Using default price ${defaultPrice} for missing room ${roomId}`);
+          
+          return {
+            basePrice: defaultPrice,
+            subtotal: defaultPrice * nights,
+            discount: undefined,
+            total: defaultPrice * nights
+          };
+        }
+        
+        console.log(`✅ Room ${roomId} found: ${room.name}, base price: ${room.pricing.basePrice}`);
         
         const basePrice = room.pricing.basePrice;
         let subtotal = basePrice * nights;
         let discount: any = undefined;
         
+        // Aplicar descuentos por estancia larga
+        if (nights >= 7 && nights < 28) {
+          discount = {
+            type: 'weekly' as const,
+            percentage: 5,
+            amount: Math.round(subtotal * 0.05)
+          };
+        } else if (nights >= 28) {
+          discount = {
+            type: 'monthly' as const,
+            percentage: 15,
+            amount: Math.round(subtotal * 0.15)
+          };
+        }
+        
+        const finalSubtotal = discount ? subtotal - discount.amount : subtotal;
+        
         return {
           basePrice,
           subtotal: basePrice * nights,
           discount,
-          total: subtotal
+          total: finalSubtotal
         };
       }),
-      delay(100)
+      delay(100),
+      catchError(error => {
+        console.error(`❌ Error calculating price for room ${roomId}:`, error);
+        
+        // ✅ FALLBACK ROBUSTO: Devolver precio por defecto
+        const defaultPrice = 75000;
+        return of({
+          basePrice: defaultPrice,
+          subtotal: defaultPrice * nights,
+          discount: undefined,
+          total: defaultPrice * nights
+        });
+      })
     );
+  }
+
+  // ================================
+  // 🔧 MÉTODO ADICIONAL: Debug room availability
+  // ================================
+
+  // ✅ AÑADIR ESTE MÉTODO PARA DEBUGGING:
+  debugRoomAvailability(roomId: string): void {
+    console.log('🔍 Debug Room Availability for:', roomId);
+    console.log('📊 Current rooms in service:', this.roomsSubject.value.length);
+    console.log('🏠 Available room IDs:', this.roomsSubject.value.map(r => ({ id: r.id, name: r.name })));
+    
+    const room = this.roomsSubject.value.find(r => r.id === roomId);
+    if (room) {
+      console.log('✅ Room found:', room.name, 'Price:', room.pricing.basePrice);
+    } else {
+      console.log('❌ Room NOT found. Searched for:', roomId);
+      console.log('🔄 Trying to find similar IDs...');
+      const similarIds = this.roomsSubject.value.filter(r => 
+        r.id.includes(roomId.replace('room-', '')) || 
+        roomId.includes(r.id.replace('room-', ''))
+      );
+      console.log('🔍 Similar IDs found:', similarIds.map(r => r.id));
+    }
   }
 
   // ================================
@@ -555,8 +610,20 @@ export class RoomService {
   }
 
   checkRoomAvailability(roomId: string, checkIn: string, checkOut: string): Observable<boolean> {
+    console.log(`🔍 Checking availability for room ${roomId}`);
+    
+    // ✅ VERIFICAR QUE LA HABITACIÓN EXISTE PRIMERO
+    const room = this.roomsSubject.value.find(r => r.id === roomId);
+    if (!room) {
+      console.warn(`⚠️ Room ${roomId} not found for availability check. Returning false.`);
+      return of(false).pipe(delay(300));
+    }
+    
     // Mock: 90% de probabilidad de estar disponible
-    return of(Math.random() > 0.1).pipe(delay(300));
+    const isAvailable = Math.random() > 0.1;
+    console.log(`✅ Room ${roomId} availability: ${isAvailable}`);
+    
+    return of(isAvailable).pipe(delay(300));
   }
 
   // ✅ CORREGIDO: Usar DataProvider en lugar de datos mock

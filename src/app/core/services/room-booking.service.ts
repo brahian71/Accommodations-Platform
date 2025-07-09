@@ -1,10 +1,10 @@
 // ================================
 // 📁 src/app/core/services/room-booking.service.ts
-// ================================
 
 import { Injectable } from '@angular/core';
 import { Observable, BehaviorSubject, of, throwError, combineLatest } from 'rxjs';
-import { map, delay, switchMap, tap } from 'rxjs/operators';
+import { map, delay, switchMap, tap, catchError, filter, take, timeout } from 'rxjs/operators';
+import { HttpClient } from '@angular/common/http';
 
 import { RoomService } from './room.service';
 import { EstablishmentService } from './establishment.service';
@@ -18,6 +18,8 @@ import {
   DayAvailability, DateSelection, CalendarConfig, DateString,
   CALENDAR_CONSTANTS, CalendarMonth, DateValidationResult
 } from '../models/calendar.interface';
+
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -40,11 +42,16 @@ export class RoomBookingService {
   private validationRules: BookingValidationRules = BOOKING_CONSTANTS.DEFAULT_VALIDATION_RULES;
   private calendarConfig: CalendarConfig = CALENDAR_CONSTANTS.DEFAULT_CONFIG;
 
+  private readonly apiUrl = environment.apiUrl || 'http://localhost:3001';
+  private readonly useRealAPI = environment.useRealAPI !== false;
+
   constructor(
     private roomService: RoomService,
-    private establishmentService: EstablishmentService
+    private establishmentService: EstablishmentService,
+    private http: HttpClient 
   ) {
     this.loadBookingsFromStorage();
+    console.log(`🔄 RoomBookingService - Mode: ${this.useRealAPI ? 'REAL API' : 'MOCK DATA'}`);
   }
 
   // ================================
@@ -52,6 +59,160 @@ export class RoomBookingService {
   // ================================
 
   getRoomAvailability(roomId: string, startDate: DateString, endDate: DateString): Observable<DayAvailability[]> {
+    if (this.useRealAPI) {
+      console.log(`🌐 Fetching real availability for room ${roomId}: ${startDate} to ${endDate}`);
+      
+      // ✅ MAPEAR ID PARA API
+      const backendId = this.mapFrontendIdToBackend(roomId);
+      console.log(`🔄 Availability ID mapping: ${roomId} → ${backendId}`);
+      
+      return this.http.get<any>(`${this.apiUrl}/api/availability/rooms/${backendId}`, {
+        params: { start_date: startDate, end_date: endDate }
+      }).pipe(
+        map(response => {
+          console.log('✅ Real availability data received:', response.data.stats);
+          return this.transformApiAvailabilityToFrontend(response.data.availability);
+        }),
+        catchError(error => {
+          console.error('❌ API error, falling back to mock:', error);
+          return this.getMockAvailability(roomId, startDate, endDate);
+        })
+      );
+    }
+
+    // ✅ FALLBACK A TU CÓDIGO ORIGINAL
+    return this.getMockAvailability(roomId, startDate, endDate);
+  }
+
+  getCalendarMonth(roomId: string, year: number, month: number): Observable<CalendarMonth> {
+    // ✅ INTENTAR API REAL PRIMERO
+    if (this.useRealAPI) {
+      console.log(`🌐 Fetching real calendar for room ${roomId}: ${year}-${month}`);
+      
+      // ✅ MAPEAR ID PARA API
+      const backendId = this.mapFrontendIdToBackend(roomId);
+      console.log(`🔄 Calendar ID mapping: ${roomId} → ${backendId}`);
+      
+      return this.http.get<any>(`${this.apiUrl}/api/availability/rooms/${backendId}/calendar/${year}/${month}`).pipe(
+        map(response => {
+          console.log(`✅ Real calendar data received:`, response.data.stats);
+          return this.transformApiCalendarToFrontend(response.data);
+        }),
+        catchError(error => {
+          console.error('❌ API error, falling back to mock calendar:', error);
+          return this.getMockCalendarMonth(roomId, year, month);
+        })
+      );
+    }
+
+    // ✅ FALLBACK A TU CÓDIGO ORIGINAL
+    return this.getMockCalendarMonth(roomId, year, month);
+  }
+
+  validateDateSelection(roomId: string, checkIn: DateString, checkOut: DateString): Observable<DateValidationResult> {
+    const errors: DateValidationResult['errors'] = [];
+    const warnings: DateValidationResult['warnings'] = [];
+    const checkInDate = new Date(checkIn);
+    const checkOutDate = new Date(checkOut);
+    const today = new Date();
+    const nights = this.calculateNights(checkIn, checkOut);
+
+    // Validaciones básicas (iguales que antes)
+    if (checkInDate < today) {
+      errors.push({
+        code: 'PAST_DATE',
+        message: 'La fecha de llegada no puede ser en el pasado',
+        field: 'checkIn'
+      });
+    }
+
+    if (checkOutDate <= checkInDate) {
+      errors.push({
+        code: 'INVALID_RANGE',
+        message: 'La fecha de salida debe ser posterior a la fecha de llegada',
+        field: 'checkOut'
+      });
+    }
+
+    // Si ya hay errores básicos, devolver inmediatamente
+    if (errors.length > 0) {
+      return of({ isValid: false, errors, warnings });
+    }
+
+    // ✅ INTENTAR VALIDACIÓN REAL
+    if (this.useRealAPI) {
+      console.log(`🌐 Validating dates with API for room ${roomId}`);
+      
+      // ✅ MAPEAR ID PARA API
+      const backendId = this.mapFrontendIdToBackend(roomId);
+      console.log(`🔄 Validation ID mapping: ${roomId} → ${backendId}`);
+      
+      return this.http.get<any>(`${this.apiUrl}/api/availability/rooms/${backendId}/validate`, {
+        params: { check_in_date: checkIn, check_out_date: checkOut }
+      }).pipe(
+        map(response => {
+          console.log(`✅ Real validation result:`, response.data.is_valid);
+          return {
+            isValid: response.data.is_valid,
+            errors: (response.data.errors || []).map((error: any) => ({
+              code: error.code,
+              message: error.message,
+              field: 'range' as const
+            })),
+            warnings: []
+          };
+        }),
+        catchError(error => {
+          console.error('❌ Validation API error, using basic validation:', error);
+          return this.getMockValidation(roomId, nights);
+        })
+      );
+    }
+
+    return this.getMockValidation(roomId, nights);
+  }
+
+  // ================================
+  // 🔄 TRANSFORMADORES API
+  // ================================
+
+  private transformApiAvailabilityToFrontend(apiAvailability: any[]): DayAvailability[] {
+    return apiAvailability.map(day => ({
+      date: day.date,
+      dayOfWeek: new Date(day.date).getDay() as any,
+      dayNumber: new Date(day.date).getDate(),
+      isAvailable: day.is_available,
+      isBlocked: day.is_blocked,
+      isBooked: day.is_booked,
+      isPastDate: new Date(day.date) < new Date(),
+      isToday: this.isSameDay(new Date(day.date), new Date()),
+      minimumStay: day.minimum_stay_override || 1,
+      hasSpecialPrice: !!day.price_override,
+      checkInAllowed: day.is_available,
+      checkOutAllowed: true
+    }));
+  }
+
+  private transformApiCalendarToFrontend(apiCalendar: any): CalendarMonth {
+    return {
+      year: apiCalendar.year,
+      month: (apiCalendar.month - 1) as any,
+      monthName: CALENDAR_CONSTANTS.MONTH_NAMES[apiCalendar.month - 1],
+      monthNameShort: CALENDAR_CONSTANTS.MONTH_NAMES_SHORT[apiCalendar.month - 1],
+      days: this.transformApiAvailabilityToFrontend(apiCalendar.days),
+      totalDays: apiCalendar.stats.total_days,
+      previousMonthDays: [],
+      nextMonthDays: [],
+      availableDays: apiCalendar.stats.available_days,
+      bookedDays: apiCalendar.stats.booked_days,
+      blockedDays: apiCalendar.stats.blocked_days,
+      isCurrentMonth: this.isCurrentMonth(apiCalendar.year, apiCalendar.month - 1),
+      isPastMonth: this.isPastMonth(apiCalendar.year, apiCalendar.month - 1),
+      isFutureMonth: this.isFutureMonth(apiCalendar.year, apiCalendar.month - 1)
+    };
+  }
+
+  private getMockAvailability(roomId: string, startDate: DateString, endDate: DateString): Observable<DayAvailability[]> {
     return this.roomService.getRoomById(roomId).pipe(
       map(room => {
         if (!room) return [];
@@ -72,13 +233,13 @@ export class RoomBookingService {
     );
   }
 
-  getCalendarMonth(roomId: string, year: number, month: number): Observable<CalendarMonth> {
+  private getMockCalendarMonth(roomId: string, year: number, month: number): Observable<CalendarMonth> {
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
     const startDate = this.formatDate(firstDay);
     const endDate = this.formatDate(lastDay);
     
-    return this.getRoomAvailability(roomId, startDate, endDate).pipe(
+    return this.getMockAvailability(roomId, startDate, endDate).pipe(
       map(days => ({
         year,
         month: month as any,
@@ -98,34 +259,12 @@ export class RoomBookingService {
     );
   }
 
-  validateDateSelection(roomId: string, checkIn: DateString, checkOut: DateString): Observable<DateValidationResult> {
-    const errors: DateValidationResult['errors'] = [];
-    const warnings: DateValidationResult['warnings'] = [];
-    const checkInDate = new Date(checkIn);
-    const checkOutDate = new Date(checkOut);
-    const today = new Date();
-    const nights = this.calculateNights(checkIn, checkOut);
-
-    // Validaciones básicas (mismas que antes)
-    if (checkInDate < today) {
-      errors.push({
-        code: 'PAST_DATE',
-        message: 'La fecha de llegada no puede ser en el pasado',
-        field: 'checkIn'
-      });
-    }
-
-    if (checkOutDate <= checkInDate) {
-      errors.push({
-        code: 'INVALID_RANGE',
-        message: 'La fecha de salida debe ser posterior a la fecha de llegada',
-        field: 'checkOut'
-      });
-    }
-
-    // Validaciones específicas de la habitación
+  private getMockValidation(roomId: string, nights: number): Observable<DateValidationResult> {
     return this.roomService.getRoomById(roomId).pipe(
       map(room => {
+        const errors: DateValidationResult['errors'] = [];
+        const warnings: DateValidationResult['warnings'] = [];
+
         if (room && room.availability.minimumStay && nights < room.availability.minimumStay) {
           errors.push({
             code: 'MIN_STAY',
@@ -133,7 +272,6 @@ export class RoomBookingService {
             field: 'range'
           });
         }
-        
         
         return {
           isValid: errors.length === 0,
@@ -197,18 +335,32 @@ export class RoomBookingService {
   // 📋 GESTIÓN DE RESERVAS
   // ================================
 
-  initializeBooking(roomId: string): Observable<PartialBookingRequest> {
-    return combineLatest([
-      this.roomService.getRoomById(roomId),
-      this.establishmentService.getEstablishmentInfo()
-    ]).pipe(
-      map(([room, establishment]) => {
-        if (!room) {
-          throw new Error('Habitación no encontrada');
-        }
+initializeBooking(roomId: string): Observable<PartialBookingRequest> {
+  console.log(`🚀 BookingService.initializeBooking called with roomId: ${roomId}`);
+  return new Observable(observer => {
+    setTimeout(() => {
+      this.performBookingInitialization(roomId).subscribe({
+        next: (result) => observer.next(result),
+        error: (error) => observer.error(error),
+        complete: () => observer.complete()
+      });
+    }, 100);
+  });
+}
+
+private performBookingInitialization(roomId: string): Observable<PartialBookingRequest> {
+  console.log(`🛏️ Performing booking initialization for ${roomId}`);
+  
+  return combineLatest([
+    this.getRoomSafelyWithRetry(roomId),
+    this.establishmentService.getEstablishmentInfo()
+  ]).pipe(
+    map(([room, establishment]) => {
+      if (!room) {
+        console.warn(`⚠️ Room ${roomId} not found, using fallback booking`);
         
-        const initialBooking: PartialBookingRequest = {
-          propertyId: roomId, // Mantenemos la compatibilidad usando propertyId como roomId
+        const fallbackBooking: PartialBookingRequest = {
+          propertyId: roomId,
           guests: {
             adults: 1,
             children: 0,
@@ -217,20 +369,73 @@ export class RoomBookingService {
           },
           purposeOfStay: 'vacation',
           isFirstTimeInArmenia: true,
-          hostWhatsapp: establishment.contactInfo.whatsapp,
-          hostName: establishment.host.name
+          hostWhatsapp: establishment.contactInfo?.whatsapp || '+573137065373',
+          hostName: establishment.host?.name || 'Hostal Norte Armenia'
         };
         
-        this.currentBookingSubject.next(initialBooking);
+        this.currentBookingSubject.next(fallbackBooking);
         this.initializeProgress();
-        
-        return initialBooking;
-      })
-    );
+        return fallbackBooking;
+      }
+      
+      console.log(`✅ Booking initialization successful for room: ${room.name} ($${room.pricing.basePrice})`);
+      
+      const initialBooking: PartialBookingRequest = {
+        propertyId: roomId,
+        guests: {
+          adults: 1,
+          children: 0,
+          infants: 0,
+          total: 1
+        },
+        purposeOfStay: 'vacation',
+        isFirstTimeInArmenia: true,
+        hostWhatsapp: establishment.contactInfo?.whatsapp || '+573137065373',
+        hostName: establishment.host?.name || 'Hostal Norte Armenia'
+      };
+      
+      this.currentBookingSubject.next(initialBooking);
+      this.initializeProgress();
+      return initialBooking;
+    }),
+    catchError(error => {
+      console.error('❌ Error in booking initialization:', error);
+      
+      const emergencyBooking: PartialBookingRequest = {
+        propertyId: roomId,
+        guests: {
+          adults: 1,
+          children: 0,
+          infants: 0,
+          total: 1
+        },
+        purposeOfStay: 'vacation',
+        isFirstTimeInArmenia: true,
+        hostWhatsapp: '+573137065373',
+        hostName: 'Hostal Norte Armenia'
+      };
+      
+      console.log('🔄 Using emergency fallback booking');
+      this.currentBookingSubject.next(emergencyBooking);
+      this.initializeProgress();
+      return of(emergencyBooking);
+    })
+  );
+}
+  debugBookingState(roomId: string): void {
+    console.log('🔍 DEBUG - Booking State:');
+    console.log(`📍 Requested Room ID: ${roomId}`);
+    console.log(`🏠 Rooms loaded: ${this.roomService['roomsSubject'].value.length}`);
+    console.log(`📋 Available Room IDs:`, this.roomService['roomsSubject'].value.map((r: any) => r.id));
+    
+    const room = this.roomService['roomsSubject'].value.find((r: any) => r.id === roomId);
+    if (room) {
+      console.log(`✅ Room found: ${room.name}, Price: ${room.pricing.basePrice}`);
+    } else {
+      console.log(`❌ Room ${roomId} not found in loaded rooms`);
+    }
   }
 
-  // El resto de métodos del booking service permanecen igual,
-  // solo cambiando las referencias de "property" por "room" donde sea necesario
 
   updateCurrentBooking(updates: Partial<PartialBookingRequest>): Observable<PartialBookingRequest> {
     const current = this.currentBookingSubject.value;
@@ -264,7 +469,7 @@ export class RoomBookingService {
 
   private createBooking(bookingRequest: BookingRequest): Observable<Booking> {
     return combineLatest([
-      this.roomService.getRoomById(bookingRequest.propertyId), // propertyId = roomId
+      this.roomService.getRoomById(bookingRequest.propertyId),
       this.establishmentService.getEstablishmentInfo(),
       this.calculatePrice(bookingRequest.propertyId, bookingRequest.checkInDate, bookingRequest.checkOutDate)
     ]).pipe(
@@ -310,10 +515,7 @@ export class RoomBookingService {
           minimumStay: room.availability.minimumStay || 1
         };
         
-        // Guardar la reserva
         this.addBooking(booking);
-        
-        // Enviar mensaje de WhatsApp
         this.sendWhatsAppMessage(booking).subscribe();
         
         return booking;
@@ -323,7 +525,22 @@ export class RoomBookingService {
   }
 
   // ================================
-  // 🔧 MÉTODOS PRIVADOS (iguales que antes)
+  // 🆔 MAPEO DE IDs FRONTEND
+  // ================================
+
+  private mapFrontendIdToBackend(frontendId: string): string {
+    if (frontendId.startsWith('room-')) {
+      return frontendId.replace('room-', '');
+    }
+    return frontendId;
+  }
+
+  private mapBackendIdToFrontend(backendId: number | string): string {
+    return `room-${backendId}`;
+  }
+
+  // ================================
+  // 🔧 MÉTODOS PRIVADOS
   // ================================
 
   private generateDayAvailability(room: Room, date: DateString): DayAvailability {
@@ -391,7 +608,7 @@ export class RoomBookingService {
     const today = new Date();
     const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '');
     const randomNum = Math.floor(Math.random() * 999) + 1;
-    return `HNA-${dateStr}-${randomNum.toString().padStart(3, '0')}`; // HNA = Hostal Norte Armenia
+    return `HNA-${dateStr}-${randomNum.toString().padStart(3, '0')}`;
   }
 
   private populateWhatsAppTemplate(template: string, booking: Booking): string {
@@ -452,12 +669,10 @@ export class RoomBookingService {
     
     if (!current || !progress) return;
     
-    // Actualizar validación de cada paso
     progress.steps[0].isValid = !!(current.checkInDate && current.checkOutDate);
     progress.steps[1].isValid = !!(current.guests && current.guests.total > 0);
     progress.steps[2].isValid = !!(current.guestInfo?.firstName && current.guestInfo?.email);
     
-    // Calcular progreso
     const completedSteps = progress.steps.filter(s => s.isValid).length;
     progress.completionPercentage = (completedSteps / progress.totalSteps) * 100;
     progress.canProceed = progress.steps[progress.currentStep - 1]?.isValid || false;
@@ -491,7 +706,6 @@ export class RoomBookingService {
     }
   }
 
-  // Los demás métodos permanecen igual...
   validateCurrentBooking(): Observable<DateValidationResult> {
     const current = this.currentBookingSubject.value;
     if (!current || !current.checkInDate || !current.checkOutDate || !current.propertyId) {
@@ -558,4 +772,83 @@ export class RoomBookingService {
       map(bookings => bookings.find(b => b.id === id))
     );
   }
+
+  openWhatsApp(booking: Booking): void {
+    const template = BOOKING_CONSTANTS.WHATSAPP_TEMPLATES['new-booking'];
+    const messageText = this.populateWhatsAppTemplate(template, booking);
+    const whatsappUrl = this.generateWhatsAppUrl(booking.hostWhatsapp, messageText);
+    
+    window.open(whatsappUrl, '_blank');
+  }
+
+// ================================
+// 🔧 MÉTODOS HELPER NUEVOS
+// ================================
+
+private waitForRoomsToLoad(): Observable<Room[]> {
+  console.log('⏳ Waiting for rooms to load...');
+  
+  return this.roomService.rooms$.pipe(
+    tap(rooms => console.log(`🔍 Current rooms count: ${rooms.length}`)),
+    filter(rooms => rooms.length > 0),
+    take(1),
+    timeout(10000), 
+    tap(() => console.log('✅ Rooms loaded successfully')),
+    catchError(error => {
+      console.error('❌ Timeout waiting for rooms to load:', error);
+      return of([] as Room[]);
+    })
+  );
 }
+
+
+private getRoomSafelyWithRetry(roomId: string): Observable<Room | null> {
+  console.log(`🔍 Looking for room: ${roomId}`);
+  
+  return this.roomService.getRoomById(roomId).pipe(
+    map(room => room || null),
+    tap(room => {
+      if (room) {
+        console.log(`✅ Room found: ${room.name}`);
+      } else {
+        console.warn(`⚠️ Room ${roomId} not found, checking available rooms...`);
+        this.debugAvailableRooms();
+      }
+    }),
+    catchError(error => {
+      console.error(`❌ Error getting room ${roomId}:`, error);
+      return of(null);
+    }),
+    switchMap(room => {
+      if (room) {
+        return of(room);
+      }
+      
+      console.log(`🔄 Retrying room lookup for ${roomId}...`);
+      return this.roomService.getRoomById(roomId).pipe(
+        map(retryRoom => retryRoom || null),
+        catchError(() => of(null))
+      );
+    })
+  );
+}
+
+private debugAvailableRooms(): void {
+  console.log('🔍 DEBUG - Available rooms:');
+  const roomService = this.roomService as any;
+  const rooms = roomService.roomsSubject?.value || [];
+  
+  console.log(`📊 Total rooms: ${rooms.length}`);
+  
+  if (rooms.length === 0) {
+    console.log('❌ No rooms found in RoomService');
+    return;
+  }
+  
+  rooms.forEach((room: Room, index: number) => {
+    console.log(`${index + 1}. ID: ${room.id}, Name: ${room.name}, Price: ${room.pricing?.basePrice}`);
+  });
+}
+
+}
+
