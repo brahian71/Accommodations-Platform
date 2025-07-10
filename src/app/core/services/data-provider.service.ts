@@ -1,5 +1,5 @@
-
 // 📁 src/app/core/services/data-provider.service.ts
+// ✅ VERSIÓN VENDIBLE - SIN FALLBACKS HARDCODEADOS
 
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
@@ -34,7 +34,6 @@ export class DataProviderService {
   getRooms(): Observable<Room[]> {
     if (this.useRealAPI) {
       console.log('🌐 Fetching rooms from API...');
-      // ✅ CORREGIDO: Añadir /api/ a la URL
       return this.http.get<any>(`${this.apiUrl}/api/rooms`).pipe(
         map(response => {
           console.log('✅ Rooms from API:', response);
@@ -79,7 +78,7 @@ export class DataProviderService {
   }
 
   // ================================
-  // 🏢 ESTABLISHMENT DATA
+  // 🏢 ESTABLISHMENT DATA - SIN FALLBACKS
   // ================================
 
   getEstablishmentInfo(): Observable<Establishment> {
@@ -88,6 +87,7 @@ export class DataProviderService {
       return this.http.get<any>(`${this.apiUrl}/api/establishment`).pipe(
         map(response => {
           console.log('✅ Establishment from API:', response.data.name);
+          console.log('🔍 Source confirmed:', response.source); // Para confirmar que viene de DB
           return this.transformApiEstablishmentToFrontend(response.data);
         }),
         catchError(error => {
@@ -206,121 +206,58 @@ export class DataProviderService {
     };
   }
 
+  // ✅ ESTABLISHMENT TRANSFORMER - 100% SIN FALLBACKS HARDCODEADOS
   private transformApiEstablishmentToFrontend(apiEstablishment: any): Establishment {
+    console.log('🔄 Transforming establishment - NO FALLBACKS VERSION');
+    
+    // ✅ VALIDAR QUE VENGA DATOS REALES
+    if (!apiEstablishment) {
+      throw new Error('❌ No se recibieron datos del establecimiento desde el API');
+    }
+    
     return {
-      id: apiEstablishment.id?.toString() || 'hostal-norte-armenia',
-      name: apiEstablishment.name || 'Hostal Norte Armenia',
-      description: apiEstablishment.description || 'Acogedor hostal ubicado en el corazón del norte de Armenia, Quindío.',
-      tagline: apiEstablishment.tagline || 'Tu hogar en el corazón del Quindío',
+      // ✅ DATOS BÁSICOS - SIN FALLBACKS
+      id: apiEstablishment.id?.toString(),
+      name: apiEstablishment.name,
+      description: apiEstablishment.description,
+      tagline: apiEstablishment.tagline,
       
-      address: apiEstablishment.address || 'Carrera 15 #25-30, Norte Centro, Armenia, Quindío',
-      coordinates: apiEstablishment.coordinates || {
-        lat: 4.5339,
-        lng: -75.6811
-      },
+      // ✅ UBICACIÓN - SIN FALLBACKS
+      address: apiEstablishment.address,
+      coordinates: apiEstablishment.coordinates,
       
-      contactInfo: apiEstablishment.contact_info || {
-        phone: '+573137065373',
-        whatsapp: '+573137065373',
-        email: 'reservas@hostalnortearmenia.com',
-        website: 'www.hostalnortearmenia.com',
-        socialMedia: {
-          instagram: '@hostalnortearmenia',
-          facebook: 'HostalNorteArmenia'
-        }
-      },
+      // ✅ CONTACTO - DIRECTO DEL API
+      contactInfo: apiEstablishment.contact_info,
       
-      host: apiEstablishment.host_info || {
-        name: 'María González',
-        photo: 'https://images.unsplash.com/photo-1494790108755-2616b612e886?w=150&h=150&fit=crop&crop=face',
-        description: 'Anfitriona experimentada con más de 8 años en hospitalidad.',
-        responseTime: 'inmediata',
-        languages: ['Español', 'Inglés básico']
-      },
+      // ✅ HOST - DIRECTO DEL API
+      host: apiEstablishment.host_info,
       
-      amenities: apiEstablishment.amenities || [
-        'wifi-gratis',
-        'parqueadero',
-        'cocina-compartida',
-        'sala-comun',
-        'terraza',
-        'lavanderia',
-        'recepcion-24h',
-        'vigilancia'
-      ],
+      // ✅ AMENITIES - DIRECTO DEL API (SIN FALLBACKS)
+      amenities: apiEstablishment.amenities,
       
-      services: apiEstablishment.services || [
-        'limpieza-diaria',
-        'transporte-aeropuerto',
-        'informacion-turistica',
-        'custodia-equipaje',
-        'tour-booking'
-      ],
+      // ✅ SERVICIOS - DIRECTO DEL API (SIN FALLBACKS)
+      services: apiEstablishment.services,
       
-      policies: apiEstablishment.policies || {
-        checkInTime: '15:00',
-        checkOutTime: '11:00',
-        cancellationPolicy: 'flexible',
-        houseRules: [
-          'No fumar en habitaciones',
-          'Respeto por otros huéspedes',
-          'No mascotas',
-          'No fiestas en habitaciones',
-          'Silencio después de las 10:00 PM'
-        ],
-        smokingAllowed: false,
-        petsAllowed: false,
-        partiesAllowed: false
-      },
+      // ✅ POLÍTICAS - DIRECTO DEL API (SIN FALLBACKS)
+      policies: apiEstablishment.policies,
       
-      areaInfo: {
-        neighborhood: apiEstablishment.neighborhood || 'Norte Centro, Armenia',
-        nearbyPlaces: apiEstablishment.area_info?.nearbyPlaces || [
-          'Centro Comercial Portal del Quindío',
-          'Clínica La Sagrada Familia',
-          'Universidad del Quindío',
-          'Parque Los Fundadores'
-        ],
-        transportAccess: apiEstablishment.area_info?.transportAccess || [
-          'Bus urbano líneas 1, 2, 3 y 7',
-          'Taxi disponible 24 horas',
-          'A 10 minutos del centro'
-        ],
-        walkingDistances: apiEstablishment.area_info?.walkingDistances || {
-          'Centro Comercial Portal del Quindío': '8 min',
-          'Parque Los Fundadores': '12 min',
-          'Centro de Armenia': '10 min'
-        }
-      },
+      // ✅ ÁREA INFO - DIRECTO DEL API (SIN FALLBACKS)
+      areaInfo: apiEstablishment.area_info,
       
-      images: apiEstablishment.images || {
-        main: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&h=600&fit=crop',
-        gallery: [
-          'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&h=600&fit=crop',
-          'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=600&fit=crop'
-        ],
-        exterior: [
-          'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&h=600&fit=crop'
-        ],
-        commonAreas: [
-          'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=600&fit=crop'
-        ]
-      },
+      // ✅ IMÁGENES - DIRECTO DEL API (SIN FALLBACKS)
+      images: apiEstablishment.images,
       
-      stats: {
-        totalRooms: apiEstablishment.total_rooms || 5,
-        totalCapacity: apiEstablishment.total_capacity || 12,
-        averageRating: parseFloat(apiEstablishment.average_rating) || 4.8,
-        totalReviews: apiEstablishment.total_reviews || 543,
-        yearsOperating: apiEstablishment.years_operating || 3
-      },
+      // ✅ ESTADÍSTICAS - DIRECTO DEL API (SIN FALLBACKS)
+      stats: apiEstablishment.stats,
       
-      isActive: apiEstablishment.is_active !== undefined ? apiEstablishment.is_active : true,
-      isVerified: apiEstablishment.is_verified !== undefined ? apiEstablishment.is_verified : true,
+      // ✅ SOLO MANTENER CAMPOS CALCULADOS/TÉCNICOS
+      isActive: apiEstablishment.is_active !== false,
+      isVerified: apiEstablishment.is_verified !== false,
       establishmentType: apiEstablishment.establishment_type || 'hostal',
       
-      createdAt: apiEstablishment.created_at || '2022-01-15T00:00:00.000Z',
-      updatedAt: apiEstablishment.updated_at || new Date().toISOString()
+      // ✅ TIMESTAMPS - DIRECTO DEL API
+      createdAt: apiEstablishment.created_at,
+      updatedAt: apiEstablishment.updated_at
     };
   }
 

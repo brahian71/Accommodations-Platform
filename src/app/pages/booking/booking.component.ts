@@ -28,7 +28,7 @@ import {
 export class BookingComponent implements OnInit, OnDestroy {
   
   // ================================
-  // 🗂️ PROPIEDADES PRINCIPALES - MIGRADAS
+  // 🗂️ PROPIEDADES PRINCIPALES
   // ================================
   
   room: Room | null = null;                      
@@ -308,7 +308,10 @@ export class BookingComponent implements OnInit, OnDestroy {
 
   private initializeCalendar(): void {
     const today = new Date();
-    this.loadCalendarMonth(today.getFullYear(), today.getMonth());
+    const year = today.getFullYear();
+    const month = today.getMonth();
+
+    this.loadCalendarMonth(year, month);
   }
 
   private loadCalendarMonth(year: number, month: number): void {
@@ -738,10 +741,13 @@ export class BookingComponent implements OnInit, OnDestroy {
       
       if (booking) {
         console.log('✅ Reserva creada exitosamente:', booking.bookingReference);
-        // ✅ ARREGLO 2: Navegación corregida con nuevo routing
         this.router.navigate(['/booking/confirmation', booking.id], { 
           replaceUrl: true,
-          queryParams: { ref: booking.bookingReference }
+          state: { 
+            booking: booking,
+            whatsappMessage: (booking as any).whatsappMessage,
+            whatsappUrl: (booking as any).whatsappUrl
+          }
         });
       }
     });
@@ -753,7 +759,6 @@ export class BookingComponent implements OnInit, OnDestroy {
       return;
     }
     
-    // ✅ COMPATIBILIDAD: Manteniendo interface Booking existente
     const tempBooking: Partial<Booking> = {
       bookingReference: 'TEMP-' + Date.now(),
       propertyTitle: this.room.name,                

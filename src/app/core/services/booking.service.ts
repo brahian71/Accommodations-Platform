@@ -1,8 +1,9 @@
 // 📁 src/app/core/services/booking.service.ts
 
 import { Injectable } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, BehaviorSubject, of, throwError, combineLatest } from 'rxjs';
-import { map, delay, switchMap, tap } from 'rxjs/operators';
+import { map, delay, switchMap, tap, catchError } from 'rxjs/operators';
 
 import { RoomService } from './room.service';
 import { EstablishmentService } from './establishment.service';
@@ -25,6 +26,14 @@ import {
 export class BookingService {
   
   // ================================
+  // 🌐 API CONFIGURATION
+  // ================================
+  
+  private readonly API_BASE = 'http://localhost:3001/api';
+  private readonly BOOKINGS_ENDPOINT = `${this.API_BASE}/bookings`;
+  private readonly AVAILABILITY_ENDPOINT = `${this.API_BASE}/availability`;
+  
+  // ================================
   // 🗂️ ESTADO Y OBSERVABLES
   // ================================
   
@@ -41,72 +50,82 @@ export class BookingService {
   private calendarConfig: CalendarConfig = CALENDAR_CONSTANTS.DEFAULT_CONFIG;
 
   constructor(
+    private http: HttpClient,
     private roomService: RoomService,
     private establishmentService: EstablishmentService 
   ) {
-    console.log('📅 BookingService initialized with Room + Establishment services');
+    console.log('📅 BookingService initialized - UNIFIED VERSION');
+    console.log('🎯 API Base:', this.API_BASE);
     this.loadBookingsFromStorage();
   }
-
-  // ================================
-  // 📅 DISPONIBILIDAD Y CALENDARIO
-  // ================================
-
   getRoomAvailability(roomId: string, startDate: DateString, endDate: DateString): Observable<DayAvailability[]> {
-    return this.roomService.getRoomById(roomId).pipe(
-      map(room => { 
-        if (!room) return [];
-        
-        const availability: DayAvailability[] = [];
-        const start = new Date(startDate);
-        const end = new Date(endDate);
-        
-        for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
-          const dateString = this.formatDate(date);
-          const dayAvailability = this.generateDayAvailability(room, dateString); 
-          availability.push(dayAvailability);
-        }
-        
-        return availability;
+    console.log('🔍 Getting availability (UNIFIED) for room:', roomId, 'dates:', startDate, 'to', endDate);
+    
+    const backendId = this.mapFrontendIdToBackend(roomId);
+    console.log(`🔄 ID mapping: ${roomId} → ${backendId}`);
+    
+    const params = new HttpParams()
+      .set('start_date', startDate)
+      .set('end_date', endDate);
+
+    return this.http.get<any>(`${this.AVAILABILITY_ENDPOINT}/rooms/${backendId}`, { params }).pipe(
+      map(response => {
+        console.log('✅ Availability API success:', response.data.stats);
+        return this.convertApiAvailabilityToDayAvailability(response.data.availability);
       }),
-      delay(200)
+      catchError(error => {
+        console.warn('⚠️ Availability API failed, using fallback:', error.status);
+        return this.generateMockAvailability(roomId, startDate, endDate);
+      })
     );
   }
 
-
-  getCalendarMonth(roomId: string, year: number, month: number): Observable<CalendarMonth> {
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const startDate = this.formatDate(firstDay);
-    const endDate = this.formatDate(lastDay);
+ getCalendarMonth(roomId: string, year: number, month: number): Observable<CalendarMonth> {
+    console.log('📅 Getting calendar (UNIFIED) for room:', roomId);
+    console.log('📅 Requested year/month:', year, month, '(0-indexed)');
+    console.log('📅 Month name:', ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'][month]);
     
-    return this.getRoomAvailability(roomId, startDate, endDate).pipe(
-      map(days => ({
-        year,
-        month: month as any,
-        monthName: CALENDAR_CONSTANTS.MONTH_NAMES[month],
-        monthNameShort: CALENDAR_CONSTANTS.MONTH_NAMES_SHORT[month],
-        days,
-        totalDays: days.length,
-        previousMonthDays: [],
-        nextMonthDays: [],
-        availableDays: days.filter(d => d.isAvailable).length,
-        bookedDays: days.filter(d => d.isBooked).length,
-        blockedDays: days.filter(d => d.isBlocked).length,
-        isCurrentMonth: this.isCurrentMonth(year, month),
-        isPastMonth: this.isPastMonth(year, month),
-        isFutureMonth: this.isFutureMonth(year, month)
-      }))
+    const backendId = this.mapFrontendIdToBackend(roomId);
+    console.log('🔄 Calendar ID mapping:', roomId, '→', backendId);
+    
+    const backendMonth = month + 1;
+    console.log('📅 Backend month (1-indexed):', backendMonth);
+    
+    return this.http.get<any>(`${this.AVAILABILITY_ENDPOINT}/rooms/${backendId}/calendar/${year}/${backendMonth}`).pipe(
+      map(response => {
+        console.log('✅ Calendar API raw response:', response);
+        console.log('✅ Calendar API stats:', response.data.stats);
+        
+        const calendarData = this.convertApiCalendarToCalendarMonth(response.data);
+        console.log('📊 Calendar after conversion:');
+        console.log('  - Total days:', calendarData.totalDays);
+        console.log('  - Available days:', calendarData.availableDays);
+        console.log('  - Booked days:', calendarData.bookedDays);
+        console.log('  - Blocked days:', calendarData.blockedDays);
+        
+        if (calendarData.availableDays === 0) {
+          console.warn('⚠️ WARNING: NO AVAILABLE DAYS AFTER CONVERSION!');
+          console.log('🔍 Sample day data:', calendarData.days.slice(0, 3));
+        }
+        
+        return calendarData;
+      }),
+      catchError(error => {
+        console.warn('⚠️ Calendar API failed:', error.status, error.message);
+        console.log('🔄 Using mock calendar fallback');
+        return this.generateMockCalendarMonth(roomId, year, month);
+      })
     );
   }
 
   validateDateSelection(roomId: string, checkIn: DateString, checkOut: DateString): Observable<DateValidationResult> {
+    console.log('✅ Validating dates (UNIFIED):', roomId, checkIn, checkOut);
     const errors: DateValidationResult['errors'] = [];
     const warnings: DateValidationResult['warnings'] = [];
     const checkInDate = new Date(checkIn);
     const checkOutDate = new Date(checkOut);
     const today = new Date();
-    const nights = this.calculateNights(checkIn, checkOut);
+    
     if (checkInDate < today) {
       errors.push({
         code: 'PAST_DATE',
@@ -114,6 +133,7 @@ export class BookingService {
         field: 'checkIn'
       });
     }
+    
     if (checkOutDate <= checkInDate) {
       errors.push({
         code: 'INVALID_RANGE',
@@ -121,12 +141,42 @@ export class BookingService {
         field: 'checkOut'
       });
     }
+    if (errors.length > 0) {
+      return of({ isValid: false, errors, warnings });
+    }
+    const backendId = this.mapFrontendIdToBackend(roomId);
+    const params = new HttpParams()
+      .set('check_in_date', checkIn)
+      .set('check_out_date', checkOut);
 
-    return combineLatest([
-      this.roomService.getRoomById(roomId),
-      this.establishmentService.getEstablishmentInfo() 
-    ]).pipe(
-      map(([room, establishment]) => {
+    return this.http.get<any>(`${this.AVAILABILITY_ENDPOINT}/rooms/${backendId}/validate`, { params }).pipe(
+      map(response => {
+        console.log('✅ Date validation API success:', response.data.is_valid);
+        
+        return {
+          isValid: response.data.is_valid,
+          errors: (response.data.errors || []).map((err: any) => ({
+            code: err.code || 'API_ERROR',
+            message: err.message || err,
+            field: this.mapFieldType(err.field) as 'checkIn' | 'checkOut' | 'range'
+          })),
+          warnings: []
+        };
+      }),
+      catchError(error => {
+        console.warn('⚠️ Date validation API failed, using basic validation:', error.status);
+        return this.validateWithRoomRules(roomId, checkIn, checkOut);
+      })
+    );
+  }
+
+  private validateWithRoomRules(roomId: string, checkIn: DateString, checkOut: DateString): Observable<DateValidationResult> {
+    const nights = this.calculateNights(checkIn, checkOut);
+    
+    return this.roomService.getRoomById(roomId).pipe(
+      map(room => {
+        const errors: DateValidationResult['errors'] = [];
+        
         if (room && room.availability.minimumStay && nights < room.availability.minimumStay) {
           errors.push({
             code: 'MIN_STAY',
@@ -135,14 +185,12 @@ export class BookingService {
           });
         }
         
-        
         return {
           isValid: errors.length === 0,
           errors,
-          warnings
+          warnings: []
         };
-      }),
-      delay(100)
+      })
     );
   }
 
@@ -151,6 +199,8 @@ export class BookingService {
   // ================================
 
   calculatePrice(roomId: string, checkIn: DateString, checkOut: DateString): Observable<PriceBreakdown> {
+    console.log('💰 Calculating price (UNIFIED) for room:', roomId);
+    
     return this.roomService.getRoomById(roomId).pipe(
       map(room => {
         if (!room) {
@@ -159,35 +209,21 @@ export class BookingService {
         
         const nights = this.calculateNights(checkIn, checkOut);
         const pricePerNight = room.pricing.basePrice;
-        let subtotal = pricePerNight * nights;
+        const subtotal = pricePerNight * nights;
         
         const breakdown: PriceBreakdown = {
           pricePerNight,
           nights,
           subtotal,
-          iva: { percentage: 0, amount: 0 },
-          total: 0,
-          totalCOP: 0
+          iva: {
+            percentage: 19,
+            amount: Math.round(subtotal * 0.19)
+          },
+          total: subtotal + Math.round(subtotal * 0.19),
+          totalCOP: subtotal + Math.round(subtotal * 0.19)
         };
         
-        if (this.priceConfig.cleaningFeePercentage > 0) {
-          breakdown.cleaningFee = Math.round(subtotal * (this.priceConfig.cleaningFeePercentage / 100));
-        }
-
-        if (this.priceConfig.serviceFeePercentage > 0) {
-          breakdown.serviceFee = Math.round(subtotal * (this.priceConfig.serviceFeePercentage / 100));
-        }
-
-        const totalBeforeTax = subtotal + (breakdown.cleaningFee || 0) + (breakdown.serviceFee || 0);
-
-        breakdown.iva = {
-          percentage: this.priceConfig.ivaPercentage,
-          amount: Math.round(totalBeforeTax * (this.priceConfig.ivaPercentage / 100))
-        };
-
-        breakdown.total = totalBeforeTax + breakdown.iva.amount;
-        breakdown.totalCOP = breakdown.total;
-        
+        console.log('✅ Price calculated (UNIFIED):', breakdown);
         return breakdown;
       }),
       delay(100)
@@ -199,7 +235,7 @@ export class BookingService {
   // ================================
 
   initializeBooking(roomId: string): Observable<PartialBookingRequest> {
-    console.log('🚀 BookingService.initializeBooking called with roomId:', roomId);
+    console.log('🚀 BookingService.initializeBooking (UNIFIED) called with roomId:', roomId);
     
     return combineLatest([
       this.roomService.getRoomById(roomId),
@@ -227,6 +263,7 @@ export class BookingService {
         this.currentBookingSubject.next(initialBooking);
         this.initializeProgress();
         
+        console.log('✅ Booking initialized (UNIFIED) successfully for room:', room.name);
         return initialBooking;
       })
     );
@@ -262,11 +299,17 @@ export class BookingService {
     return this.validateDateSelection(current.propertyId, current.checkInDate, current.checkOutDate);
   }
 
+  // ================================
+  // 🚀 SUBMIT BOOKING
+  // ================================
+
   submitBooking(): Observable<Booking> {
     const currentBooking = this.currentBookingSubject.value;
     if (!currentBooking) {
       return throwError('No hay una reserva para enviar');
     }
+    
+    console.log('🚀 Submitting booking (UNIFIED)...', currentBooking);
     
     return this.validateCurrentBooking().pipe(
       switchMap(validation => {
@@ -274,66 +317,128 @@ export class BookingService {
           return throwError('La reserva contiene errores: ' + validation.errors.map((e: any) => e.message).join(', '));
         }
         
-        return this.createBooking(currentBooking as BookingRequest);
+        return this.createBookingViaAPI(currentBooking as BookingRequest);
       })
     );
   }
 
-  private createBooking(bookingRequest: BookingRequest): Observable<Booking> {
-    return combineLatest([
-      this.roomService.getRoomById(bookingRequest.propertyId),   
-      this.establishmentService.getEstablishmentInfo(), 
-      this.calculatePrice(bookingRequest.propertyId, bookingRequest.checkInDate, bookingRequest.checkOutDate)
-    ]).pipe(
-      map(([room, establishment, priceBreakdown]) => {
-        if (!room) {
-          throw new Error('Habitación no encontrada');
+  private createBookingViaAPI(bookingRequest: BookingRequest): Observable<Booking> {
+    console.log('📤 Creating booking via API (UNIFIED):', bookingRequest);
+
+    const apiPayload = {
+      roomId: this.mapFrontendIdToBackend(bookingRequest.propertyId),
+      checkInDate: bookingRequest.checkInDate,
+      checkOutDate: bookingRequest.checkOutDate,
+      guests: {
+        adults: bookingRequest.guests.adults,
+        children: bookingRequest.guests.children,
+        infants: bookingRequest.guests.infants,
+        total: bookingRequest.guests.total
+      },
+      guestInfo: {
+        firstName: bookingRequest.guestInfo.firstName,
+        lastName: bookingRequest.guestInfo.lastName,
+        email: bookingRequest.guestInfo.email,
+        phone: bookingRequest.guestInfo.phone,
+        documentType: bookingRequest.guestInfo.documentType || 'cedula',
+        documentNumber: bookingRequest.guestInfo.documentNumber || '12345678'
+      },
+      specialRequests: bookingRequest.specialRequests || null,
+      estimatedArrivalTime: bookingRequest.estimatedArrivalTime || null,
+      purposeOfStay: bookingRequest.purposeOfStay,
+      isFirstTimeInArmenia: bookingRequest.isFirstTimeInArmenia
+    };
+
+    console.log('📤 API Payload (UNIFIED):', apiPayload);
+
+    // Test de conectividad + crear reserva
+    return this.http.get(`http://localhost:3001/health`).pipe(
+      switchMap(() => {
+        console.log('✅ Backend is reachable, creating booking...');
+        return this.http.post<any>(this.BOOKINGS_ENDPOINT, apiPayload);
+      }),
+      map(response => {
+        console.log('✅ Booking API response (UNIFIED):', response);
+        
+        if (response.status === 'success' && response.data) {
+          const apiBooking = response.data.booking;
+          const whatsappMessage = response.data.whatsappMessage;
+
+          const frontendBooking: Booking = {
+            id: apiBooking.id.toString(),
+            bookingReference: apiBooking.bookingReference,
+            status: apiBooking.status as BookingStatus,
+            paymentStatus: apiBooking.paymentStatus,
+            
+            propertyId: this.mapBackendIdToFrontend(apiBooking.room.id),
+            propertyTitle: apiBooking.room.name,
+            propertyImage: '',
+            propertyAddress: '',
+            propertyZone: '',
+            
+            checkInDate: apiBooking.checkInDate,
+            checkOutDate: apiBooking.checkOutDate,
+            nights: apiBooking.nights,
+            
+            guests: apiBooking.guests,
+            guestInfo: apiBooking.guestInfo,
+            
+            priceBreakdown: {
+              pricePerNight: parseFloat(apiBooking.priceBreakdown.basePrice),
+              nights: apiBooking.priceBreakdown.nights,
+              subtotal: apiBooking.priceBreakdown.subtotal,
+              iva: apiBooking.priceBreakdown.iva,
+              total: apiBooking.priceBreakdown.total,
+              totalCOP: apiBooking.priceBreakdown.total
+            },
+            
+            hostName: apiBooking.host_name || bookingRequest.hostName,
+            hostWhatsapp: apiBooking.host_whatsapp || bookingRequest.hostWhatsapp,
+            
+            whatsappMessageSent: false,
+            
+            specialRequests: apiBooking.specialRequests,
+            estimatedArrivalTime: apiBooking.estimatedArrivalTime,
+            purposeOfStay: apiBooking.purposeOfStay,
+            
+            createdAt: apiBooking.createdAt,
+            updatedAt: apiBooking.updatedAt,
+            confirmedAt: apiBooking.confirmedAt,
+            
+            cancellationPolicy: 'flexible',
+            minimumStay: 1
+          };
+
+          (frontendBooking as any).whatsappUrl = whatsappMessage.url;
+          (frontendBooking as any).whatsappMessage = whatsappMessage.message;
+
+          this.addBooking(frontendBooking);
+          
+          console.log('✅ Booking created (UNIFIED):', frontendBooking.bookingReference);
+          console.log('📱 WhatsApp URL ready:', whatsappMessage.url);
+          
+          return frontendBooking;
         }
         
-        const booking: Booking = {
-          id: this.generateBookingId(),
-          bookingReference: this.generateBookingReference(),
-          status: 'pending',
-          paymentStatus: 'pending',
-          
-          propertyId: room.id,
-          propertyTitle: `${room.name} - ${establishment.name}`,    
-          propertyImage: room.images.main,                      
-          propertyAddress: establishment.address,     
-          propertyZone: establishment.areaInfo.neighborhood, 
-          
-          checkInDate: bookingRequest.checkInDate,
-          checkOutDate: bookingRequest.checkOutDate,
-          nights: this.calculateNights(bookingRequest.checkInDate, bookingRequest.checkOutDate),
-          
-          guests: bookingRequest.guests,
-          guestInfo: bookingRequest.guestInfo,
-          
-          priceBreakdown,
-
-          hostName: establishment.host.name,
-          hostWhatsapp: establishment.contactInfo.whatsapp,
-          
-          whatsappMessageSent: false,
-          
-          specialRequests: bookingRequest.specialRequests,
-          estimatedArrivalTime: bookingRequest.estimatedArrivalTime,
-          purposeOfStay: bookingRequest.purposeOfStay,
-          
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-
-          cancellationPolicy: establishment.policies.cancellationPolicy,
-          minimumStay: room.availability.minimumStay || 1   
-        };
-
-        this.addBooking(booking);
-        
-        this.sendWhatsAppMessage(booking).subscribe();
-        
-        return booking;
+        throw new Error('Respuesta del API inválida');
       }),
-      delay(500)
+      catchError(error => {
+        console.error('❌ Error creating booking (UNIFIED):', error);
+        
+        if (error.status === 0) {
+          return throwError('No se puede conectar al servidor. ¿Está el backend funcionando?');
+        }
+        
+        if (error.status === 409) {
+          return throwError('Las fechas seleccionadas no están disponibles');
+        }
+        
+        if (error.error && error.error.message) {
+          return throwError(error.error.message);
+        }
+        
+        return throwError(`Error del servidor (${error.status}): ${error.statusText || 'Error desconocido'}`);
+      })
     );
   }
 
@@ -342,8 +447,20 @@ export class BookingService {
   // ================================
 
   sendWhatsAppMessage(booking: Booking): Observable<WhatsAppMessage> {
-    const template = BOOKING_CONSTANTS.WHATSAPP_TEMPLATES['new-booking'];
+    if ((booking as any).whatsappMessage && (booking as any).whatsappUrl) {
+      const message: WhatsAppMessage = {
+        bookingId: booking.id,
+        hostWhatsapp: booking.hostWhatsapp,
+        messageText: (booking as any).whatsappMessage,
+        messageType: 'new-booking',
+        isSent: false,
+        whatsappUrl: (booking as any).whatsappUrl
+      };
+      
+      return of(message);
+    }
     
+    const template = BOOKING_CONSTANTS.WHATSAPP_TEMPLATES['new-booking'];
     const messageText = this.populateWhatsAppTemplate(template, booking);
     const whatsappUrl = this.generateWhatsAppUrl(booking.hostWhatsapp, messageText);
     
@@ -356,59 +473,260 @@ export class BookingService {
       whatsappUrl
     };
 
-    setTimeout(() => {
-      message.isSent = true;
-      message.sentAt = new Date().toISOString();
-      this.updateBookingWhatsAppStatus(booking.id, true);
-    }, 1000);
-    
     return of(message).pipe(delay(100));
   }
 
   openWhatsApp(booking: Booking): void {
-    console.log('📱 Opening WhatsApp for booking:', booking.bookingReference);
-    const template = BOOKING_CONSTANTS.WHATSAPP_TEMPLATES['new-booking'];
-    const messageText = this.populateWhatsAppTemplate(template, booking);
-    const whatsappUrl = this.generateWhatsAppUrl(booking.hostWhatsapp, messageText);
+    console.log('📱 Opening WhatsApp (UNIFIED) for booking:', booking.bookingReference);
     
+    let whatsappUrl: string;
+    
+    if ((booking as any).whatsappUrl) {
+      whatsappUrl = (booking as any).whatsappUrl;
+    } else {
+      const template = BOOKING_CONSTANTS.WHATSAPP_TEMPLATES['new-booking'];
+      const messageText = this.populateWhatsAppTemplate(template, booking);
+      whatsappUrl = this.generateWhatsAppUrl(booking.hostWhatsapp, messageText);
+    }
+    
+    console.log('📱 Opening WhatsApp URL:', whatsappUrl);
     window.open(whatsappUrl, '_blank');
+    
     this.updateBookingWhatsAppStatus(booking.id, true);
   }
 
   // ================================
-  // 🔧 MÉTODOS PRIVADOS MIGRADOS
+  // 🔄 MÉTODOS DE CONVERSIÓN API
   // ================================
 
-  private generateDayAvailability(room: Room, date: DateString): DayAvailability {
-    const dateObj = new Date(date);
-    const today = new Date();
-    const dayOfWeek = dateObj.getDay() as any;
+  private convertApiAvailabilityToDayAvailability(apiData: any[]): DayAvailability[] {
+  console.log('🔄 Converting API availability data:', apiData.length, 'days');
+  console.log('📊 API raw sample:', apiData.slice(0, 3));
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayString = today.toISOString().split('T')[0];
+  
+  console.log('📅 Today for comparison:', todayString);
+  console.log('📅 Today as Date object:', today);
+  
+  return apiData.map((day, index) => {
+    const dayDateString = day.date;
     
-    const isBlocked = Math.random() < 0.1;
-    const isBooked = Math.random() < 0.15;
+    const dayDate = new Date(dayDateString);
+    dayDate.setHours(0, 0, 0, 0);
+
+    const isPastDate = dayDate.getTime() < today.getTime();
+    const backendAvailable = day.is_available === true;
+    const backendBlocked = day.is_blocked === true;
+    const backendBooked = day.is_booked === true;
+    const isAvailable = backendAvailable && !backendBlocked && !backendBooked && !isPastDate;
+
+    if (index < 10 || day.is_available === true) {
+      console.log(`📅 Day ${dayDateString} (${index}):`, {
+        raw_backend_data: day,
+        dayDate_timestamp: dayDate.getTime(),
+        today_timestamp: today.getTime(),
+        isPastDate_calculation: `${dayDate.getTime()} < ${today.getTime()} = ${isPastDate}`,
+        backend_available: backendAvailable,
+        backend_blocked: backendBlocked,
+        backend_booked: backendBooked,
+        isPastDate: isPastDate,
+        FINAL_isAvailable: isAvailable
+      });
+    }
+    
+    const result = {
+      date: dayDateString,
+      dayOfWeek: dayDate.getDay() as any,
+      dayNumber: dayDate.getDate(),
+      isAvailable: isAvailable,
+      isBlocked: backendBlocked,
+      isBooked: backendBooked,
+      isPastDate: isPastDate,
+      isToday: dayDateString === todayString,
+      minimumStay: day.minimum_stay_override || 1,
+      hasSpecialPrice: !!day.price_override,
+      checkInAllowed: true,
+      checkOutAllowed: true
+    };
+    
+    return result;
+  });
+}
+
+ private convertApiCalendarToCalendarMonth(apiCalendar: any): CalendarMonth {
+  console.log('🔄 Converting API calendar to CalendarMonth:', apiCalendar);
+  
+  const convertedDays = this.convertApiAvailabilityToDayAvailability(apiCalendar.days);
+  const totalDays = convertedDays.length;
+  const availableDays = convertedDays.filter(d => d.isAvailable).length;
+  const bookedDays = convertedDays.filter(d => d.isBooked).length;
+  const blockedDays = convertedDays.filter(d => d.isBlocked).length;
+  
+  console.log('📊 Calendar month conversion stats:');
+  console.log('  - Backend reported available:', apiCalendar.stats?.available_days || 'unknown');
+  console.log('  - Frontend calculated available:', availableDays);
+  console.log('  - Backend reported booked:', apiCalendar.stats?.booked_days || 'unknown');
+  console.log('  - Frontend calculated booked:', bookedDays);
+  
+  if (availableDays === 0 && (apiCalendar.stats?.available_days || 0) > 0) {
+    console.error('🚨 CONVERSION PROBLEM: Backend has available days but frontend shows 0!');
+    console.log('🔍 Sample converted days:', convertedDays.slice(0, 5));
+  }
+  
+  const month = (apiCalendar.month - 1) as any; 
+  
+  return {
+    year: apiCalendar.year,
+    month: month,
+    monthName: CALENDAR_CONSTANTS.MONTH_NAMES[month],
+    monthNameShort: CALENDAR_CONSTANTS.MONTH_NAMES_SHORT[month],
+    days: convertedDays,
+    totalDays: totalDays,
+    previousMonthDays: [],
+    nextMonthDays: [],
+    availableDays: availableDays,
+    bookedDays: bookedDays,
+    blockedDays: blockedDays,
+    isCurrentMonth: this.isCurrentMonth(apiCalendar.year, month),
+    isPastMonth: this.isPastMonth(apiCalendar.year, month),
+    isFutureMonth: this.isFutureMonth(apiCalendar.year, month)
+  };
+}
+
+  // ================================
+  // 🔄 MÉTODOS FALLBACK (MOCK)
+  // ================================
+
+  private generateMockAvailability(roomId: string, startDate: DateString, endDate: DateString): Observable<DayAvailability[]> {
+  console.log('🔄 Generating mock availability for', roomId, 'from', startDate, 'to', endDate);
+  
+  const today = new Date();
+  const todayString = today.toISOString().split('T')[0];
+  
+  const dates: string[] = [];
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  
+  for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
+    dates.push(this.formatDate(date));
+  }
+
+  const availability = dates.map(dateString => {
+    const dateObj = new Date(dateString + 'T12:00:00');
+    
+    // ✅ FIX: Comparación simple de strings
+    const isPastDate = dateString < todayString;
+    
+    // ✅ FIX: Más días disponibles para testing
+    const isBlocked = false;
+    const isBooked = Math.random() < 0.1; // Solo 10% ocupados
+    const isAvailable = !isBlocked && !isBooked && !isPastDate;
     
     return {
-      date,
-      dayOfWeek,
+      date: dateString,
+      dayOfWeek: dateObj.getDay() as any,
       dayNumber: dateObj.getDate(),
-      isAvailable: !isBlocked && !isBooked && dateObj >= today,
+      isAvailable,
       isBlocked,
       isBooked,
-      isPastDate: dateObj < today,
-      isToday: this.isSameDay(dateObj, today),
-      minimumStay: room.availability.minimumStay,
+      isPastDate,
+      isToday: dateString === todayString,
+      minimumStay: 1,
       hasSpecialPrice: false,
       checkInAllowed: true,
       checkOutAllowed: true
     };
+  });
+  
+  const availableCount = availability.filter(d => d.isAvailable).length;
+  console.log('✅ Generated mock availability:', availableCount, 'available days out of', availability.length);
+  
+  if (availableCount === 0) {
+    console.warn('⚠️ NO AVAILABLE DAYS IN MOCK! All days are past?');
+    console.log('📅 Today string:', todayString);
+    console.log('📅 Date range:', startDate, 'to', endDate);
+  }
+  
+  return of(availability).pipe(delay(100));
+}
+
+  private generateMockCalendarMonth(roomId: string, year: number, month: number): Observable<CalendarMonth> {
+  console.log('🔄 Generating mock calendar for', roomId, year, month);
+  
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  const startDate = this.formatDate(firstDay);
+  const endDate = this.formatDate(lastDay);
+  
+  console.log('📅 Mock calendar date range:', startDate, 'to', endDate);
+  
+  return this.generateMockAvailability(roomId, startDate, endDate).pipe(
+    map(days => {
+      const availableDays = days.filter(d => d.isAvailable).length;
+      
+      console.log('📊 Mock calendar generated:');
+      console.log('  - Total days:', days.length);
+      console.log('  - Available days:', availableDays);
+      
+      return {
+        year,
+        month: month as any,
+        monthName: CALENDAR_CONSTANTS.MONTH_NAMES[month],
+        monthNameShort: CALENDAR_CONSTANTS.MONTH_NAMES_SHORT[month],
+        days,
+        totalDays: days.length,
+        previousMonthDays: [],
+        nextMonthDays: [],
+        availableDays,
+        bookedDays: days.filter(d => d.isBooked).length,
+        blockedDays: days.filter(d => d.isBlocked).length,
+        isCurrentMonth: this.isCurrentMonth(year, month),
+        isPastMonth: this.isPastMonth(year, month),
+        isFutureMonth: this.isFutureMonth(year, month)
+      };
+    })
+  );
+}
+
+  // ================================
+  // 🆔 MAPEO DE IDs
+  // ================================
+
+  private mapFrontendIdToBackend(frontendId: string): string {
+    // room-2 → 2
+    if (frontendId.startsWith('room-')) {
+      return frontendId.replace('room-', '');
+    }
+    return frontendId;
   }
 
-  private generateBookingReference(): string {
-    const today = new Date();
-    const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '');
-    const randomNum = Math.floor(Math.random() * 999) + 1;
-    return `HNA-${dateStr}-${randomNum.toString().padStart(3, '0')}`;
+  private mapBackendIdToFrontend(backendId: number | string): string {
+    // 2 → room-2
+    return `room-${backendId}`;
   }
+
+  private mapFieldType(field: string): 'checkIn' | 'checkOut' | 'range' {
+    switch (field?.toLowerCase()) {
+      case 'checkin':
+      case 'check_in':
+      case 'check-in':
+      case 'checkindate':
+        return 'checkIn';
+      case 'checkout':
+      case 'check_out':
+      case 'check-out':
+      case 'checkoutdate':
+        return 'checkOut';
+      default:
+        return 'range';
+    }
+  }
+
+  // ================================
+  // 🔧 MÉTODOS AUXILIARES
+  // ================================
 
   private calculateNights(checkIn: DateString, checkOut: DateString): number {
     const checkInDate = new Date(checkIn);
@@ -422,7 +740,12 @@ export class BookingService {
   }
 
   private isSameDay(date1: Date, date2: Date): boolean {
-    return date1.toDateString() === date2.toDateString();
+    const d1 = new Date(date1);
+    const d2 = new Date(date2);
+
+    return d1.getFullYear() === d2.getFullYear() &&
+          d1.getMonth() === d2.getMonth() &&
+          d1.getDate() === d2.getDate();
   }
 
   private isCurrentMonth(year: number, month: number): boolean {
@@ -440,10 +763,6 @@ export class BookingService {
     const today = new Date();
     const monthDate = new Date(year, month);
     return monthDate > new Date(today.getFullYear(), today.getMonth());
-  }
-
-  private generateBookingId(): string {
-    return 'booking_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
   }
 
   private populateWhatsAppTemplate(template: string, booking: Booking): string {
@@ -466,7 +785,12 @@ export class BookingService {
   }
 
   private generateWhatsAppUrl(phone: string, message: string): string {
-    const cleanPhone = phone.replace(/\D/g, '');
+    let cleanPhone = phone.replace(/\D/g, '');
+    
+    if (!cleanPhone.startsWith('57')) {
+      cleanPhone = '57' + cleanPhone;
+    }
+    
     const encodedMessage = encodeURIComponent(message);
     return `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
   }
@@ -504,12 +828,10 @@ export class BookingService {
     
     if (!current || !progress) return;
     
-    // Actualizar validación de cada paso
     progress.steps[0].isValid = !!(current.checkInDate && current.checkOutDate);
     progress.steps[1].isValid = !!(current.guests && current.guests.total > 0);
     progress.steps[2].isValid = !!(current.guestInfo?.firstName && current.guestInfo?.email);
     
-    // Calcular progreso
     const completedSteps = progress.steps.filter(s => s.isValid).length;
     progress.completionPercentage = (completedSteps / progress.totalSteps) * 100;
     progress.canProceed = progress.steps[progress.currentStep - 1]?.isValid || false;
@@ -555,7 +877,7 @@ export class BookingService {
   }
 
   // ================================
-  // 🧹 MÉTODOS PÚBLICOS ADICIONALES
+  // 🧹 MÉTODOS PÚBLICOS
   // ================================
 
   clearCurrentBooking(): void {
