@@ -45,6 +45,18 @@ const routes: Routes = [
   },
 
   // ================================
+  // 🔐 ADMIN: Panel de Administración
+  // ================================
+  {
+    path: 'admin',
+    loadChildren: () => import('./admin/admin.module').then(m => m.AdminModule),
+    data: { 
+      title: 'Panel de Administración',
+      description: 'Gestión del establecimiento y habitaciones' 
+    }
+  },
+
+  // ================================
   // 🔄 REDIRECTS DE COMPATIBILIDAD
   // ================================
   

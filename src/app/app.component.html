@@ -7,8 +7,11 @@
         <h1>🏠 Accommodations Platform</h1>
       </div>
       <div class="navbar-nav">
-        <a href="#" class="nav-link active">Home</a>
-        <a href="#" class="nav-link disabled">Login Admin (Coming Soon)</a>
+        <a routerLink="/home" class="nav-link" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">Home</a>
+        <a routerLink="/rooms" class="nav-link" routerLinkActive="active">Habitaciones</a>
+        <a routerLink="/admin/login" class="nav-link admin-link" title="Panel de Administración">
+          🔐 Admin
+        </a>
       </div>
     </div>
   </nav>

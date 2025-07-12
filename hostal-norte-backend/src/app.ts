@@ -10,6 +10,7 @@ import { testConnection, closePool } from './config/database';
 import availabilityRoutes from './routes/availability.routes';
 import establishmentRoutes from './routes/establishment.routes';
 import bookingsRoutes from './routes/bookings.routes';
+import adminAuthRoutes from './routes/admin/admin.auth.routes';
 
 dotenv.config();
 
@@ -165,9 +166,11 @@ app.get('/api/rooms', async (req, res) => {
 // ================================
 
 // ✅ RUTAS ESPECIALIZADAS - EN ORDEN DE PRIORIDAD
+
 app.use('/api/availability', availabilityRoutes);
 app.use('/api/bookings', bookingsRoutes);
-app.use('/api/establishment', establishmentRoutes); // ← AHORA FUNCIONARÁ CORRECTAMENTE
+app.use('/api/establishment', establishmentRoutes); 
+app.use('/api/admin/auth', adminAuthRoutes);
 
 // ================================
 // 🚫 404 HANDLER

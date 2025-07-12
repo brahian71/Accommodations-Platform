@@ -54,4 +54,67 @@
       }
     }
   }
+
+  .admin-link {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  color: white !important;
+  border-radius: 6px;
+  padding: 8px 16px !important;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    color: white !important;
+  }
+  
+  &:focus, &:active {
+    color: white !important;
+  }
+}
+
+// ✅ MEJORAR NAVEGACIÓN GENERAL
+.navbar-nav {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  
+  .nav-link {
+    position: relative;
+    transition: all 0.2s ease;
+    
+    &.active:not(.admin-link) {
+      color: #667eea;
+      font-weight: 600;
+      
+      &::after {
+        content: '';
+        position: absolute;
+        bottom: -4px;
+        left: 0;
+        right: 0;
+        height: 2px;
+        border-radius: 1px;
+      }
+    }
+    
+    &:hover:not(.admin-link) {
+      color: #667eea;
+    }
+  }
+}
+
+// ✅ RESPONSIVE
+@media (max-width: 768px) {
+  .navbar-nav {
+    gap: 15px;
+    
+    .admin-link {
+      padding: 6px 12px !important;
+      font-size: 0.9rem;
+    }
+  }
+}
 }
